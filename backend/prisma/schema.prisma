@@ -1,0 +1,403 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProductCategory {
+  TABLES
+  CHAIRS
+  BEDS
+  SHELVES
+  STORAGE
+  DESKS
+  OUTDOOR
+  DECORATIVE
+}
+
+enum Difficulty {
+  EASY
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  PAID
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Models
+model User {
+  id                       String    @id @default(cuid())
+  email                    String    @unique
+  password                 String
+  role                     UserRole  @default(BUYER)
+  isBoth                   Boolean   @default(false)
+  firstName                String
+  lastName                 String
+  emailVerified            Boolean   @default(false)
+  emailVerificationToken   String?   @unique
+  emailVerifiedAt          DateTime?
+  resetPasswordToken       String?   @unique
+  resetPasswordExpiresAt   DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  lastLoginAt              DateTime?
+  isActive                 Boolean   @default(true)
+
+  // Profile Relations
+  sellerProfile  SellerProfile?
+  buyerProfile   BuyerProfile?
+
+  // Activity Relations
+  products       Product[]
+  orders         Order[]
+  reviews        Review[]
+  favorites      Favorite[]
+  chatMessages   ChatMessage[]
+  supportTickets SupportTicket[]
+  notifications  Notification[]
+  downloads      Download[]
+  blacklistedTokens BlacklistedToken[]
+
+  // Moderation Relations
+  moderatedProducts Product[] @relation("ModeratedBy")
+
+  @@map("User")
+}
+
+model SellerProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  storeName   String  @unique
+  slug        String  @unique
+  description String?
+  website     String?
+  phone       String?
+  avatar      String?
+  banner      String?
+  rating      Float   @default(0)
+  totalSales  Int     @default(0)
+  isVerified  Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("SellerProfile")
+}
+
+model BuyerProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  avatar       String?
+  phone        String?
+  dateOfBirth  DateTime?
+  preferences  Json?
+  totalOrders  Int      @default(0)
+  totalSpent   Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("BuyerProfile")
+}
+
+model Product {
+  id               String        @id @default(cuid())
+  title            String
+  description      String
+  slug             String        @unique
+  price            Float
+  category         ProductCategory
+  difficulty       Difficulty
+  pdfUrl           String
+  previewImages    String[]
+  tags             String[]
+  estimatedTime    String?
+  toolsRequired    String[]
+  materials        String[]
+  dimensions       String?
+  specifications   Json?
+  status           ProductStatus @default(DRAFT)
+  moderatedBy      String?
+  moderatedAt      DateTime?
+  rejectionReason  String?
+  sellerId         String
+  viewCount        Int           @default(0)
+  downloadCount    Int           @default(0)
+  favoriteCount    Int           @default(0)
+  featured         Boolean       @default(false)
+  rating           Float         @default(0)
+  reviewCount      Int           @default(0)
+  createdAt        DateTime      @default(now())
+  publishedAt      DateTime?
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  seller      User         @relation(fields: [sellerId], references: [id])
+  moderator   User?        @relation("ModeratedBy", fields: [moderatedBy], references: [id])
+  images      ProductImage[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+  favorites   Favorite[]
+  downloads   Download[]
+
+  @@index([status, createdAt])
+  @@index([category, difficulty])
+  @@index([sellerId, status])
+  @@index([featured, publishedAt])
+  @@index([title])
+  @@index([description])
+  @@map("Product")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("ProductImage")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  subtotal        Float
+  platformFee     Float
+  sellerAmount    Float
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
+  paymentIntentId String?
+  paymentStatus   String?
+  isGuestOrder    Boolean     @default(false)
+  guestEmail      String?
+  buyerId         String?
+  billingAddress  Json
+  metadata        Json?
+  createdAt       DateTime    @default(now())
+  paidAt          DateTime?
+  completedAt     DateTime?
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  buyer     User?       @relation(fields: [buyerId], references: [id])
+  items     OrderItem[]
+  downloads Download[]
+  reviews   Review[]
+
+  @@index([status, createdAt])
+  @@index([buyerId])
+  @@map("Order")
+}
+
+model OrderItem {
+  id           String @id @default(cuid())
+  orderId      String
+  productId    String
+  productTitle String
+  productSlug  String
+  price        Float
+  quantity     Int    @default(1)
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("OrderItem")
+}
+
+model Download {
+  id              String    @id @default(cuid())
+  downloadToken   String    @unique
+  orderId         String
+  productId       String
+  buyerId         String
+  expiresAt       DateTime
+  downloadCount   Int       @default(0)
+  maxDownloads    Int       @default(10)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  lastDownloadAt  DateTime?
+  ipAddress       String?
+  userAgent       String?
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  buyer   User    @relation(fields: [buyerId], references: [id])
+
+  @@index([downloadToken])
+  @@index([buyerId])
+  @@map("Download")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  buyerId   String
+  rating    Int      // 1-5
+  comment   String?
+  images    String[]
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  buyer   User    @relation(fields: [buyerId], references: [id])
+
+  @@unique([orderId, productId])
+  @@index([productId, rating])
+  @@map("Review")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("Favorite")
+}
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  type      String   // 'support', 'general'
+  name      String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  messages ChatMessage[]
+
+  @@map("ChatRoom")
+}
+
+model ChatMessage {
+  id       String   @id @default(cuid())
+  roomId   String
+  senderId String
+  content  String
+  type     String   @default("text") // 'text', 'image', 'file'
+  metadata Json?
+  sentAt   DateTime @default(now())
+
+  // Relations
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User     @relation(fields: [senderId], references: [id])
+
+  @@index([roomId, sentAt])
+  @@map("ChatMessage")
+}
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  ticketNumber String  @unique
+  userId      String
+  subject     String
+  description String
+  status      String   @default("open") // 'open', 'in_progress', 'resolved', 'closed'
+  priority    String   @default("normal") // 'low', 'normal', 'high', 'urgent'
+  assignedTo  String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([status, priority])
+  @@map("SupportTicket")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("Notification")
+}
+
+model Analytics {
+  id          String   @id @default(cuid())
+  eventType   String
+  userId      String?
+  productId   String?
+  sessionId   String?
+  eventData   Json
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([userId])
+  @@index([productId])
+  @@map("Analytics")
+}
+
+model BlacklistedToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([userId])
+  @@map("BlacklistedToken")
+}
