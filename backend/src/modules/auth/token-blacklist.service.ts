@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class TokenBlacklistService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
-  ) {}
+  private blacklistedTokens = new Map<string, { userId: string; expiresAt: Date }>();
+
+  constructor(private readonly jwtService: JwtService) {
+    // Limpiar tokens expirados cada hora
+    setInterval(() => this.cleanupExpiredTokens(), 60 * 60 * 1000);
+  }
 
   async blacklistToken(token: string, userId: string): Promise<void> {
     try {
@@ -15,14 +16,16 @@ export class TokenBlacklistService {
       const decoded = this.jwtService.decode(token) as any;
       const expiresAt = new Date(decoded.exp * 1000); // exp está en segundos
 
-      // Crear entrada en tabla de tokens blacklisteados
-      await this.prisma.blacklistedToken.create({
-        data: {
-          token,
-          userId,
-          expiresAt,
-        },
-      });
+      // Almacenar en memoria
+      this.blacklistedTokens.set(token, { userId, expiresAt });
+
+      // Programar eliminación automática cuando expire
+      const timeUntilExpiration = expiresAt.getTime() - Date.now();
+      if (timeUntilExpiration > 0) {
+        setTimeout(() => {
+          this.blacklistedTokens.delete(token);
+        }, timeUntilExpiration);
+      }
     } catch (error) {
       console.error('Error blacklisting token:', error);
       // No lanzar error para no interrumpir el logout
@@ -31,19 +34,15 @@ export class TokenBlacklistService {
 
   async isTokenBlacklisted(token: string): Promise<boolean> {
     try {
-      const blacklistedToken = await this.prisma.blacklistedToken.findUnique({
-        where: { token },
-      });
-
-      if (!blacklistedToken) {
+      const blacklistedData = this.blacklistedTokens.get(token);
+      
+      if (!blacklistedData) {
         return false;
       }
 
-      // Si el token ya expiró, eliminarlo de la blacklist y retornar false
-      if (blacklistedToken.expiresAt < new Date()) {
-        await this.prisma.blacklistedToken.delete({
-          where: { token },
-        });
+      // Si el token ya expiró, eliminarlo y retornar false
+      if (blacklistedData.expiresAt < new Date()) {
+        this.blacklistedTokens.delete(token);
         return false;
       }
 
@@ -55,17 +54,38 @@ export class TokenBlacklistService {
   }
 
   // Limpiar tokens expirados (ejecutar periódicamente)
-  async cleanupExpiredTokens(): Promise<void> {
+  private cleanupExpiredTokens(): void {
     try {
-      await this.prisma.blacklistedToken.deleteMany({
-        where: {
-          expiresAt: {
-            lt: new Date(),
-          },
-        },
+      const now = new Date();
+      const expiredTokens: string[] = [];
+
+      // Encontrar tokens expirados
+      for (const [token, data] of this.blacklistedTokens.entries()) {
+        if (data.expiresAt < now) {
+          expiredTokens.push(token);
+        }
+      }
+
+      // Eliminar tokens expirados
+      expiredTokens.forEach(token => {
+        this.blacklistedTokens.delete(token);
       });
+
+      if (expiredTokens.length > 0) {
+        console.log(`Cleaned up ${expiredTokens.length} expired tokens`);
+      }
     } catch (error) {
       console.error('Error cleaning up expired tokens:', error);
     }
+  }
+
+  // Método para debugging - ver cuántos tokens están en blacklist
+  getBlacklistSize(): number {
+    return this.blacklistedTokens.size;
+  }
+
+  // Método para limpiar toda la blacklist (útil en testing)
+  clearBlacklist(): void {
+    this.blacklistedTokens.clear();
   }
 }

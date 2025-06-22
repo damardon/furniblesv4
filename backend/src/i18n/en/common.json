@@ -1,0 +1,61 @@
+{
+  "navigation": {
+    "home": "Home",
+    "marketplace": "Marketplace",
+    "categories": "Categories",
+    "sellers": "Sellers",
+    "about": "About",
+    "contact": "Contact",
+    "support": "Support",
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "favorites": "Favorites",
+    "settings": "Settings"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "download": "Download",
+    "upload": "Upload",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "load_more": "Load More",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "draft": "Draft",
+    "published": "Published",
+    "suspended": "Suspended"
+  },
+  "time": {
+    "just_now": "Just now",
+    "minutes_ago": "{count} minutes ago",
+    "hours_ago": "{count} hours ago",
+    "days_ago": "{count} days ago",
+    "weeks_ago": "{count} weeks ago",
+    "months_ago": "{count} months ago"
+  },
+  "currency": {
+    "symbol": "$",
+    "free": "Free"
+  },
+  "language": {
+    "english": "English",
+    "spanish": "Español"
+  }
+}

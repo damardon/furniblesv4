@@ -1,0 +1,61 @@
+{
+  "navigation": {
+    "home": "Inicio",
+    "marketplace": "Marketplace",
+    "categories": "Categorías",
+    "sellers": "Vendedores",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "support": "Soporte",
+    "profile": "Perfil",
+    "dashboard": "Panel",
+    "orders": "Pedidos",
+    "favorites": "Favoritos",
+    "settings": "Configuración"
+  },
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "download": "Descargar",
+    "upload": "Subir",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "load_more": "Cargar Más",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "close": "Cerrar"
+  },
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "pending": "Pendiente",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "draft": "Borrador",
+    "published": "Publicado",
+    "suspended": "Suspendido"
+  },
+  "time": {
+    "just_now": "Justo ahora",
+    "minutes_ago": "hace {count} minutos",
+    "hours_ago": "hace {count} horas",
+    "days_ago": "hace {count} días",
+    "weeks_ago": "hace {count} semanas",
+    "months_ago": "hace {count} meses"
+  },
+  "currency": {
+    "symbol": "$",
+    "free": "Gratis"
+  },
+  "language": {
+    "english": "English",
+    "spanish": "Español"
+  }
+}

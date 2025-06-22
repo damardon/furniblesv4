@@ -1,0 +1,10 @@
+export enum ProductCategory {
+  TABLES = 'TABLES',
+  CHAIRS = 'CHAIRS',
+  BEDS = 'BEDS',
+  SHELVES = 'SHELVES',
+  STORAGE = 'STORAGE',
+  DESKS = 'DESKS',
+  OUTDOOR = 'OUTDOOR',
+  DECORATIVE = 'DECORATIVE'
+}

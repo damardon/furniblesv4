@@ -1,0 +1,22 @@
+{
+  "required": "Este campo es obligatorio",
+  "email": "Por favor ingresa un email válido",
+  "minLength": "Debe tener al menos {min} caracteres",
+  "maxLength": "No debe tener más de {max} caracteres",
+  "min": "Debe ser al menos {min}",
+  "max": "No debe ser más de {max}",
+  "pattern": "Formato inválido",
+  "phone": "Por favor ingresa un número de teléfono válido",
+  "url": "Por favor ingresa una URL válida",
+  "number": "Debe ser un número válido",
+  "integer": "Debe ser un número entero",
+  "decimal": "Debe ser un número decimal válido",
+  "password": {
+    "weak": "La contraseña es muy débil",
+    "requirements": "La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas y números"
+  },
+  "file": {
+    "size": "El archivo debe ser menor a {max}MB",
+    "format": "Formato de archivo inválido. Permitidos: {formats}"
+  }
+}
