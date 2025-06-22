@@ -1,22 +1,14 @@
 {
-  "required": "Este campo es obligatorio",
-  "email": "Por favor ingresa un email válido",
-  "minLength": "Debe tener al menos {min} caracteres",
-  "maxLength": "No debe tener más de {max} caracteres",
-  "min": "Debe ser al menos {min}",
-  "max": "No debe ser más de {max}",
-  "pattern": "Formato inválido",
-  "phone": "Por favor ingresa un número de teléfono válido",
-  "url": "Por favor ingresa una URL válida",
-  "number": "Debe ser un número válido",
-  "integer": "Debe ser un número entero",
-  "decimal": "Debe ser un número decimal válido",
-  "password": {
-    "weak": "La contraseña es muy débil",
-    "requirements": "La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas y números"
-  },
-  "file": {
-    "size": "El archivo debe ser menor a {max}MB",
-    "format": "Formato de archivo inválido. Permitidos: {formats}"
-  }
+  "required": "{field} is required",
+  "email": "{field} must be a valid email address",
+  "min_length": "{field} must be at least {min} characters long",
+  "max_length": "{field} must not exceed {max} characters",
+  "numeric": "{field} must be a number",
+  "positive": "{field} must be a positive number",
+  "enum": "{field} must be one of: {values}",
+  "unique": "{field} already exists",
+  "password_mismatch": "Passwords do not match",
+  "invalid_format": "{field} has an invalid format",
+  "file_too_large": "File size must not exceed {size}MB",
+  "invalid_file_type": "Invalid file type. Allowed types: {types}"
 }

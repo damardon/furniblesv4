@@ -1,0 +1,55 @@
+{
+  "categories": {
+    "TABLES": "Mesas",
+    "CHAIRS": "Sillas",
+    "BEDS": "Camas", 
+    "SHELVES": "Estantes",
+    "STORAGE": "Almacenamiento",
+    "DESKS": "Escritorios",
+    "OUTDOOR": "Muebles de Exterior",
+    "DECORATIVE": "Artículos Decorativos"
+  },
+  "difficulty": {
+    "EASY": "Fácil",
+    "INTERMEDIATE": "Intermedio",
+    "ADVANCED": "Avanzado"
+  },
+  "status": {
+    "DRAFT": "Borrador",
+    "PENDING": "Pendiente de Revisión",
+    "APPROVED": "Aprobado", 
+    "REJECTED": "Rechazado"
+  },
+  "fields": {
+    "title": "Título del Producto",
+    "description": "Descripción",
+    "price": "Precio",
+    "category": "Categoría",
+    "difficulty": "Nivel de Dificultad",
+    "estimated_time": "Tiempo Estimado de Construcción",
+    "tools_required": "Herramientas Requeridas",
+    "materials": "Materiales Necesarios",
+    "dimensions": "Dimensiones",
+    "tags": "Etiquetas"
+  },
+  "actions": {
+    "create": "Crear Producto",
+    "edit": "Editar Producto",
+    "delete": "Eliminar Producto",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "view_details": "Ver Detalles",
+    "download": "Descargar Planos",
+    "add_to_favorites": "Agregar a Favoritos",
+    "share": "Compartir"
+  },
+  "messages": {
+    "created": "Producto creado exitosamente",
+    "updated": "Producto actualizado exitosamente",
+    "deleted": "Producto eliminado exitosamente", 
+    "approved": "Producto aprobado exitosamente",
+    "rejected": "Producto rechazado",
+    "download_started": "Descarga iniciada",
+    "added_to_favorites": "Agregado a favoritos"
+  }
+}

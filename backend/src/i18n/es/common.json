@@ -1,36 +1,37 @@
 {
   "navigation": {
     "home": "Inicio",
-    "marketplace": "Marketplace",
+    "products": "Productos", 
     "categories": "Categorías",
-    "sellers": "Vendedores",
     "about": "Acerca de",
     "contact": "Contacto",
-    "support": "Soporte",
+    "help": "Ayuda",
+    "dashboard": "Panel de Control",
     "profile": "Perfil",
-    "dashboard": "Panel",
-    "orders": "Pedidos",
-    "favorites": "Favoritos",
-    "settings": "Configuración"
+    "settings": "Configuraciones",
+    "logout": "Cerrar Sesión"
   },
   "actions": {
     "save": "Guardar",
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "edit": "Editar",
-    "view": "Ver",
-    "download": "Descargar",
-    "upload": "Subir",
+    "create": "Crear",
+    "update": "Actualizar",
     "search": "Buscar",
     "filter": "Filtrar",
     "sort": "Ordenar",
-    "load_more": "Cargar Más",
+    "export": "Exportar",
+    "import": "Importar",
+    "upload": "Subir",
+    "download": "Descargar",
     "back": "Atrás",
     "next": "Siguiente",
     "previous": "Anterior",
+    "continue": "Continuar",
     "submit": "Enviar",
-    "confirm": "Confirmar",
-    "close": "Cerrar"
+    "reset": "Restablecer",
+    "clear": "Limpiar"
   },
   "status": {
     "active": "Activo",
@@ -38,24 +39,34 @@
     "pending": "Pendiente",
     "approved": "Aprobado",
     "rejected": "Rechazado",
-    "draft": "Borrador",
-    "published": "Publicado",
-    "suspended": "Suspendido"
+    "completed": "Completado",
+    "in_progress": "En Progreso",
+    "cancelled": "Cancelado"
   },
   "time": {
-    "just_now": "Justo ahora",
-    "minutes_ago": "hace {count} minutos",
-    "hours_ago": "hace {count} horas",
-    "days_ago": "hace {count} días",
-    "weeks_ago": "hace {count} semanas",
-    "months_ago": "hace {count} meses"
+    "just_now": "Ahora mismo",
+    "minutes_ago": "Hace {count} minutos",
+    "hours_ago": "Hace {count} horas",
+    "days_ago": "Hace {count} días", 
+    "weeks_ago": "Hace {count} semanas",
+    "months_ago": "Hace {count} meses",
+    "years_ago": "Hace {count} años"
   },
-  "currency": {
-    "symbol": "$",
-    "free": "Gratis"
+  "pagination": {
+    "showing": "Mostrando {from} a {to} de {total} resultados",
+    "per_page": "Por página",
+    "first": "Primero",
+    "last": "Último",
+    "previous": "Anterior",
+    "next": "Siguiente"
   },
-  "language": {
-    "english": "English",
-    "spanish": "Español"
+  "messages": {
+    "loading": "Cargando...",
+    "no_data": "No hay datos disponibles",
+    "success": "Operación completada exitosamente",
+    "error": "Ocurrió un error",
+    "confirmation": "¿Estás seguro?",
+    "saved": "Cambios guardados exitosamente",
+    "deleted": "Elemento eliminado exitosamente"
   }
 }

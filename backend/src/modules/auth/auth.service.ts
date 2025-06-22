@@ -124,7 +124,9 @@ export class AuthService {
 
   async logout(token: string, userId: string): Promise<{ message: string }> {
     // Agregar token a blacklist
-    await this.tokenBlacklistService.blacklistToken(token, userId);
+    if (token) {
+      await this.tokenBlacklistService.blacklistToken(token, userId);
+    }
     
     return {
       message: 'Sesión cerrada exitosamente',

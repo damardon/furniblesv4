@@ -1,0 +1,55 @@
+{
+  "categories": {
+    "TABLES": "Tables",
+    "CHAIRS": "Chairs", 
+    "BEDS": "Beds",
+    "SHELVES": "Shelves",
+    "STORAGE": "Storage",
+    "DESKS": "Desks",
+    "OUTDOOR": "Outdoor Furniture",
+    "DECORATIVE": "Decorative Items"
+  },
+  "difficulty": {
+    "EASY": "Easy",
+    "INTERMEDIATE": "Intermediate", 
+    "ADVANCED": "Advanced"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "PENDING": "Pending Review",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected"
+  },
+  "fields": {
+    "title": "Product Title",
+    "description": "Description",
+    "price": "Price",
+    "category": "Category",
+    "difficulty": "Difficulty Level",
+    "estimated_time": "Estimated Build Time",
+    "tools_required": "Tools Required",
+    "materials": "Materials Needed",
+    "dimensions": "Dimensions",
+    "tags": "Tags"
+  },
+  "actions": {
+    "create": "Create Product",
+    "edit": "Edit Product",
+    "delete": "Delete Product",
+    "approve": "Approve",
+    "reject": "Reject",
+    "view_details": "View Details",
+    "download": "Download Plans",
+    "add_to_favorites": "Add to Favorites",
+    "share": "Share"
+  },
+  "messages": {
+    "created": "Product created successfully",
+    "updated": "Product updated successfully", 
+    "deleted": "Product deleted successfully",
+    "approved": "Product approved successfully",
+    "rejected": "Product rejected",
+    "download_started": "Download started",
+    "added_to_favorites": "Added to favorites"
+  }
+}

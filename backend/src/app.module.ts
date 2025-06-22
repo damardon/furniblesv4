@@ -5,7 +5,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { I18nModule } from './modules/i18n/i18n.module';
+import { I18nConfigModule } from './i18n/i18n.module';
 
 @Module({
   imports: [
@@ -13,8 +13,8 @@ import { I18nModule } from './modules/i18n/i18n.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+    I18nConfigModule, // ← Agregar aquí
     DatabaseModule,
-    I18nModule,
     AuthModule,
     UsersModule,
   ],

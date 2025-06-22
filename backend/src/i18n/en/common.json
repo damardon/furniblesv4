@@ -1,36 +1,37 @@
 {
   "navigation": {
     "home": "Home",
-    "marketplace": "Marketplace",
-    "categories": "Categories",
-    "sellers": "Sellers",
+    "products": "Products",
+    "categories": "Categories", 
     "about": "About",
     "contact": "Contact",
-    "support": "Support",
-    "profile": "Profile",
+    "help": "Help",
     "dashboard": "Dashboard",
-    "orders": "Orders",
-    "favorites": "Favorites",
-    "settings": "Settings"
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
   },
   "actions": {
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
-    "view": "View",
-    "download": "Download",
-    "upload": "Upload",
+    "create": "Create",
+    "update": "Update",
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
-    "load_more": "Load More",
+    "export": "Export",
+    "import": "Import",
+    "upload": "Upload",
+    "download": "Download",
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
+    "continue": "Continue",
     "submit": "Submit",
-    "confirm": "Confirm",
-    "close": "Close"
+    "reset": "Reset",
+    "clear": "Clear"
   },
   "status": {
     "active": "Active",
@@ -38,24 +39,34 @@
     "pending": "Pending",
     "approved": "Approved",
     "rejected": "Rejected",
-    "draft": "Draft",
-    "published": "Published",
-    "suspended": "Suspended"
+    "completed": "Completed",
+    "in_progress": "In Progress",
+    "cancelled": "Cancelled"
   },
   "time": {
     "just_now": "Just now",
     "minutes_ago": "{count} minutes ago",
-    "hours_ago": "{count} hours ago",
+    "hours_ago": "{count} hours ago", 
     "days_ago": "{count} days ago",
     "weeks_ago": "{count} weeks ago",
-    "months_ago": "{count} months ago"
+    "months_ago": "{count} months ago",
+    "years_ago": "{count} years ago"
   },
-  "currency": {
-    "symbol": "$",
-    "free": "Free"
+  "pagination": {
+    "showing": "Showing {from} to {to} of {total} results",
+    "per_page": "Per page",
+    "first": "First",
+    "last": "Last",
+    "previous": "Previous",
+    "next": "Next"
   },
-  "language": {
-    "english": "English",
-    "spanish": "Español"
+  "messages": {
+    "loading": "Loading...",
+    "no_data": "No data available",
+    "success": "Operation completed successfully",
+    "error": "An error occurred",
+    "confirmation": "Are you sure?",
+    "saved": "Changes saved successfully",
+    "deleted": "Item deleted successfully"
   }
 }

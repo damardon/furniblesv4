@@ -1,30 +1,28 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return '🏠 Furnibles API is running!';
+  constructor(private readonly configService: ConfigService) {}
+
+  getHealth() {
+    return {
+      message: 'Furnibles API is running successfully! 🚀',
+      timestamp: new Date().toISOString(),
+      environment: this.configService.get('NODE_ENV', 'development'),
+      version: '1.0.0',
+    };
   }
 
-  async getHealthCheck() {
-    const uptime = process.uptime();
-    const timestamp = new Date().toISOString();
-    
+  getVersion() {
     return {
-      status: 'healthy',
-      timestamp,
-      uptime: `${Math.floor(uptime)}s`,
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.npm_package_version || '1.0.0',
-      services: {
-        database: 'checking...',
-        redis: 'checking...',
-        email: 'checking...',
-      },
-      memory: {
-        used: Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100,
-        total: Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) / 100,
-      },
+      name: 'Furnibles API',
+      version: '1.0.0',
+      description: 'Marketplace C2C de planos digitales de muebles',
     };
+  }
+
+  getHello(): string {
+    return 'Hello World!';
   }
 }
