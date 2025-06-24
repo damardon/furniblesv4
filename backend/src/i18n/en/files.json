@@ -1,0 +1,20 @@
+{
+  "errors": {
+    "file_too_large": "File size exceeds maximum allowed size of {{maxSize}}",
+    "invalid_file_type": "Invalid file type. Allowed types: {{allowed}}",
+    "not_pdf": "File must be a PDF document",
+    "not_image": "File must be an image",
+    "too_many_images": "Maximum 5 images allowed per upload",
+    "file_not_found": "File not found",
+    "not_owner": "You don't have permission to access this file",
+    "not_authorized": "You are not authorized to view this file metadata",
+    "corrupted_file": "File appears to be corrupted or invalid",
+    "upload_failed": "File upload failed",
+    "processing_failed": "File processing failed"
+  },
+  "messages": {
+    "upload_success": "File uploaded successfully",
+    "delete_success": "File deleted successfully",
+    "cleanup_success": "{{deletedFiles}} orphaned files cleaned up, {{freedSpace}} freed"
+  }
+}

@@ -1,5 +1,6 @@
 {
   "categories": {
+    "FURNITURE": "Muebles",
     "TABLES": "Mesas",
     "CHAIRS": "Sillas",
     "BEDS": "Camas", 
@@ -7,18 +8,22 @@
     "STORAGE": "Almacenamiento",
     "DESKS": "Escritorios",
     "OUTDOOR": "Muebles de Exterior",
-    "DECORATIVE": "Artículos Decorativos"
+    "DECORATIVE": "Artículos Decorativos",
+    "KITCHEN": "Cocina",
+    "OFFICE": "Oficina"
   },
   "difficulty": {
-    "EASY": "Fácil",
+    "BEGINNER": "Principiante",
     "INTERMEDIATE": "Intermedio",
-    "ADVANCED": "Avanzado"
+    "ADVANCED": "Avanzado",
+    "EXPERT": "Experto"
   },
   "status": {
     "DRAFT": "Borrador",
     "PENDING": "Pendiente de Revisión",
     "APPROVED": "Aprobado", 
-    "REJECTED": "Rechazado"
+    "REJECTED": "Rechazado",
+    "SUSPENDED": "Suspendido"
   },
   "fields": {
     "title": "Título del Producto",
@@ -47,9 +52,32 @@
     "created": "Producto creado exitosamente",
     "updated": "Producto actualizado exitosamente",
     "deleted": "Producto eliminado exitosamente", 
+    "published": "Producto enviado para moderación",
     "approved": "Producto aprobado exitosamente",
     "rejected": "Producto rechazado",
     "download_started": "Descarga iniciada",
     "added_to_favorites": "Agregado a favoritos"
+  },
+  "errors": {
+    "not_found": "Producto no encontrado",
+    "not_owner": "No tienes autorización para modificar este producto",
+    "max_products_reached": "Has alcanzado el límite máximo de 50 productos",
+    "cannot_publish": "No se puede publicar el producto. Solo los borradores pueden ser publicados",
+    "cannot_approve": "No se puede aprobar el producto. Solo los productos pendientes pueden ser aprobados",
+    "cannot_reject": "No se puede rechazar el producto. Solo los productos pendientes pueden ser rechazados",
+    "no_images": "El producto debe tener al menos una imagen de vista previa",
+    "has_orders": "No se puede eliminar un producto que tiene órdenes asociadas"
+  },
+  "validation": {
+    "title_min_length": "El título debe tener al menos 10 caracteres",
+    "title_max_length": "El título no puede exceder 100 caracteres",
+    "description_min_length": "La descripción debe tener al menos 50 caracteres",
+    "description_max_length": "La descripción no puede exceder 2000 caracteres",
+    "price_number": "El precio debe ser un número válido",
+    "price_min": "El precio debe ser de al menos $1.00",
+    "price_max": "El precio no puede exceder $100.00",
+    "invalid_category": "Categoría de producto inválida",
+    "invalid_difficulty": "Nivel de dificultad inválido",
+    "tags_max_size": "Máximo 10 etiquetas permitidas"
   }
 }

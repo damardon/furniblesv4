@@ -1,4 +1,21 @@
 {
+  "notifications": {
+    "orderCreated": "¡Orden Creada Exitosamente!",
+    "orderCreatedMsg": "Tu orden {orderNumber} ha sido creada. Procede al pago para recibir tus archivos.",
+    "orderPaid": "¡Pago Confirmado!",
+    "orderPaidMsg": "Tu pago por la orden {orderNumber} ha sido procesado exitosamente.",
+    "orderCompleted": "¡Archivos Listos para Descarga!",
+    "orderCompletedMsg": "Tu orden {orderNumber} está completa. Ya puedes descargar tus archivos.",
+    "productSold": "¡Nueva Venta!",
+    "productSoldMsg": "Has vendido {itemCount} producto(s) por un total de ${sellerAmount}."
+  },
+  "cart": {
+    "buyerOnly": "Solo los compradores pueden agregar productos al carrito",
+    "limitExceeded": "Límite de carrito excedido (máximo 10 productos)",
+    "alreadyExists": "El producto ya está en tu carrito",
+    "ownProduct": "No puedes comprar tu propio producto"
+  },
+
   "navigation": {
     "home": "Inicio",
     "products": "Productos", 

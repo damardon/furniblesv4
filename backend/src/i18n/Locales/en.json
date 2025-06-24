@@ -1,0 +1,36 @@
+{
+  "cart": {
+    "addSuccess": "Product added to cart",
+    "alreadyExists": "Product already in cart",
+    "limitExceeded": "Cart limit exceeded (10 products max)",
+    "buyerOnly": "Only buyers can add products to cart",
+    "ownProduct": "You cannot buy your own product",
+    "empty": "Cart is empty",
+    "cleared": "Cart cleared successfully"
+  },
+  "orders": {
+    "created": "Order created successfully",
+    "notFound": "Order not found",
+    "completed": "Order completed",
+    "cancelled": "Order cancelled",
+    "pending": "Pending payment",
+    "processing": "Processing payment",
+    "paid": "Payment confirmed"
+  },
+  "notifications": {
+    "orderCreated": "Order Created Successfully!",
+    "orderCreatedMsg": "Your order {orderNumber} has been created. Please proceed to payment.",
+    "orderPaid": "Payment Confirmed!",
+    "orderPaidMsg": "Your payment for order {orderNumber} has been processed successfully.",
+    "orderCompleted": "Files Ready for Download!",
+    "orderCompletedMsg": "Your order {orderNumber} is complete. You can now download your files.",
+    "productSold": "New Sale!",
+    "productSoldMsg": "You sold {itemCount} product(s) for a total of ${sellerAmount}."
+  },
+  "downloads": {
+    "invalidToken": "Invalid download token",
+    "expired": "Download link expired",
+    "limitExceeded": "Download limit exceeded",
+    "notFound": "File not found"
+  }
+}

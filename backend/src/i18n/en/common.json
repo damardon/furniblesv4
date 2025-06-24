@@ -1,4 +1,21 @@
 {
+  "notifications": {
+      "orderCreated": "Order Created Successfully!",
+      "orderCreatedMsg": "Your order {orderNumber} has been created. Please proceed to payment.",
+      "orderPaid": "Payment Confirmed!",
+      "orderPaidMsg": "Your payment for order {orderNumber} has been processed successfully.",
+      "orderCompleted": "Files Ready for Download!",
+      "orderCompletedMsg": "Your order {orderNumber} is complete. You can now download your files.",
+      "productSold": "New Sale!",
+      "productSoldMsg": "You sold {itemCount} product(s) for a total of ${sellerAmount}."
+    },
+    "cart": {
+      "buyerOnly": "Only buyers can add products to cart",
+      "limitExceeded": "Cart limit exceeded (10 products max)",
+      "alreadyExists": "Product already in cart",
+      "ownProduct": "You cannot buy your own product"
+    },
+
   "navigation": {
     "home": "Home",
     "products": "Products",
@@ -69,4 +86,5 @@
     "saved": "Changes saved successfully",
     "deleted": "Item deleted successfully"
   }
+  
 }

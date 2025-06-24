@@ -1,0 +1,20 @@
+{
+  "errors": {
+    "file_too_large": "El archivo excede el tamaño máximo permitido de {{maxSize}}",
+    "invalid_file_type": "Tipo de archivo inválido. Tipos permitidos: {{allowed}}",
+    "not_pdf": "El archivo debe ser un documento PDF",
+    "not_image": "El archivo debe ser una imagen",
+    "too_many_images": "Máximo 5 imágenes permitidas por carga",
+    "file_not_found": "Archivo no encontrado",
+    "not_owner": "No tienes permisos para acceder a este archivo",
+    "not_authorized": "No tienes autorización para ver los metadatos de este archivo",
+    "corrupted_file": "El archivo parece estar corrupto o ser inválido",
+    "upload_failed": "Error al subir el archivo",
+    "processing_failed": "Error al procesar el archivo"
+  },
+  "messages": {
+    "upload_success": "Archivo subido exitosamente",
+    "delete_success": "Archivo eliminado exitosamente",
+    "cleanup_success": "{{deletedFiles}} archivos huérfanos limpiados, {{freedSpace}} liberados"
+  }
+}

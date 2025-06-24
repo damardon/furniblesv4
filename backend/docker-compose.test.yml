@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  postgres_test:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: furnibles_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_test_data:

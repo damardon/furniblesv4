@@ -19,7 +19,9 @@
     "noFallthroughCasesInSwitch": false,
     "paths": {
       "@/*": ["src/*"],
+      "@/database/*": ["src/database/*"],
       "@/common/*": ["src/common/*"],
+      "@/i18n/*": ["src/i18n/*"],
       "@/modules/*": ["src/modules/*"],
       "@/config/*": ["src/config/*"]
     }

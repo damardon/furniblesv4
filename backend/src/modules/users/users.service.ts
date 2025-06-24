@@ -36,6 +36,7 @@ export class UsersService {
     // Crear el usuario (la contraseña ya viene hasheada desde AuthService)
     const user = await this.prisma.user.create({
       data: {
+        name: `${createUserData.firstName} ${createUserData.lastName}`,
         email: createUserData.email,
         password: createUserData.password,
         firstName: createUserData.firstName,

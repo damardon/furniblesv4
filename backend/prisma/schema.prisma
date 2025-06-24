@@ -1,9 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// prisma/schema.prisma - Versión Corregida Etapa 7
 generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["fullTextSearch"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -18,72 +16,130 @@ enum UserRole {
   ADMIN
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 enum ProductStatus {
   DRAFT
   PENDING
   APPROVED
   REJECTED
+  SUSPENDED
 }
 
 enum ProductCategory {
-  TABLES
+  FURNITURE
   CHAIRS
+  TABLES
   BEDS
-  SHELVES
   STORAGE
-  DESKS
   OUTDOOR
   DECORATIVE
+  KITCHEN
+  OFFICE
 }
 
 enum Difficulty {
-  EASY
+  BEGINNER
   INTERMEDIATE
   ADVANCED
+  EXPERT
 }
 
+// 🆕 Estados de orden actualizados
 enum OrderStatus {
-  PENDING
+  PENDING      // Orden creada, esperando pago
+  PROCESSING   // Pago recibido, procesando archivos
+  PAID         // Pago confirmado por Stripe
+  COMPLETED    // Archivos enviados y disponibles
+  CANCELLED    // Cancelada antes del pago
+  REFUNDED     // Reembolso procesado
+  DISPUTED     // En disputa
+}
+
+// 🆕 Enums para archivos
+enum FileType {
+  PDF
+  IMAGE
+  THUMBNAIL
+}
+
+enum FileStatus {
+  UPLOADING
   PROCESSING
-  PAID
-  COMPLETED
+  ACTIVE
   FAILED
-  REFUNDED
+  DELETED
+}
+
+// 🆕 Enums para notificaciones
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_PAID
+  ORDER_COMPLETED
+  ORDER_CANCELLED
+  ORDER_DISPUTED
+  ORDER_REFUNDED
+  PRODUCT_SOLD
+  DOWNLOAD_READY
+  SYSTEM_NOTIFICATION
+}
+
+// 🆕 Enums para configuración de fees
+enum FeeType {
+  PLATFORM_FEE
+  PAYMENT_PROCESSING
+  TAX
+  REGIONAL_FEE
 }
 
 // Models
 model User {
-  id                       String    @id @default(cuid())
-  email                    String    @unique
-  password                 String
-  role                     UserRole  @default(BUYER)
-  isBoth                   Boolean   @default(false)
-  firstName                String
-  lastName                 String
-  emailVerified            Boolean   @default(false)
-  emailVerificationToken   String?   @unique
-  emailVerifiedAt          DateTime?
-  resetPasswordToken       String?   @unique
-  resetPasswordExpiresAt   DateTime?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-  lastLoginAt              DateTime?
-  isActive                 Boolean   @default(true)
+  id                     String     @id @default(cuid())
+  email                  String     @unique
+  password               String
+  name                   String
+  role                   UserRole   @default(BUYER)
+  isBoth                 Boolean    @default(false)
+  firstName              String
+  lastName               String
+  emailVerified          Boolean    @default(false)
+  emailVerificationToken String?    @unique
+  emailVerifiedAt        DateTime?
+  resetPasswordToken     String?    @unique
+  resetPasswordExpiresAt DateTime?
+  lastLoginAt            DateTime?
+  isActive               Boolean    @default(true)
+  status                 UserStatus @default(ACTIVE)
+  avatar                 String?
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
 
-  // Profile Relations
-  sellerProfile  SellerProfile?
-  buyerProfile   BuyerProfile?
+  // Perfiles
+  sellerProfile SellerProfile?
+  buyerProfile  BuyerProfile?
 
   // Activity Relations
-  products       Product[]
-  orders         Order[]
-  reviews        Review[]
-  favorites      Favorite[]
-  chatMessages   ChatMessage[]
-  supportTickets SupportTicket[]
-  notifications  Notification[]
-  downloads      Download[]
+  products          Product[]
+  orders            Order[]
+  reviews           Review[]
+  favorites         Favorite[]
+  chatMessages      ChatMessage[]
+  supportTickets    SupportTicket[]
+  notifications     Notification[]
+  downloads         Download[]
   blacklistedTokens BlacklistedToken[]
+  uploadedFiles     File[]
+
+  // 🆕 Relaciones del carrito
+  cartItems         CartItem[]
+
+  // 🆕 Relaciones de órdenes
+  orderItems        OrderItem[] @relation("OrderSeller")
+  downloadTokens    DownloadToken[] @relation("TokenBuyer")
 
   // Moderation Relations
   moderatedProducts Product[] @relation("ModeratedBy")
@@ -92,91 +148,192 @@ model User {
 }
 
 model SellerProfile {
-  id          String  @id @default(cuid())
-  userId      String  @unique
-  storeName   String  @unique
-  slug        String  @unique
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  storeName   String   @unique
+  slug        String   @unique
   description String?
   website     String?
   phone       String?
   avatar      String?
   banner      String?
-  rating      Float   @default(0)
-  totalSales  Int     @default(0)
-  isVerified  Boolean @default(false)
+  rating      Float    @default(0)
+  totalSales  Int      @default(0)
+  isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("SellerProfile")
 }
 
 model BuyerProfile {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  avatar       String?
-  phone        String?
-  dateOfBirth  DateTime?
-  preferences  Json?
-  totalOrders  Int      @default(0)
-  totalSpent   Float    @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  avatar      String?
+  phone       String?
+  dateOfBirth DateTime?
+  preferences Json?
+  totalOrders Int       @default(0)
+  totalSpent  Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("BuyerProfile")
 }
 
-model Product {
-  id               String        @id @default(cuid())
-  title            String
-  description      String
-  slug             String        @unique
-  price            Float
-  category         ProductCategory
-  difficulty       Difficulty
-  pdfUrl           String
-  previewImages    String[]
-  tags             String[]
-  estimatedTime    String?
-  toolsRequired    String[]
-  materials        String[]
-  dimensions       String?
-  specifications   Json?
-  status           ProductStatus @default(DRAFT)
-  moderatedBy      String?
-  moderatedAt      DateTime?
-  rejectionReason  String?
-  sellerId         String
-  viewCount        Int           @default(0)
-  downloadCount    Int           @default(0)
-  favoriteCount    Int           @default(0)
-  featured         Boolean       @default(false)
-  rating           Float         @default(0)
-  reviewCount      Int           @default(0)
-  createdAt        DateTime      @default(now())
-  publishedAt      DateTime?
-  updatedAt        DateTime      @updatedAt
+// 🆕 Configuración de fees
+model feeConfig {
+  id            String   @id @default(cuid())
+  name          String   // "Platform Fee Argentina", "PayPal Processing Fee"
+  type          FeeType
+  country       String?  // "AR", "US", "MX", null para global
+  region        String?  // "LATAM", "EU", null para específico
+  category      ProductCategory? // Fee específico por categoría
+  paymentMethod String?  // "stripe", "paypal", "mercadopago"
+  
+  // Configuración del fee
+  isPercentage  Boolean  @default(true)
+  value         Float    // 0.10 para 10% o 2.50 para $2.50 fijo
+  minAmount     Float?   // Mínimo fee a cobrar
+  maxAmount     Float?   // Máximo fee a cobrar
+  
+  // Control
+  isActive      Boolean  @default(true)
+  priority      Int      @default(0) // Para resolver conflictos
+  description   String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  // Relations
-  seller      User         @relation(fields: [sellerId], references: [id])
-  moderator   User?        @relation("ModeratedBy", fields: [moderatedBy], references: [id])
-  images      ProductImage[]
-  orderItems  OrderItem[]
-  reviews     Review[]
-  favorites   Favorite[]
-  downloads   Download[]
+  @@index([country, isActive])
+  @@index([type, isActive])
+  @@index([category, isActive])
+  @@map("feeConfig")
+}
+
+// 🆕 Carrito de compras
+model CartItem {
+  id            String   @id @default(cuid())
+  userId        String
+  productId     String
+  priceSnapshot Float    // Precio al momento de agregar al carrito
+  quantity      Int      @default(1) // Siempre 1 para productos digitales
+  addedAt       DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId]) // Un producto por usuario en carrito
+  @@index([userId])
+  @@map("CartItem")
+}
+
+model File {
+  id       String     @id @default(cuid())
+  filename String
+  key      String     @unique
+  url      String
+  mimeType String
+  size     Int
+  type     FileType
+  status   FileStatus @default(UPLOADING)
+
+  // Metadata adicional
+  width    Int?
+  height   Int?
+  checksum String?
+  metadata Json?
+
+  // Relaciones
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  // Relaciones con productos
+  productPdfs   Product[] @relation("ProductPDF")
+  productImages Product[] @relation("ProductImages")
+  productThumbs Product[] @relation("ProductThumbnails")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([uploadedById])
+  @@index([type, status])
+  @@index([key])
+  @@map("File")
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  title       String          @db.VarChar(100)
+  description String          @db.VarChar(2000)
+  slug        String          @unique @db.VarChar(120)
+  price       Float           @default(5.00)
+  category    ProductCategory
+  difficulty  Difficulty
+  status      ProductStatus   @default(DRAFT)
+
+  // Archivos
+  pdfFileId        String?
+  pdfFile          File?    @relation("ProductPDF", fields: [pdfFileId], references: [id])
+  imageFileIds     String[] @default([])
+  imageFiles       File[]   @relation("ProductImages")
+  thumbnailFileIds String[] @default([])
+  thumbnailFiles   File[]   @relation("ProductThumbnails")
+
+  // Metadata del producto
+  tags           String[] @default([])
+  estimatedTime  String?  @db.VarChar(50)
+  toolsRequired  String[] @default([])
+  materials      String[] @default([])
+  dimensions     String?  @db.VarChar(100)
+  specifications Json?
+
+  // Moderación
+  moderatedBy     String?
+  moderatedAt     DateTime?
+  rejectionReason String?
+
+  // Relaciones
+  sellerId  String
+  seller    User   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  moderator User?  @relation("ModeratedBy", fields: [moderatedBy], references: [id])
+
+  // Estadísticas
+  viewCount     Int     @default(0)
+  downloadCount Int     @default(0)
+  favoriteCount Int     @default(0)
+  featured      Boolean @default(false)
+  rating        Float   @default(0)
+  reviewCount   Int     @default(0)
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  publishedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  // 🆕 Relaciones del carrito y órdenes
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  downloads    Download[]
+  downloadTokens DownloadToken[]
+
+  // Relaciones existentes
+  reviews      Review[]
+  favorites    Favorite[]
+  ProductImage ProductImage[]
 
   @@index([status, createdAt])
   @@index([category, difficulty])
+  @@index([category, status])
   @@index([sellerId, status])
   @@index([featured, publishedAt])
-  @@index([title])
-  @@index([description])
+  @@index([slug])
   @@map("Product")
 }
 
@@ -188,75 +345,135 @@ model ProductImage {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 
-  // Relations
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("ProductImage")
 }
 
+// 🆕 Modelo de órdenes actualizado
 model Order {
   id              String      @id @default(cuid())
-  orderNumber     String      @unique
-  subtotal        Float
-  platformFee     Float
-  sellerAmount    Float
-  totalAmount     Float
+  orderNumber     String      @unique // ORD-20250622-001
+  buyerId         String
+  
+  // Precios y fees
+  subtotal        Float       // Suma de precios de productos
+  platformFeeRate Float       @default(0.10) // Rate aplicado (10%)
+  platformFee     Float       // Fee calculado
+  totalAmount     Float       // Total que paga el buyer
+  sellerAmount    Float       // Total que recibe el seller (subtotal - platformFee)
+  
+  // Estado y pago
   status          OrderStatus @default(PENDING)
-  paymentIntentId String?
-  paymentStatus   String?
-  isGuestOrder    Boolean     @default(false)
-  guestEmail      String?
-  buyerId         String?
-  billingAddress  Json
-  metadata        Json?
+  paymentIntentId String?     // Stripe Payment Intent ID
+  paymentStatus   String?     // Stripe payment status
+  
+  // Información del comprador
+  buyerEmail      String      // Email para envío (puede ser diferente al user.email)
+  billingData     Json?       // Datos de facturación si es necesario
+  
+  // Metadata
+  metadata        Json?       // Información adicional
+  feeBreakdown    Json?       // Desglose detallado de fees aplicados
+  
+  // Timestamps
   createdAt       DateTime    @default(now())
-  paidAt          DateTime?
-  completedAt     DateTime?
+  paidAt          DateTime?   // Cuando se confirmó el pago
+  completedAt     DateTime?   // Cuando se entregaron los archivos
+  cancelledAt     DateTime?   // Cuando se canceló
   updatedAt       DateTime    @updatedAt
 
-  // Relations
-  buyer     User?       @relation(fields: [buyerId], references: [id])
-  items     OrderItem[]
-  downloads Download[]
-  reviews   Review[]
+  // Relaciones
+  buyer           User         @relation(fields: [buyerId], references: [id])
+  items           OrderItem[]
+  downloads       Download[]
+  downloadTokens  DownloadToken[]
+  reviews         Review[]
+  notifications   Notification[]
 
   @@index([status, createdAt])
   @@index([buyerId])
+  @@index([orderNumber])
+  @@index([paymentIntentId])
   @@map("Order")
 }
 
+// 🆕 Items de orden actualizado
 model OrderItem {
   id           String @id @default(cuid())
   orderId      String
   productId    String
+  sellerId     String // ID del seller de este producto específico
+  
+  // Snapshot de datos al momento de la compra
   productTitle String
   productSlug  String
-  price        Float
-  quantity     Int    @default(1)
+  price        Float  // Precio del producto al momento de la compra
+  quantity     Int    @default(1) // Siempre 1 para productos digitales
+  
+  // Datos del seller al momento de la compra
+  sellerName   String
+  storeName    String?
+  
+  createdAt    DateTime @default(now())
 
-  // Relations
+  // Relaciones
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
+  seller  User    @relation("OrderSeller", fields: [sellerId], references: [id])
 
+  @@index([orderId])
+  @@index([sellerId])
   @@map("OrderItem")
 }
 
-model Download {
+// 🆕 Tokens de descarga seguros
+model DownloadToken {
   id              String    @id @default(cuid())
-  downloadToken   String    @unique
+  token           String    @unique @default(cuid()) // Token único para la descarga
   orderId         String
   productId       String
   buyerId         String
-  expiresAt       DateTime
-  downloadCount   Int       @default(0)
-  maxDownloads    Int       @default(10)
-  isActive        Boolean   @default(true)
+  
+  // Control de descargas
+  downloadLimit   Int       @default(5)     // Límite de descargas
+  downloadCount   Int       @default(0)     // Descargas realizadas
+  expiresAt       DateTime  // Fecha de expiración del token
+  isActive        Boolean   @default(true)  // Si el token está activo
+  
+  // Tracking
   createdAt       DateTime  @default(now())
-  lastDownloadAt  DateTime?
-  ipAddress       String?
-  userAgent       String?
+  lastDownloadAt  DateTime? // Última descarga
+  lastIpAddress   String?   // IP de la última descarga
+  lastUserAgent   String?   // User agent de la última descarga
+  
+  // Relaciones
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  buyer   User    @relation("TokenBuyer", fields: [buyerId], references: [id])
 
-  // Relations
+  @@index([token])
+  @@index([orderId])
+  @@index([buyerId])
+  @@index([expiresAt, isActive])
+  @@map("DownloadToken")
+}
+
+model Download {
+  id             String    @id @default(cuid())
+  downloadToken  String    @unique
+  orderId        String
+  productId      String
+  buyerId        String
+  expiresAt      DateTime
+  downloadCount  Int       @default(0)
+  maxDownloads   Int       @default(10)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  lastDownloadAt DateTime?
+  ipAddress      String?
+  userAgent      String?
+
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
   buyer   User    @relation(fields: [buyerId], references: [id])
@@ -267,18 +484,17 @@ model Download {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  buyerId   String
-  rating    Int      // 1-5
-  comment   String?
-  images    String[]
-  isVerified Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  orderId    String
+  productId  String
+  buyerId    String
+  rating     Int
+  comment    String?
+  images     String[]
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  // Relations
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
   buyer   User    @relation(fields: [buyerId], references: [id])
@@ -294,7 +510,6 @@ model Favorite {
   productId String
   createdAt DateTime @default(now())
 
-  // Relations
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -304,13 +519,12 @@ model Favorite {
 
 model ChatRoom {
   id        String   @id @default(cuid())
-  type      String   // 'support', 'general'
+  type      String
   name      String?
   metadata  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   messages ChatMessage[]
 
   @@map("ChatRoom")
@@ -321,11 +535,10 @@ model ChatMessage {
   roomId   String
   senderId String
   content  String
-  type     String   @default("text") // 'text', 'image', 'file'
+  type     String   @default("text")
   metadata Json?
   sentAt   DateTime @default(now())
 
-  // Relations
   room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   sender User     @relation(fields: [senderId], references: [id])
 
@@ -334,52 +547,63 @@ model ChatMessage {
 }
 
 model SupportTicket {
-  id          String   @id @default(cuid())
-  ticketNumber String  @unique
-  userId      String
-  subject     String
-  description String
-  status      String   @default("open") // 'open', 'in_progress', 'resolved', 'closed'
-  priority    String   @default("normal") // 'low', 'normal', 'high', 'urgent'
-  assignedTo  String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  ticketNumber String   @unique
+  userId       String
+  subject      String
+  description  String
+  status       String   @default("open")
+  priority     String   @default("normal")
+  assignedTo   String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // Relations
   user User @relation(fields: [userId], references: [id])
 
   @@index([status, priority])
   @@map("SupportTicket")
 }
 
+// 🆕 Sistema de notificaciones actualizado
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String
-  title     String
-  message   String
-  data      Json?
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?            // Datos adicionales (orderId, productId, etc.)
+  
+  // Control de lectura y envío
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  sentAt      DateTime?        // Cuando se envió el email
+  emailSent   Boolean          @default(false)
+  
+  // Relaciones opcionales
+  orderId     String?
+  order       Order?           @relation(fields: [orderId], references: [id])
+  
+  createdAt   DateTime         @default(now())
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, read])
+  @@index([userId, isRead])
+  @@index([type, createdAt])
+  @@index([orderId])
   @@map("Notification")
 }
 
 model Analytics {
-  id          String   @id @default(cuid())
-  eventType   String
-  userId      String?
-  productId   String?
-  sessionId   String?
-  eventData   Json
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  eventType String
+  userId    String?
+  productId String?
+  sessionId String?
+  eventData Json
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([eventType, createdAt])
   @@index([userId])
@@ -394,7 +618,6 @@ model BlacklistedToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])

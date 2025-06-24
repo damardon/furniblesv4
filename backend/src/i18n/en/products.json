@@ -1,5 +1,6 @@
 {
   "categories": {
+    "FURNITURE": "Furniture",
     "TABLES": "Tables",
     "CHAIRS": "Chairs", 
     "BEDS": "Beds",
@@ -7,18 +8,22 @@
     "STORAGE": "Storage",
     "DESKS": "Desks",
     "OUTDOOR": "Outdoor Furniture",
-    "DECORATIVE": "Decorative Items"
+    "DECORATIVE": "Decorative Items",
+    "KITCHEN": "Kitchen",
+    "OFFICE": "Office"
   },
   "difficulty": {
-    "EASY": "Easy",
-    "INTERMEDIATE": "Intermediate", 
-    "ADVANCED": "Advanced"
+    "BEGINNER": "Beginner",
+    "INTERMEDIATE": "Intermediate",
+    "ADVANCED": "Advanced",
+    "EXPERT": "Expert"
   },
   "status": {
     "DRAFT": "Draft",
     "PENDING": "Pending Review",
     "APPROVED": "Approved",
-    "REJECTED": "Rejected"
+    "REJECTED": "Rejected",
+    "SUSPENDED": "Suspended"
   },
   "fields": {
     "title": "Product Title",
@@ -47,9 +52,32 @@
     "created": "Product created successfully",
     "updated": "Product updated successfully", 
     "deleted": "Product deleted successfully",
+    "published": "Product sent for moderation",
     "approved": "Product approved successfully",
     "rejected": "Product rejected",
     "download_started": "Download started",
     "added_to_favorites": "Added to favorites"
+  },
+  "validation": {
+    "title_min_length": "Title must be at least 10 characters long",
+    "title_max_length": "Title cannot exceed 100 characters",
+    "description_min_length": "Description must be at least 50 characters long",
+    "description_max_length": "Description cannot exceed 2000 characters",
+    "price_number": "Price must be a valid number",
+    "price_min": "Price must be at least $1.00",
+    "price_max": "Price cannot exceed $100.00",
+    "invalid_category": "Invalid product category",
+    "invalid_difficulty": "Invalid difficulty level",
+    "tags_max_size": "Maximum 10 tags allowed"
+  },
+  "errors": {
+    "not_found": "Product not found",
+    "not_owner": "You are not authorized to modify this product",
+    "max_products_reached": "You have reached the maximum limit of 50 products",
+    "cannot_publish": "Product cannot be published. Only drafts can be published",
+    "cannot_approve": "Product cannot be approved. Only pending products can be approved",
+    "cannot_reject": "Product cannot be rejected. Only pending products can be rejected",
+    "no_images": "Product must have at least one preview image",
+    "has_orders": "Cannot delete product that has associated orders"
   }
 }

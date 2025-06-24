@@ -1,0 +1,36 @@
+{
+  "cart": {
+    "addSuccess": "Producto agregado al carrito",
+    "alreadyExists": "El producto ya está en tu carrito",
+    "limitExceeded": "Límite de carrito excedido (máximo 10 productos)",
+    "buyerOnly": "Solo los compradores pueden agregar productos al carrito",
+    "ownProduct": "No puedes comprar tu propio producto",
+    "empty": "El carrito está vacío",
+    "cleared": "Carrito limpiado exitosamente"
+  },
+  "orders": {
+    "created": "Orden creada exitosamente",
+    "notFound": "Orden no encontrada",
+    "completed": "Orden completada",
+    "cancelled": "Orden cancelada",
+    "pending": "Esperando pago",
+    "processing": "Procesando pago",
+    "paid": "Pago confirmado"
+  },
+  "notifications": {
+    "orderCreated": "¡Orden Creada Exitosamente!",
+    "orderCreatedMsg": "Tu orden {orderNumber} ha sido creada. Procede al pago para recibir tus archivos.",
+    "orderPaid": "¡Pago Confirmado!",
+    "orderPaidMsg": "Tu pago por la orden {orderNumber} ha sido procesado exitosamente.",
+    "orderCompleted": "¡Archivos Listos para Descarga!",
+    "orderCompletedMsg": "Tu orden {orderNumber} está completa. Ya puedes descargar tus archivos.",
+    "productSold": "¡Nueva Venta!",
+    "productSoldMsg": "Has vendido {itemCount} producto(s) por un total de ${sellerAmount}."
+  },
+  "downloads": {
+    "invalidToken": "Token de descarga inválido",
+    "expired": "Link de descarga expirado",
+    "limitExceeded": "Límite de descargas excedido",
+    "notFound": "Archivo no encontrado"
+  }
+}
