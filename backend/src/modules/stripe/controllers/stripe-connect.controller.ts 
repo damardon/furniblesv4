@@ -1,0 +1,366 @@
+// src/modules/stripe/controllers/stripe-connect.controller.ts
+import { 
+  Controller, 
+  Post, 
+  Get, 
+  Body, 
+  Headers, 
+  RawBodyRequest, 
+  Req, 
+  Param, 
+  Logger, 
+  HttpCode, 
+  HttpStatus,
+  BadRequestException,
+  UseGuards
+} from '@nestjs/common';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiParam, 
+  ApiBearerAuth, 
+  ApiExcludeEndpoint 
+} from '@nestjs/swagger';
+import { Request } from 'express';
+import { StripeService } from '../stripe.service';
+import { CreateConnectAccountDto } from '../dto/create-connect-account.dto';
+import { UpdateConnectAccountDto } from '../dto/update-connect-account.dto';
+import { CreatePayoutDto } from '../dto/create-payout.dto';
+import { CreateCheckoutSplitDto } from '../dto/create-checkout-split.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
+import { UserRole } from '@prisma/client';
+
+@ApiTags('stripe-connect')
+@Controller('stripe/connect')
+export class StripeConnectController {
+  private readonly logger = new Logger(StripeConnectController.name);
+
+  constructor(private readonly stripeService: StripeService) {}
+
+  /**
+   * 🆕 Crear cuenta de Stripe Connect para seller
+   */
+  @Post('accounts')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Create Stripe Connect account for seller',
+    description: 'Creates a new Stripe Express account for a seller to receive payments'
+  })
+  @ApiResponse({ status: 201, description: 'Account created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async createConnectAccount(
+    @Body() createAccountDto: CreateConnectAccountDto,
+    @CurrentUser() user: any,
+  ) {
+    try {
+      this.logger.log(`Creating Connect account for user ${user.id}`);
+
+      const account = await this.stripeService.createConnectAccount(createAccountDto);
+      
+      // TODO: Guardar account.id en la base de datos del usuario
+      // await this.usersService.updateStripeConnectId(user.id, account.id);
+
+      return {
+        success: true,
+        data: {
+          accountId: account.id,
+          email: account.email,
+          country: account.country,
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to create Connect account: ${error.message}`);
+      throw new BadRequestException(`Failed to create account: ${error.message}`);
+    }
+  }
+
+  /**
+   * 🆕 Generar link de onboarding
+   */
+  @Post('accounts/:accountId/onboard')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Generate onboarding link',
+    description: 'Creates an onboarding link for sellers to complete their Stripe account setup'
+  })
+  @ApiParam({ name: 'accountId', description: 'Stripe Connect account ID' })
+  @ApiResponse({ status: 200, description: 'Onboarding link generated' })
+  async createOnboardingLink(
+    @Param('accountId') accountId: string,
+    @CurrentUser() user: any,
+  ) {
+    try {
+      this.logger.log(`Generating onboarding link for account ${accountId}`);
+
+      const accountLink = await this.stripeService.createAccountLink(accountId);
+
+      return {
+        success: true,
+        data: {
+          url: accountLink.url,
+          expiresAt: accountLink.expires_at,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to create onboarding link: ${error.message}`);
+      throw new BadRequestException(`Failed to create onboarding link: ${error.message}`);
+    }
+  }
+
+  /**
+   * 🆕 Obtener información de cuenta Connect
+   */
+  @Get('accounts/:accountId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Get Connect account information',
+    description: 'Retrieves detailed information about a Stripe Connect account'
+  })
+  @ApiParam({ name: 'accountId', description: 'Stripe Connect account ID' })
+  @ApiResponse({ status: 200, description: 'Account information retrieved' })
+  async getAccountInfo(
+    @Param('accountId') accountId: string,
+    @CurrentUser() user: any,
+  ) {
+    try {
+      this.logger.log(`Getting account info for ${accountId}`);
+
+      const account = await this.stripeService.retrieveAccount(accountId);
+
+      return {
+        success: true,
+        data: {
+          id: account.id,
+          email: account.email,
+          country: account.country,
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+          detailsSubmitted: account.details_submitted,
+          requirements: account.requirements,
+          capabilities: account.capabilities,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get account info: ${error.message}`);
+      throw new BadRequestException(`Failed to get account info: ${error.message}`);
+    }
+  }
+
+  /**
+   * 🆕 Obtener balance de cuenta Connect
+   */
+  @Get('accounts/:accountId/balance')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Get account balance',
+    description: 'Retrieves the current balance for a Stripe Connect account'
+  })
+  @ApiParam({ name: 'accountId', description: 'Stripe Connect account ID' })
+  @ApiResponse({ status: 200, description: 'Balance retrieved successfully' })
+  async getAccountBalance(
+    @Param('accountId') accountId: string,
+    @CurrentUser() user: any,
+  ) {
+    try {
+      this.logger.log(`Getting balance for account ${accountId}`);
+
+      const balance = await this.stripeService.getAccountBalance(accountId);
+
+      return {
+        success: true,
+        data: {
+          available: balance.available,
+          pending: balance.pending,
+          connectReserved: balance.connect_reserved,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get balance: ${error.message}`);
+      throw new BadRequestException(`Failed to get balance: ${error.message}`);
+    }
+  }
+
+  /**
+   * 🆕 Crear payout manual
+   */
+  @Post('payouts')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Create manual payout',
+    description: 'Creates a manual payout for a seller account'
+  })
+  @ApiResponse({ status: 201, description: 'Payout created successfully' })
+  async createPayout(
+    @Body() createPayoutDto: CreatePayoutDto,
+    @CurrentUser() user: any,
+  ) {
+    try {
+      this.logger.log(`Creating payout for account ${createPayoutDto.stripeAccountId}`);
+
+      const payout = await this.stripeService.createPayout(createPayoutDto);
+
+      return {
+        success: true,
+        data: {
+          id: payout.id,
+          amount: payout.amount,
+          currency: payout.currency,
+          status: payout.status,
+          arrivalDate: payout.arrival_date,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to create payout: ${error.message}`);
+      throw new BadRequestException(`Failed to create payout: ${error.message}`);
+    }
+  }
+
+  /**
+   * 🆕 Crear checkout session con split payment
+   */
+  @Post('checkout/sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Create split payment checkout session',
+    description: 'Creates a checkout session that automatically splits payment between seller and platform'
+  })
+  @ApiResponse({ status: 201, description: 'Checkout session created' })
+  async createSplitCheckoutSession(
+    @Body() createCheckoutDto: CreateCheckoutSplitDto,
+    @CurrentUser() user: any,
+  ) {
+    try {
+      this.logger.log(`Creating split checkout session for order ${createCheckoutDto.orderId}`);
+
+      const session = await this.stripeService.createCheckoutSessionWithSplit(createCheckoutDto);
+
+      return {
+        success: true,
+        data: {
+          sessionId: session.id,
+          url: session.url,
+          expiresAt: session.expires_at,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to create split checkout session: ${error.message}`);
+      throw new BadRequestException(`Failed to create checkout session: ${error.message}`);
+    }
+  }
+
+  /**
+   * 🆕 Webhook para eventos de Stripe Connect
+   * Maneja: account.updated, transfer.created, transfer.failed, payout.created, payout.failed
+   */
+  @Public()
+  @Post('/webhooks')
+  @HttpCode(HttpStatus.OK)
+  @ApiExcludeEndpoint() // No mostrar en docs públicos
+  async handleConnectWebhook(
+    @Req() request: RawBodyRequest<Request>,
+    @Headers('stripe-signature') signature: string,
+  ) {
+    this.logger.log('Received Stripe Connect webhook');
+
+    try {
+      // Verificar la firma del webhook Connect
+      const event = this.stripeService.verifyConnectWebhookSignature(
+        request.rawBody,
+        signature,
+      );
+
+      this.logger.log(`Processing Connect webhook event: ${event.type}`);
+
+      // Procesar diferentes tipos de eventos de Connect
+      switch (event.type) {
+        case 'account.updated':
+          await this.handleAccountUpdated(event);
+          break;
+
+        case 'transfer.created':
+          await this.handleTransferCreated(event);
+          break;
+
+        case 'transfer.failed':
+          await this.handleTransferFailed(event);
+          break;
+
+        case 'payout.created':
+          await this.handlePayoutCreated(event);
+          break;
+
+        case 'payout.failed':
+          await this.handlePayoutFailed(event);
+          break;
+
+        case 'payout.paid':
+          await this.handlePayoutPaid(event);
+          break;
+
+        default:
+          this.logger.warn(`Unhandled Connect webhook event: ${event.type}`);
+      }
+
+      return { received: true };
+    } catch (error) {
+      this.logger.error(`Connect webhook error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // Event handlers privados
+  private async handleAccountUpdated(event: any) {
+    const account = event.data.object;
+    this.logger.log(`Account updated: ${account.id}`);
+    // TODO: Actualizar estado de cuenta en BD
+  }
+
+  private async handleTransferCreated(event: any) {
+    const transfer = event.data.object;
+    this.logger.log(`Transfer created: ${transfer.id} for ${transfer.amount}`);
+    // TODO: Registrar transfer en BD
+  }
+
+  private async handleTransferFailed(event: any) {
+    const transfer = event.data.object;
+    this.logger.warn(`Transfer failed: ${transfer.id}`);
+    // TODO: Manejar error de transfer
+  }
+
+  private async handlePayoutCreated(event: any) {
+    const payout = event.data.object;
+    this.logger.log(`Payout created: ${payout.id}`);
+    // TODO: Registrar payout en BD
+  }
+
+  private async handlePayoutFailed(event: any) {
+    const payout = event.data.object;
+    this.logger.warn(`Payout failed: ${payout.id}`);
+    // TODO: Notificar error de payout
+  }
+
+  private async handlePayoutPaid(event: any) {
+    const payout = event.data.object;
+    this.logger.log(`Payout paid: ${payout.id}`);
+    // TODO: Confirmar payout en BD
+  }
+}

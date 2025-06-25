@@ -1,4 +1,4 @@
-// src/app.module.ts - App Module completo y corregido para Etapa 7
+// src/app.module.ts - App Module completo Etapa 8
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -14,7 +14,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { FilesModule } from './modules/files/files.module';
 
-// 🆕 Stage 7 modules (nuevos)
+// 🔄 Stage 7 modules (existentes)
 import { CartModule } from './modules/cart/cart.module';
 import { FeesModule } from './modules/fees/fees.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -22,16 +22,21 @@ import { CheckoutModule } from './modules/checkout/checkout.module';
 import { DownloadsModule } from './modules/downloads/downloads.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
-import { StripeModule } from './modules/stripe/stripe.module';
+import { StripeModule } from './modules/stripe/stripe.module'; // 🔄 Expandido con Connect
 import { WebSocketModule } from './modules/websocket/websocket.module';
 import { EmailModule } from './modules/email/email.module';
 import { CronModule } from './modules/cron/cron.module';
 import { AdminModule } from './modules/admin/admin.module';
 
+// 🆕 Stage 8 modules (nuevos)
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PayoutsModule } from './modules/payouts/payouts.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
+
 @Module({
   imports: [
-
-// 🌍 Configuración I18n
+    // 🌍 Configuración I18n
     I18nModule.forRoot({
       fallbackLanguage: 'en',
       loaderOptions: {
@@ -69,7 +74,7 @@ import { AdminModule } from './modules/admin/admin.module';
     ProductsModule,
     FilesModule,
 
-    // 🆕 Stage 7: Orders System modules
+    // 🔄 Stage 7: Orders System modules (existentes)
     CartModule,
     FeesModule,
     OrdersModule,
@@ -77,11 +82,17 @@ import { AdminModule } from './modules/admin/admin.module';
     DownloadsModule,
     NotificationModule,
     WebhookModule,
-    StripeModule,
+    StripeModule, // 🔄 Expandido con Connect en Etapa 8
     WebSocketModule,
     EmailModule,
     CronModule,
     AdminModule,
+
+    // 🆕 Stage 8: Advanced Payments System modules
+    PaymentsModule,
+    PayoutsModule,
+    TransactionsModule,
+    InvoicesModule,
   ],
   controllers: [],
   providers: [
@@ -89,8 +100,6 @@ import { AdminModule } from './modules/admin/admin.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-
   ],
 })
 export class AppModule {}
-

@@ -13,22 +13,40 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:test": "dotenv -e .env.test -- prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed:products": "ts-node prisma/seed-products.ts",
     "test:products": "jest --testPathPattern=products",
     "test:products:watch": "jest --testPathPattern=products --watch",
     "test:products:cov": "jest --testPathPattern=products --coverage",
+    "db:seed:test": "dotenv -e .env.test -- ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:stage7:watch": "jest --testPathPattern=\"(cart|orders|downloads|notifications|fees|webhook)\" --watch",
+    "test:cart": "jest --testPathPattern=cart",
+    "test:orders": "jest --testPathPattern=orders",
+    "test:downloads": "jest --testPathPattern=downloads",
+    "test:stage7": "jest --testPathPattern='(cart|orders|downloads|notifications|fees)'",
+    "test:stage7:cov": "jest --testPathPattern='(cart|orders|downloads|notifications|fees)' --coverage",
+    "test:notifications": "jest --testPathPattern=\"notifications\" --verbose",
+    "test:fees": "jest --testPathPattern=\"fees\" --verbose",
+    "test:webhook": "jest --testPathPattern=\"webhook\" --verbose",
+    "test:e2e:stage7": "jest --config ./test/jest-e2e.json --testPathPattern=\"(cart|orders|downloads|webhook)\"",
+    "test:e2e:cart": "jest --config ./test/jest-e2e.json --testPathPattern=\"cart\"",
+    "test:e2e:orders": "jest --config ./test/jest-e2e.json --testPathPattern=\"orders\"",
+    "test:db:reset": "npm run db:reset && npm run db:seed:test",
+    "test:db:setup": "createdb furnibles_test && npm run db:migrate:test",
+    "test:e2e:stage7:full": "jest --config ./test/jest-e2e.json --testPathPattern=\"e2e\"",
+    "test:e2e:setup": "npm run db:reset && npm run db:seed:test"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
@@ -97,6 +115,7 @@
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
+    "dotenv-cli": "^7.3.0",
     "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
@@ -125,9 +144,24 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapping": {
+      "^src/(.*)$": "<rootDir>/$1"
+    },
+    "setupFilesAfterEnv": [
+      "<rootDir>/../test/setup.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/",
+      ".module.ts$",
+      "main.ts$",
+      ".dto.ts$"
+    ]
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   }
 }
+    "test:stage7:complete": "npm run test:stage7 && npm run test:e2e:stage7:full",
+    "test:stage7:report": "npm run test:stage7:cov && echo 'Testing completed successfully!'"

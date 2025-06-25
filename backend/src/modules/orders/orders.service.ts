@@ -21,6 +21,193 @@ export class OrdersService {
     private notificationService: NotificationService,
   ) {}
 
+  // Agregar estos métodos al OrdersService existente
+
+async handleSuccessfulPayment(params: {
+  orderId: string;
+  paymentIntentId: string;
+  amount: number;
+  currency: string;
+  webhookEventId: string;
+}, tx?: any): Promise<void> {
+  const prisma = tx || this.prisma;
+  
+  await prisma.order.update({
+    where: { id: params.orderId },
+    data: {
+      status: 'PROCESSING',
+      paidAt: new Date(),
+      paymentStatus: 'succeeded',
+      paymentIntentId: params.paymentIntentId,
+      metadata: {
+        webhookEventId: params.webhookEventId,
+        amountPaid: params.amount,
+        currency: params.currency
+      }
+    }
+  });
+
+  await this.processPaymentSuccess(params.paymentIntentId);
+}
+
+async handleFailedPayment(params: {
+  orderId: string;
+  paymentIntentId: string;
+  errorCode?: string;
+  errorMessage?: string;
+  webhookEventId: string;
+}, tx?: any): Promise<void> {
+  const prisma = tx || this.prisma;
+  
+  await prisma.order.update({
+    where: { id: params.orderId },
+    data: {
+      paymentStatus: 'failed',
+      metadata: {
+        webhookEventId: params.webhookEventId,
+        paymentError: {
+          code: params.errorCode,
+          message: params.errorMessage
+        }
+      }
+    }
+  });
+}
+
+async handleCheckoutCompleted(params: {
+  orderId: string;
+  sessionId: string;
+  paymentIntentId: string;
+  paymentStatus: string;
+  webhookEventId: string;
+}, tx?: any): Promise<void> {
+  const prisma = tx || this.prisma;
+  
+  await prisma.order.update({
+    where: { id: params.orderId },
+    data: {
+      paymentIntentId: params.paymentIntentId,
+      paymentStatus: 'completed',
+      metadata: {
+        webhookEventId: params.webhookEventId,
+        sessionId: params.sessionId,
+        checkoutStatus: params.paymentStatus
+      }
+    }
+  });
+}
+
+async handleCheckoutExpired(params: {
+  orderId: string;
+  sessionId: string;
+  webhookEventId: string;
+}, tx?: any): Promise<void> {
+  const prisma = tx || this.prisma;
+  
+  const order = await prisma.order.findUnique({
+    where: { id: params.orderId }
+  });
+
+  if (order?.status === 'PENDING') {
+    await prisma.order.update({
+      where: { id: params.orderId },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        metadata: {
+          webhookEventId: params.webhookEventId,
+          cancelReason: 'checkout_expired'
+        }
+      }
+    });
+  }
+}
+
+async handlePaymentCanceled(params: {
+  orderId: string;
+  paymentIntentId: string;
+  webhookEventId: string;
+}, tx?: any): Promise<void> {
+  const prisma = tx || this.prisma;
+  
+  await prisma.order.update({
+    where: { id: params.orderId },
+    data: {
+      status: 'CANCELLED',
+      cancelledAt: new Date(),
+      paymentStatus: 'canceled',
+      metadata: {
+        webhookEventId: params.webhookEventId,
+        cancelReason: 'payment_canceled'
+      }
+    }
+  });
+}
+
+async handleDispute(params: {
+  paymentIntentId: string;
+  disputeId: string;
+  reason: string;
+  amount: number;
+  currency: string;
+  webhookEventId: string;
+}, tx?: any): Promise<void> {
+  const prisma = tx || this.prisma;
+  
+  const order = await prisma.order.findFirst({
+    where: { paymentIntentId: params.paymentIntentId }
+  });
+
+  if (order) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: 'DISPUTED',
+        metadata: {
+          webhookEventId: params.webhookEventId,
+          dispute: {
+            disputeId: params.disputeId,
+            reason: params.reason,
+            amount: params.amount,
+            currency: params.currency
+          }
+        }
+      }
+    });
+  }
+}
+
+async handleRefund(params: {
+  paymentIntentId: string;
+  refundId: string;
+  amount: number;
+  reason: string;
+  webhookEventId: string;
+}, tx?: any): Promise<void> {
+  const prisma = tx || this.prisma;
+  
+  const order = await prisma.order.findFirst({
+    where: { paymentIntentId: params.paymentIntentId }
+  });
+
+  if (order) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: 'REFUNDED',
+        metadata: {
+          webhookEventId: params.webhookEventId,
+          refund: {
+            refundId: params.refundId,
+            amount: params.amount,
+            reason: params.reason
+          }
+        }
+      }
+    });
+  }
+}
+
   /**
    * Crear orden desde carrito
    */

@@ -1,0 +1,98 @@
+// src/modules/stripe/dto/create-checkout-split.dto.ts
+import { IsString, IsNumber, IsEmail, IsUrl, IsOptional, Min, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+
+export class CreateCheckoutSplitDto {
+  @ApiProperty({
+    description: 'Order ID for tracking',
+    example: 'order_123456789',
+  })
+  @IsString({ message: 'orderId.invalid' })
+  orderId: string;
+
+  @ApiProperty({
+    description: 'Human readable order number',
+    example: 'ORD-20240624-001',
+  })
+  @IsString({ message: 'orderNumber.invalid' })
+  orderNumber: string;
+
+  @ApiProperty({
+    description: 'Total amount in dollars',
+    example: 29.99,
+    minimum: 0.50,
+  })
+  @IsNumber({}, { message: 'amount.invalid' })
+  @Min(0.50, { message: 'amount.tooSmall' })
+  amount: number;
+
+  @ApiProperty({
+    description: 'Amount that goes to the seller (after platform fee)',
+    example: 26.99,
+    minimum: 0,
+  })
+  @IsNumber({}, { message: 'sellerAmount.invalid' })
+  @Min(0, { message: 'sellerAmount.tooSmall' })
+  sellerAmount: number;
+
+  @ApiProperty({
+    description: 'Platform fee amount',
+    example: 3.00,
+    minimum: 0,
+  })
+  @IsNumber({}, { message: 'platformFeeAmount.invalid' })
+  @Min(0, { message: 'platformFeeAmount.tooSmall' })
+  platformFeeAmount: number;
+
+  @ApiProperty({
+    description: 'Seller Stripe Connect account ID',
+    example: 'acct_1234567890',
+  })
+  @IsString({ message: 'sellerId.invalid' })
+  sellerId: string;
+
+  @ApiProperty({
+    description: 'Currency code',
+    example: 'USD',
+  })
+  @IsString({ message: 'currency.invalid' })
+  currency: string;
+
+  @ApiProperty({
+    description: 'Customer email address',
+    example: 'customer@example.com',
+  })
+  @IsEmail({}, { message: 'customerEmail.invalid' })
+  customerEmail: string;
+
+  @ApiProperty({
+    description: 'URL to redirect on successful payment',
+    example: 'https://furnibles.com/orders/success?orderId=123',
+  })
+  @IsUrl({}, { message: 'successUrl.invalid' })
+  successUrl: string;
+
+  @ApiProperty({
+    description: 'URL to redirect on cancelled payment',
+    example: 'https://furnibles.com/cart',
+  })
+  @IsUrl({}, { message: 'cancelUrl.invalid' })
+  cancelUrl: string;
+
+  @ApiPropertyOptional({
+    description: 'Transfer group for organizing related transfers',
+    example: 'order_123456789',
+  })
+  @IsOptional()
+  @IsString({ message: 'transferGroup.invalid' })
+  transferGroup?: string;
+
+  @ApiPropertyOptional({
+    description: 'Additional metadata for the payment',
+    example: { products: 'chair,table', sellerId: 'user_456' },
+  })
+  @IsOptional()
+  @IsObject({ message: 'metadata.invalid' })
+  metadata?: Record<string, string>;
+}

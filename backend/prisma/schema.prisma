@@ -1,4 +1,5 @@
-// prisma/schema.prisma - Versión Corregida Etapa 7
+// prisma/schema.prisma - Schema Final Etapa 8 (Completo)
+
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearchPostgres"]
@@ -49,7 +50,6 @@ enum Difficulty {
   EXPERT
 }
 
-// 🆕 Estados de orden actualizados
 enum OrderStatus {
   PENDING      // Orden creada, esperando pago
   PROCESSING   // Pago recibido, procesando archivos
@@ -60,7 +60,6 @@ enum OrderStatus {
   DISPUTED     // En disputa
 }
 
-// 🆕 Enums para archivos
 enum FileType {
   PDF
   IMAGE
@@ -75,7 +74,6 @@ enum FileStatus {
   DELETED
 }
 
-// 🆕 Enums para notificaciones
 enum NotificationType {
   ORDER_CREATED
   ORDER_PAID
@@ -86,14 +84,63 @@ enum NotificationType {
   PRODUCT_SOLD
   DOWNLOAD_READY
   SYSTEM_NOTIFICATION
+  // 🆕 Payment related notifications
+  PAYMENT_SETUP
+  PAYMENT_SETUP_COMPLETE
+  PAYMENT_METHOD_ADDED
+  PAYOUT_REQUESTED
+  PAYOUT_COMPLETED
+  PAYOUT_FAILED
+  TRANSFER_FAILED
+  DISPUTE_CREATED
+  REFUND_PROCESSED
+  SALE_COMPLETED
 }
 
-// 🆕 Enums para configuración de fees
 enum FeeType {
   PLATFORM_FEE
   PAYMENT_PROCESSING
   TAX
   REGIONAL_FEE
+}
+
+// 🆕 New enums for Etapa 8
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum TransactionType {
+  SALE
+  PLATFORM_FEE
+  STRIPE_FEE
+  PAYOUT
+  REFUND
+  CHARGEBACK
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum SellerFeeType {
+  PERCENTAGE
+  FIXED
+  TIERED
 }
 
 // Models
@@ -115,6 +162,13 @@ model User {
   isActive               Boolean    @default(true)
   status                 UserStatus @default(ACTIVE)
   avatar                 String?
+  
+  // 🆕 Stripe Connect Integration
+  stripeConnectId        String?    @unique // Stripe Connect Account ID
+  onboardingComplete     Boolean    @default(false)
+  payoutsEnabled         Boolean    @default(false)
+  chargesEnabled         Boolean    @default(false)
+  
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 
@@ -134,12 +188,15 @@ model User {
   blacklistedTokens BlacklistedToken[]
   uploadedFiles     File[]
 
-  // 🆕 Relaciones del carrito
+  // Cart & Order Relations
   cartItems         CartItem[]
-
-  // 🆕 Relaciones de órdenes
   orderItems        OrderItem[] @relation("OrderSeller")
   downloadTokens    DownloadToken[] @relation("TokenBuyer")
+
+  // 🆕 Payment Relations
+  payouts           Payout[]
+  transactions      Transaction[]
+  invoices          Invoice[]
 
   // Moderation Relations
   moderatedProducts Product[] @relation("ModeratedBy")
@@ -185,29 +242,140 @@ model BuyerProfile {
   @@map("BuyerProfile")
 }
 
-// 🆕 Configuración de fees
+// 🆕 Payout Management
+model Payout {
+  id               String       @id @default(cuid())
+  sellerId         String
+  seller           User         @relation(fields: [sellerId], references: [id])
+  
+  // Payout details
+  amount           Decimal      @db.Decimal(10,2)
+  currency         String       @default("USD")
+  status           PayoutStatus @default(PENDING)
+  
+  // Stripe data
+  stripePayoutId   String?      @unique
+  stripeTransferId String?      @unique
+  
+  // Metadata
+  description      String?
+  failureReason    String?
+  requestedAt      DateTime     @default(now())
+  processedAt      DateTime?
+  
+  // Relations
+  transactions     Transaction[]
+  
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@map("payouts")
+}
+
+// 🆕 Transaction Tracking
+model Transaction {
+  id               String            @id @default(cuid())
+  
+  // Transaction details
+  type             TransactionType
+  status           TransactionStatus @default(PENDING)
+  amount           Decimal           @db.Decimal(10,2)
+  currency         String            @default("USD")
+  
+  // Relationships
+  sellerId         String?
+  seller           User?             @relation(fields: [sellerId], references: [id])
+  orderId          String?
+  order            Order?            @relation(fields: [orderId], references: [id])
+  payoutId         String?
+  payout           Payout?           @relation(fields: [payoutId], references: [id])
+  
+  // Stripe references
+  stripeTransactionId String?        @unique
+  stripeChargeId      String?
+  stripePaymentIntentId String?
+  
+  // Metadata
+  description      String?
+  metadata         Json?
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@map("transactions")
+}
+
+// 🆕 Invoice System
+model Invoice {
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique // INV-YYYYMMDD-XXX
+  
+  // Invoice details
+  sellerId         String
+  seller           User          @relation(fields: [sellerId], references: [id])
+  orderId          String        @unique
+  order            Order         @relation(fields: [orderId], references: [id])
+  
+  // Amounts
+  subtotal         Decimal       @db.Decimal(10,2)
+  platformFee      Decimal       @db.Decimal(10,2)
+  netAmount        Decimal       @db.Decimal(10,2)
+  taxAmount        Decimal?      @db.Decimal(10,2)
+  totalAmount      Decimal       @db.Decimal(10,2)
+  
+  // Status
+  status           InvoiceStatus @default(PENDING)
+  currency         String        @default("USD")
+  
+  // Dates
+  issuedAt         DateTime      @default(now())
+  dueAt            DateTime?
+  paidAt           DateTime?
+  
+  // Files
+  pdfUrl           String?
+  
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@map("invoices")
+}
+
+// Updated FeeConfig for more granular control
 model feeConfig {
-  id            String   @id @default(cuid())
-  name          String   // "Platform Fee Argentina", "PayPal Processing Fee"
-  type          FeeType
-  country       String?  // "AR", "US", "MX", null para global
-  region        String?  // "LATAM", "EU", null para específico
-  category      ProductCategory? // Fee específico por categoría
-  paymentMethod String?  // "stripe", "paypal", "mercadopago"
+  id               String            @id @default(cuid())
+  name             String
+  type             FeeType
   
-  // Configuración del fee
-  isPercentage  Boolean  @default(true)
-  value         Float    // 0.10 para 10% o 2.50 para $2.50 fijo
-  minAmount     Float?   // Mínimo fee a cobrar
-  maxAmount     Float?   // Máximo fee a cobrar
+  // Conditions
+  country          String?
+  region           String?
+  category         ProductCategory?
+  paymentMethod    String?
+  sellerTier       String?           // 🆕 Seller tier-based fees
   
-  // Control
-  isActive      Boolean  @default(true)
-  priority      Int      @default(0) // Para resolver conflictos
-  description   String?
+  // Fee structure
+  isPercentage     Boolean           @default(true)
+  value            Float
+  minAmount        Float?
+  maxAmount        Float?
   
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  // 🆕 Split payment configuration
+  stripeFeeOffset  Float?            // Offset Stripe fees
+  sellerFeeType    SellerFeeType?    @default(PERCENTAGE)
+  sellerFeeValue   Float?
+  
+  // Priority and status
+  priority         Int               @default(100)
+  isActive         Boolean           @default(true)
+  description      String?
+  
+  // Dates
+  validFrom        DateTime?
+  validUntil       DateTime?
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([country, isActive])
   @@index([type, isActive])
@@ -215,21 +383,33 @@ model feeConfig {
   @@map("feeConfig")
 }
 
-// 🆕 Carrito de compras
+// 🆕 Webhook Event Tracking
+model WebhookEvent {
+  id               String   @id @default(cuid())
+  stripeEventId    String   @unique
+  stripeAccountId  String?  // For Connect webhooks
+  eventType        String
+  data             Json
+  processedAt      DateTime @default(now())
+  
+  @@index([stripeEventId])
+  @@index([eventType])
+  @@map("webhook_events")
+}
+
 model CartItem {
   id            String   @id @default(cuid())
   userId        String
   productId     String
-  priceSnapshot Float    // Precio al momento de agregar al carrito
-  quantity      Int      @default(1) // Siempre 1 para productos digitales
+  priceSnapshot Float
+  quantity      Int      @default(1)
   addedAt       DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relaciones
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, productId]) // Un producto por usuario en carrito
+  @@unique([userId, productId])
   @@index([userId])
   @@map("CartItem")
 }
@@ -244,17 +424,14 @@ model File {
   type     FileType
   status   FileStatus @default(UPLOADING)
 
-  // Metadata adicional
   width    Int?
   height   Int?
   checksum String?
   metadata Json?
 
-  // Relaciones
   uploadedById String
   uploadedBy   User   @relation(fields: [uploadedById], references: [id])
 
-  // Relaciones con productos
   productPdfs   Product[] @relation("ProductPDF")
   productImages Product[] @relation("ProductImages")
   productThumbs Product[] @relation("ProductThumbnails")
@@ -278,7 +455,6 @@ model Product {
   difficulty  Difficulty
   status      ProductStatus   @default(DRAFT)
 
-  // Archivos
   pdfFileId        String?
   pdfFile          File?    @relation("ProductPDF", fields: [pdfFileId], references: [id])
   imageFileIds     String[] @default([])
@@ -286,7 +462,6 @@ model Product {
   thumbnailFileIds String[] @default([])
   thumbnailFiles   File[]   @relation("ProductThumbnails")
 
-  // Metadata del producto
   tags           String[] @default([])
   estimatedTime  String?  @db.VarChar(50)
   toolsRequired  String[] @default([])
@@ -294,17 +469,14 @@ model Product {
   dimensions     String?  @db.VarChar(100)
   specifications Json?
 
-  // Moderación
   moderatedBy     String?
   moderatedAt     DateTime?
   rejectionReason String?
 
-  // Relaciones
   sellerId  String
   seller    User   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   moderator User?  @relation("ModeratedBy", fields: [moderatedBy], references: [id])
 
-  // Estadísticas
   viewCount     Int     @default(0)
   downloadCount Int     @default(0)
   favoriteCount Int     @default(0)
@@ -312,21 +484,17 @@ model Product {
   rating        Float   @default(0)
   reviewCount   Int     @default(0)
 
-  // Timestamps
   createdAt   DateTime  @default(now())
   publishedAt DateTime?
   updatedAt   DateTime  @updatedAt
 
-  // 🆕 Relaciones del carrito y órdenes
-  cartItems    CartItem[]
-  orderItems   OrderItem[]
-  downloads    Download[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  downloads      Download[]
   downloadTokens DownloadToken[]
-
-  // Relaciones existentes
-  reviews      Review[]
-  favorites    Favorite[]
-  ProductImage ProductImage[]
+  reviews        Review[]
+  favorites      Favorite[]
+  ProductImage   ProductImage[]
 
   @@index([status, createdAt])
   @@index([category, difficulty])
@@ -350,46 +518,48 @@ model ProductImage {
   @@map("ProductImage")
 }
 
-// 🆕 Modelo de órdenes actualizado
+// Updated Order model for split payments
 model Order {
   id              String      @id @default(cuid())
-  orderNumber     String      @unique // ORD-20250622-001
+  orderNumber     String      @unique
   buyerId         String
   
-  // Precios y fees
-  subtotal        Float       // Suma de precios de productos
-  platformFeeRate Float       @default(0.10) // Rate aplicado (10%)
-  platformFee     Float       // Fee calculado
-  totalAmount     Float       // Total que paga el buyer
-  sellerAmount    Float       // Total que recibe el seller (subtotal - platformFee)
+  subtotal        Float
+  subtotalAmount  Float
+  platformFeeRate Float       @default(0.10)
+  platformFee     Float
+  totalAmount     Float
+  sellerAmount    Float
   
-  // Estado y pago
+  // 🆕 Split payment data
+  transferGroup   String?     // Stripe Transfer Group ID
+  applicationFee  Float?      // Application fee for Connect
+  
   status          OrderStatus @default(PENDING)
-  paymentIntentId String?     // Stripe Payment Intent ID
-  paymentStatus   String?     // Stripe payment status
+  paymentIntentId String?
+  paymentStatus   String?
   
-  // Información del comprador
-  buyerEmail      String      // Email para envío (puede ser diferente al user.email)
-  billingData     Json?       // Datos de facturación si es necesario
+  buyerEmail      String
+  billingData     Json?
+  metadata        Json?
+  feeBreakdown    Json?
   
-  // Metadata
-  metadata        Json?       // Información adicional
-  feeBreakdown    Json?       // Desglose detallado de fees aplicados
-  
-  // Timestamps
   createdAt       DateTime    @default(now())
-  paidAt          DateTime?   // Cuando se confirmó el pago
-  completedAt     DateTime?   // Cuando se entregaron los archivos
-  cancelledAt     DateTime?   // Cuando se canceló
+  paidAt          DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
   updatedAt       DateTime    @updatedAt
 
-  // Relaciones
   buyer           User         @relation(fields: [buyerId], references: [id])
   items           OrderItem[]
   downloads       Download[]
   downloadTokens  DownloadToken[]
   reviews         Review[]
   notifications   Notification[]
+  
+  // 🆕 New relations
+  transactions    Transaction[]
+  invoice         Invoice?
 
   @@index([status, createdAt])
   @@index([buyerId])
@@ -398,26 +568,22 @@ model Order {
   @@map("Order")
 }
 
-// 🆕 Items de orden actualizado
 model OrderItem {
   id           String @id @default(cuid())
   orderId      String
   productId    String
-  sellerId     String // ID del seller de este producto específico
+  sellerId     String
   
-  // Snapshot de datos al momento de la compra
   productTitle String
   productSlug  String
-  price        Float  // Precio del producto al momento de la compra
-  quantity     Int    @default(1) // Siempre 1 para productos digitales
+  price        Float
+  quantity     Int    @default(1)
   
-  // Datos del seller al momento de la compra
   sellerName   String
   storeName    String?
   
   createdAt    DateTime @default(now())
 
-  // Relaciones
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
   seller  User    @relation("OrderSeller", fields: [sellerId], references: [id])
@@ -427,27 +593,23 @@ model OrderItem {
   @@map("OrderItem")
 }
 
-// 🆕 Tokens de descarga seguros
 model DownloadToken {
   id              String    @id @default(cuid())
-  token           String    @unique @default(cuid()) // Token único para la descarga
+  token           String    @unique @default(cuid())
   orderId         String
   productId       String
   buyerId         String
   
-  // Control de descargas
-  downloadLimit   Int       @default(5)     // Límite de descargas
-  downloadCount   Int       @default(0)     // Descargas realizadas
-  expiresAt       DateTime  // Fecha de expiración del token
-  isActive        Boolean   @default(true)  // Si el token está activo
+  downloadLimit   Int       @default(5)
+  downloadCount   Int       @default(0)
+  expiresAt       DateTime
+  isActive        Boolean   @default(true)
   
-  // Tracking
   createdAt       DateTime  @default(now())
-  lastDownloadAt  DateTime? // Última descarga
-  lastIpAddress   String?   // IP de la última descarga
-  lastUserAgent   String?   // User agent de la última descarga
+  lastDownloadAt  DateTime?
+  lastIpAddress   String?
+  lastUserAgent   String?
   
-  // Relaciones
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
   buyer   User    @relation("TokenBuyer", fields: [buyerId], references: [id])
@@ -565,22 +727,19 @@ model SupportTicket {
   @@map("SupportTicket")
 }
 
-// 🆕 Sistema de notificaciones actualizado
 model Notification {
   id          String           @id @default(cuid())
   userId      String
   type        NotificationType
   title       String
   message     String
-  data        Json?            // Datos adicionales (orderId, productId, etc.)
+  data        Json?
   
-  // Control de lectura y envío
   isRead      Boolean          @default(false)
   readAt      DateTime?
-  sentAt      DateTime?        // Cuando se envió el email
+  sentAt      DateTime?
   emailSent   Boolean          @default(false)
   
-  // Relaciones opcionales
   orderId     String?
   order       Order?           @relation(fields: [orderId], references: [id])
   
