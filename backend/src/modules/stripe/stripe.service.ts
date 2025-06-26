@@ -21,6 +21,7 @@ interface CreateConnectAccountDto {
   firstName: string;
   lastName: string;
   businessType?: 'individual' | 'company';
+  phone?: string;
 }
 
 interface CreateCheckoutSessionWithSplitDto extends CreateCheckoutSessionDto {

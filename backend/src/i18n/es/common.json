@@ -7,7 +7,13 @@
     "orderCompleted": "¡Archivos Listos para Descarga!",
     "orderCompletedMsg": "Tu orden {orderNumber} está completa. Ya puedes descargar tus archivos.",
     "productSold": "¡Nueva Venta!",
-    "productSoldMsg": "Has vendido {itemCount} producto(s) por un total de ${sellerAmount}."
+    "productSoldMsg": "Has vendido {itemCount} producto(s) por un total de ${sellerAmount}.",
+    "reviewReceived": "¡Nueva Reseña Recibida!",
+    "reviewReceivedMsg": "Recibiste una reseña de {rating} estrellas para \"{productTitle}\"",
+    "reviewResponse": "El Vendedor Respondió a tu Reseña",
+    "reviewResponseMsg": "{sellerName} respondió a tu reseña de \"{productTitle}\"",
+    "reviewRemoved": "Reseña Eliminada",
+    "reviewRemovedMsg": "Tu reseña de \"{productTitle}\" ha sido eliminada. Motivo: {reason}"
   },
   "cart": {
     "buyerOnly": "Solo los compradores pueden agregar productos al carrito",
@@ -15,7 +21,44 @@
     "alreadyExists": "El producto ya está en tu carrito",
     "ownProduct": "No puedes comprar tu propio producto"
   },
-
+  "reviews": {
+    "title": "Reseñas",
+    "writeReview": "Escribir Reseña",
+    "editReview": "Editar Reseña",
+    "yourReview": "Tu Reseña",
+    "sellerResponse": "Respuesta del Vendedor",
+    "rating": "Calificación",
+    "comment": "Comentario",
+    "pros": "¿Qué te gustó?",
+    "cons": "¿Qué se podría mejorar?",
+    "helpful": "Útil",
+    "notHelpful": "No Útil",
+    "report": "Reportar",
+    "respond": "Responder",
+    "verified": "Compra Verificada",
+    "recommended": "Recomendado",
+    "errors": {
+      "alreadyExists": "Ya has reseñado este producto",
+      "notFound": "Reseña no encontrada",
+      "notOwner": "Solo puedes editar tus propias reseñas",
+      "cannotEdit": "Esta reseña no se puede editar",
+      "notYourProduct": "Solo puedes responder a reseñas de tus productos",
+      "notPublished": "La reseña no está publicada",
+      "ownReview": "No puedes votar en tu propia reseña",
+      "alreadyReported": "Ya has reportado esta reseña",
+      "orderNotFound": "Orden no encontrada o no completada",
+      "productNotInOrder": "Producto no encontrado en tus órdenes completadas",
+      "invalidImages": "Una o más imágenes son inválidas"
+    },
+    "success": {
+      "created": "Reseña enviada exitosamente",
+      "updated": "Reseña actualizada exitosamente",
+      "responseCreated": "Respuesta enviada exitosamente",
+      "voted": "Gracias por tu opinión",
+      "reported": "Reseña reportada exitosamente",
+      "deleted": "Reseña eliminada exitosamente"
+    }
+  },
   "navigation": {
     "home": "Inicio",
     "products": "Productos", 

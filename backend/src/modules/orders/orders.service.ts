@@ -225,44 +225,70 @@ async handleRefund(params: {
     // Obtener IDs únicos de sellers
     const sellerIds = [...new Set(cart.items.map(item => item.seller.id))];
 
-    // Crear orden
     const order = await this.prisma.order.create({
-      data: {
-        orderNumber,
-        buyerId: userId,
-        subtotal: cart.summary.subtotal,
-        platformFeeRate: cart.summary.platformFeeRate,
-        platformFee: cart.summary.platformFee,
-        totalAmount: cart.summary.totalAmount,
-        sellerAmount: cart.summary.subtotal - cart.summary.platformFee,
-        buyerEmail: dto.buyerEmail,
-        billingData: dto.billingData,
-        metadata: dto.metadata,
-        feeBreakdown: cart.summary.feeBreakdown,
-        status: OrderStatus.PENDING,
-        items: {
-          create: cart.items.map(item => ({
-            productId: item.productId,
-            sellerId: item.seller.id,
-            productTitle: item.productTitle,
-            productSlug: item.productSlug,
-            price: item.currentPrice,
-            quantity: item.quantity,
-            sellerName: item.seller.name,
-            storeName: item.seller.storeName
-          }))
+    data: {
+      orderNumber,
+      buyerId: userId,
+      subtotal: cart.summary.subtotal,
+      subtotalAmount: cart.summary.subtotal,
+      platformFeeRate: cart.summary.platformFeeRate,
+      platformFee: cart.summary.platformFee,
+      totalAmount: cart.summary.totalAmount,
+      sellerAmount: cart.summary.subtotal - cart.summary.platformFee,
+      buyerEmail: dto.buyerEmail,
+      billingData: dto.billingData || null,
+      metadata: dto.metadata || null,
+      feeBreakdown: cart.summary.feeBreakdown || null,
+      status: 'PENDING',
+      items: {
+        create: cart.items.map(item => ({
+          productId: item.productId,
+          sellerId: item.seller.id,
+          productTitle: item.productTitle,
+          productSlug: item.productSlug,
+          price: item.currentPrice,
+          quantity: item.quantity || 1,
+          sellerName: item.seller.name,
+          storeName: item.seller.storeName || null
+        }))
+      }
+    },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              thumbnailFileIds: true
+            }
+          },
+          seller: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              sellerProfile: {
+                select: {
+                  storeName: true,
+                  avatar: true
+                }
+              }
+            }
+          }
         }
       },
-      include: {
-        items: {
-          include: {
-            product: true
-          }
-        },
-        buyer: true
+      buyer: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
       }
-    });
-
+    }
+  });
     // Enviar notificación de orden creada
     await this.notificationService.sendOrderCreatedNotification(order);
 

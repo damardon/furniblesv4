@@ -1,4 +1,4 @@
-// src/app.module.ts - App Module completo Etapa 8
+/// src/app.module.ts - Actualizado con PayoutsModule
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -22,13 +22,13 @@ import { CheckoutModule } from './modules/checkout/checkout.module';
 import { DownloadsModule } from './modules/downloads/downloads.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
-import { StripeModule } from './modules/stripe/stripe.module'; // 🔄 Expandido con Connect
+import { StripeModule } from './modules/stripe/stripe.module';
 import { WebSocketModule } from './modules/websocket/websocket.module';
 import { EmailModule } from './modules/email/email.module';
 import { CronModule } from './modules/cron/cron.module';
 import { AdminModule } from './modules/admin/admin.module';
 
-// 🆕 Stage 8 modules (nuevos)
+// 🆕 Stage 8 modules
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PayoutsModule } from './modules/payouts/payouts.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
@@ -82,7 +82,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
     DownloadsModule,
     NotificationModule,
     WebhookModule,
-    StripeModule, // 🔄 Expandido con Connect en Etapa 8
+    StripeModule,
     WebSocketModule,
     EmailModule,
     CronModule,
@@ -90,7 +90,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 
     // 🆕 Stage 8: Advanced Payments System modules
     PaymentsModule,
-    PayoutsModule,
+    PayoutsModule, // 🆕 AGREGADO
     TransactionsModule,
     InvoicesModule,
   ],

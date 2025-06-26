@@ -1,4 +1,4 @@
-// prisma/schema.prisma - Schema Final Etapa 8 (Completo)
+// prisma/schema.prisma - Schema Final Etapa 9 (Completo)
 
 generator client {
   provider        = "prisma-client-js"
@@ -64,6 +64,7 @@ enum FileType {
   PDF
   IMAGE
   THUMBNAIL
+  REVIEW_IMAGE  // 🆕 Agregado para imágenes de reviews
 }
 
 enum FileStatus {
@@ -84,7 +85,7 @@ enum NotificationType {
   PRODUCT_SOLD
   DOWNLOAD_READY
   SYSTEM_NOTIFICATION
-  // 🆕 Payment related notifications
+  // Payment related notifications
   PAYMENT_SETUP
   PAYMENT_SETUP_COMPLETE
   PAYMENT_METHOD_ADDED
@@ -95,6 +96,11 @@ enum NotificationType {
   DISPUTE_CREATED
   REFUND_PROCESSED
   SALE_COMPLETED
+  // 🆕 Review related notifications
+  REVIEW_RECEIVED
+  REVIEW_RESPONSE_RECEIVED
+  REVIEW_FLAGGED
+  REVIEW_REMOVED
 }
 
 enum FeeType {
@@ -104,7 +110,6 @@ enum FeeType {
   REGIONAL_FEE
 }
 
-// 🆕 New enums for Etapa 8
 enum PayoutStatus {
   PENDING
   PROCESSING
@@ -143,6 +148,19 @@ enum SellerFeeType {
   TIERED
 }
 
+// 🆕 Nuevos enums para Reviews
+enum ReviewStatus {
+  PENDING_MODERATION
+  PUBLISHED
+  FLAGGED
+  REMOVED
+}
+
+enum ReviewHelpfulness {
+  HELPFUL
+  NOT_HELPFUL
+}
+
 // Models
 model User {
   id                     String     @id @default(cuid())
@@ -163,7 +181,7 @@ model User {
   status                 UserStatus @default(ACTIVE)
   avatar                 String?
   
-  // 🆕 Stripe Connect Integration
+  // Stripe Connect Integration
   stripeConnectId        String?    @unique // Stripe Connect Account ID
   onboardingComplete     Boolean    @default(false)
   payoutsEnabled         Boolean    @default(false)
@@ -193,13 +211,19 @@ model User {
   orderItems        OrderItem[] @relation("OrderSeller")
   downloadTokens    DownloadToken[] @relation("TokenBuyer")
 
-  // 🆕 Payment Relations
+  // Payment Relations
   payouts           Payout[]
   transactions      Transaction[]
   invoices          Invoice[]
 
+  // 🆕 Review Relations
+  reviewResponses   ReviewResponse[]
+  reviewVotes       ReviewVote[]
+  reportedReviews   ReviewReport[]
+
   // Moderation Relations
   moderatedProducts Product[] @relation("ModeratedBy")
+  moderatedReviews  Review[] @relation("ModeratedReviews") // 🆕
 
   @@map("User")
 }
@@ -214,13 +238,17 @@ model SellerProfile {
   phone       String?
   avatar      String?
   banner      String?
-  rating      Float    @default(0)
+  rating      Float    @default(0)    // Se actualizará con las reviews
   totalSales  Int      @default(0)
+  totalReviews Int     @default(0)    // 🆕 Total de reviews recibidas
   isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 🆕 Rating relation
+  sellerRating SellerRating?
 
   @@map("SellerProfile")
 }
@@ -234,6 +262,7 @@ model BuyerProfile {
   preferences Json?
   totalOrders Int       @default(0)
   totalSpent  Float     @default(0)
+  totalReviews Int      @default(0)  // 🆕 Total de reviews escritas
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -242,7 +271,7 @@ model BuyerProfile {
   @@map("BuyerProfile")
 }
 
-// 🆕 Payout Management
+// Payout Management
 model Payout {
   id               String       @id @default(cuid())
   sellerId         String
@@ -272,7 +301,7 @@ model Payout {
   @@map("payouts")
 }
 
-// 🆕 Transaction Tracking
+// Transaction Tracking
 model Transaction {
   id               String            @id @default(cuid())
   
@@ -305,7 +334,7 @@ model Transaction {
   @@map("transactions")
 }
 
-// 🆕 Invoice System
+// Invoice System
 model Invoice {
   id               String        @id @default(cuid())
   invoiceNumber    String        @unique // INV-YYYYMMDD-XXX
@@ -341,7 +370,7 @@ model Invoice {
   @@map("invoices")
 }
 
-// Updated FeeConfig for more granular control
+// Fee Configuration
 model feeConfig {
   id               String            @id @default(cuid())
   name             String
@@ -352,7 +381,7 @@ model feeConfig {
   region           String?
   category         ProductCategory?
   paymentMethod    String?
-  sellerTier       String?           // 🆕 Seller tier-based fees
+  sellerTier       String?           // Seller tier-based fees
   
   // Fee structure
   isPercentage     Boolean           @default(true)
@@ -360,7 +389,7 @@ model feeConfig {
   minAmount        Float?
   maxAmount        Float?
   
-  // 🆕 Split payment configuration
+  // Split payment configuration
   stripeFeeOffset  Float?            // Offset Stripe fees
   sellerFeeType    SellerFeeType?    @default(PERCENTAGE)
   sellerFeeValue   Float?
@@ -383,7 +412,7 @@ model feeConfig {
   @@map("feeConfig")
 }
 
-// 🆕 Webhook Event Tracking
+// Webhook Event Tracking
 model WebhookEvent {
   id               String   @id @default(cuid())
   stripeEventId    String   @unique
@@ -432,9 +461,10 @@ model File {
   uploadedById String
   uploadedBy   User   @relation(fields: [uploadedById], references: [id])
 
-  productPdfs   Product[] @relation("ProductPDF")
-  productImages Product[] @relation("ProductImages")
-  productThumbs Product[] @relation("ProductThumbnails")
+  productPdfs    Product[]      @relation("ProductPDF")
+  productImages  Product[]      @relation("ProductImages")
+  productThumbs  Product[]      @relation("ProductThumbnails")
+  reviewImages   ReviewImage[]  // 🆕 Relación con imágenes de reviews
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -481,8 +511,8 @@ model Product {
   downloadCount Int     @default(0)
   favoriteCount Int     @default(0)
   featured      Boolean @default(false)
-  rating        Float   @default(0)
-  reviewCount   Int     @default(0)
+  rating        Float   @default(0)    // Promedio de ratings
+  reviewCount   Int     @default(0)    // Total de reviews
 
   createdAt   DateTime  @default(now())
   publishedAt DateTime?
@@ -495,6 +525,9 @@ model Product {
   reviews        Review[]
   favorites      Favorite[]
   ProductImage   ProductImage[]
+  
+  // 🆕 Rating relation
+  productRating  ProductRating?
 
   @@index([status, createdAt])
   @@index([category, difficulty])
@@ -502,6 +535,7 @@ model Product {
   @@index([sellerId, status])
   @@index([featured, publishedAt])
   @@index([slug])
+  @@index([rating, reviewCount]) // 🆕 Índice para ordenar por rating
   @@map("Product")
 }
 
@@ -518,7 +552,7 @@ model ProductImage {
   @@map("ProductImage")
 }
 
-// Updated Order model for split payments
+// Order model
 model Order {
   id              String      @id @default(cuid())
   orderNumber     String      @unique
@@ -531,7 +565,7 @@ model Order {
   totalAmount     Float
   sellerAmount    Float
   
-  // 🆕 Split payment data
+  // Split payment data
   transferGroup   String?     // Stripe Transfer Group ID
   applicationFee  Float?      // Application fee for Connect
   
@@ -557,7 +591,7 @@ model Order {
   reviews         Review[]
   notifications   Notification[]
   
-  // 🆕 New relations
+  // New relations
   transactions    Transaction[]
   invoice         Invoice?
 
@@ -645,25 +679,169 @@ model Download {
   @@map("Download")
 }
 
+// 🆕 Modelo Review actualizado y expandido
 model Review {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   orderId    String
   productId  String
   buyerId    String
-  rating     Int
-  comment    String?
-  images     String[]
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  sellerId   String       // 🆕 Para tracking directo del seller
+  rating     Int          // 1-5 estrellas
+  title      String?      // 🆕 Título opcional de la review
+  comment    String       @db.Text // 🆕 Cambiado a Text para reviews más largas
+  pros       String?      // 🆕 Puntos positivos
+  cons       String?      // 🆕 Puntos negativos
+  
+  // Review metadata
+  status     ReviewStatus @default(PENDING_MODERATION) // 🆕
+  isVerified Boolean      @default(true)  // Verificado = comprador real
+  helpfulCount Int        @default(0)     // 🆕 Contador de votos útiles
+  notHelpfulCount Int     @default(0)     // 🆕 Contador de votos no útiles
+  
+  // Moderation
+  moderatedBy String?     // 🆕
+  moderatedAt DateTime?   // 🆕
+  moderationReason String? // 🆕
+  
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-  buyer   User    @relation(fields: [buyerId], references: [id])
+  // Relations
+  order      Order        @relation(fields: [orderId], references: [id])
+  product    Product      @relation(fields: [productId], references: [id])
+  buyer      User         @relation(fields: [buyerId], references: [id])
+  moderator  User?        @relation("ModeratedReviews", fields: [moderatedBy], references: [id]) // 🆕
+  
+  // 🆕 New relations
+  images     ReviewImage[]
+  response   ReviewResponse?
+  votes      ReviewVote[]
+  reports    ReviewReport[]
 
-  @@unique([orderId, productId])
-  @@index([productId, rating])
+  @@unique([orderId, productId, buyerId]) // Evita reviews duplicadas
+  @@index([productId, status, rating])
+  @@index([sellerId, status])
+  @@index([status, createdAt])
   @@map("Review")
+}
+
+// 🆕 Tabla para imágenes de reviews
+model ReviewImage {
+  id        String   @id @default(cuid())
+  reviewId  String
+  fileId    String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  file      File     @relation(fields: [fileId], references: [id])
+  
+  @@index([reviewId])
+  @@map("review_images")
+}
+
+// 🆕 Tabla para respuestas del seller a reviews
+model ReviewResponse {
+  id        String   @id @default(cuid())
+  reviewId  String   @unique
+  sellerId  String
+  comment   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  seller    User     @relation(fields: [sellerId], references: [id])
+  
+  @@index([sellerId])
+  @@map("review_responses")
+}
+
+// 🆕 Tabla para votos de utilidad en reviews
+model ReviewVote {
+  id        String            @id @default(cuid())
+  reviewId  String
+  userId    String
+  vote      ReviewHelpfulness
+  createdAt DateTime          @default(now())
+  
+  review    Review            @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id])
+  
+  @@unique([reviewId, userId]) // Un usuario solo puede votar una vez por review
+  @@index([reviewId])
+  @@map("review_votes")
+}
+
+// 🆕 Tabla para reportar reviews inapropiadas
+model ReviewReport {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  reason    String
+  details   String?
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@index([reviewId, resolved])
+  @@index([userId])
+  @@map("review_reports")
+}
+
+// 🆕 Tabla para agregación de ratings por producto
+model ProductRating {
+  id              String   @id @default(cuid())
+  productId       String   @unique
+  
+  // Distribución de ratings
+  totalReviews    Int      @default(0)
+  averageRating   Float    @default(0)
+  oneStar         Int      @default(0)
+  twoStar         Int      @default(0)
+  threeStar       Int      @default(0)
+  fourStar        Int      @default(0)
+  fiveStar        Int      @default(0)
+  
+  // Metadata adicional
+  recommendationRate Float? @default(0) // % que lo recomienda
+  
+  updatedAt       DateTime @updatedAt
+  
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("product_ratings")
+}
+
+// 🆕 Tabla para agregación de ratings por seller
+model SellerRating {
+  id              String        @id @default(cuid())
+  sellerId        String        @unique
+  
+  // Ratings generales
+  totalReviews    Int           @default(0)
+  averageRating   Float         @default(0)
+  
+  // Ratings por categoría
+  communicationRating Float?    @default(0)
+  qualityRating      Float?     @default(0)
+  valueRating        Float?     @default(0)
+  shippingRating     Float?     @default(0) // Para futuro físico
+  
+  // Distribución
+  oneStar         Int           @default(0)
+  twoStar         Int           @default(0)
+  threeStar       Int           @default(0)
+  fourStar        Int           @default(0)
+  fiveStar        Int           @default(0)
+  
+  updatedAt       DateTime      @updatedAt
+  
+  sellerProfile   SellerProfile @relation(fields: [sellerId], references: [userId], onDelete: Cascade)
+  
+  @@map("seller_ratings")
 }
 
 model Favorite {

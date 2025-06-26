@@ -1,21 +1,64 @@
 {
   "notifications": {
-      "orderCreated": "Order Created Successfully!",
-      "orderCreatedMsg": "Your order {orderNumber} has been created. Please proceed to payment.",
-      "orderPaid": "Payment Confirmed!",
-      "orderPaidMsg": "Your payment for order {orderNumber} has been processed successfully.",
-      "orderCompleted": "Files Ready for Download!",
-      "orderCompletedMsg": "Your order {orderNumber} is complete. You can now download your files.",
-      "productSold": "New Sale!",
-      "productSoldMsg": "You sold {itemCount} product(s) for a total of ${sellerAmount}."
+    "orderCreated": "Order Created Successfully!",
+    "orderCreatedMsg": "Your order {orderNumber} has been created. Please proceed to payment.",
+    "orderPaid": "Payment Confirmed!",
+    "orderPaidMsg": "Your payment for order {orderNumber} has been processed successfully.",
+    "orderCompleted": "Files Ready for Download!",
+    "orderCompletedMsg": "Your order {orderNumber} is complete. You can now download your files.",
+    "productSold": "New Sale!",
+    "productSoldMsg": "You sold {itemCount} product(s) for a total of ${sellerAmount}.",
+    "reviewReceived": "New Review Received!",
+    "reviewReceivedMsg": "You received a {rating}-star review for \"{productTitle}\"",
+    "reviewResponse": "Seller Responded to Your Review",
+    "reviewResponseMsg": "{sellerName} responded to your review for \"{productTitle}\"",
+    "reviewRemoved": "Review Removed",
+    "reviewRemovedMsg": "Your review for \"{productTitle}\" has been removed. Reason: {reason}"
+  },
+  "cart": {
+    "buyerOnly": "Only buyers can add products to cart",
+    "limitExceeded": "Cart limit exceeded (10 products max)",
+    "alreadyExists": "Product already in cart",
+    "ownProduct": "You cannot buy your own product"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "writeReview": "Write a Review",
+    "editReview": "Edit Review",
+    "yourReview": "Your Review",
+    "sellerResponse": "Seller Response",
+    "rating": "Rating",
+    "comment": "Comment",
+    "pros": "What did you like?",
+    "cons": "What could be improved?",
+    "helpful": "Helpful",
+    "notHelpful": "Not Helpful",
+    "report": "Report",
+    "respond": "Respond",
+    "verified": "Verified Purchase",
+    "recommended": "Recommended",
+    "errors": {
+      "alreadyExists": "You have already reviewed this product",
+      "notFound": "Review not found",
+      "notOwner": "You can only edit your own reviews",
+      "cannotEdit": "This review cannot be edited",
+      "notYourProduct": "You can only respond to reviews on your products",
+      "notPublished": "Review is not published",
+      "ownReview": "You cannot vote on your own review",
+      "alreadyReported": "You have already reported this review",
+      "orderNotFound": "Order not found or not completed",
+      "productNotInOrder": "Product not found in your completed orders",
+      "invalidImages": "One or more images are invalid"
     },
-    "cart": {
-      "buyerOnly": "Only buyers can add products to cart",
-      "limitExceeded": "Cart limit exceeded (10 products max)",
-      "alreadyExists": "Product already in cart",
-      "ownProduct": "You cannot buy your own product"
-    },
-
+    "success": {
+      "created": "Review submitted successfully",
+      "updated": "Review updated successfully", 
+      "responseCreated": "Response submitted successfully",
+      "voted": "Thank you for your feedback",
+      "reported": "Review reported successfully",
+      "deleted": "Review deleted successfully"
+    }
+  },
   "navigation": {
     "home": "Home",
     "products": "Products",
@@ -86,5 +129,4 @@
     "saved": "Changes saved successfully",
     "deleted": "Item deleted successfully"
   }
-  
 }

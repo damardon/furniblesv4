@@ -1,31 +1,19 @@
-// src/modules/transactions/dto/transaction-filter.dto.ts
+// src/modules/payouts/dto/payout-filter.dto.ts - FINAL
 import { IsOptional, IsIn, IsDateString, IsString, IsNumber, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { TransactionType, TransactionStatus } from '@prisma/client';
 
-export class TransactionFilterDto {
+export class PayoutFilterDto {
   @ApiPropertyOptional({
-    description: 'Filter by transaction type',
-    example: 'SALE',
-    enum: ['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'],
+    description: 'Filter by payout status',
+    example: 'PAID',
+    enum: ['PENDING', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED'],
   })
   @IsOptional()
-  @IsIn(['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'], {
-    message: 'type.invalid',
-  })
-  type?: TransactionType;
-
-  @ApiPropertyOptional({
-    description: 'Filter by transaction status',
-    example: 'COMPLETED',
-    enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'],
-  })
-  @IsOptional()
-  @IsIn(['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'], {
+  @IsIn(['PENDING', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED'], {
     message: 'status.invalid',
   })
-  status?: TransactionStatus;
+  status?: 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'CANCELLED';
 
   @ApiPropertyOptional({
     description: 'Filter by currency',
@@ -37,30 +25,6 @@ export class TransactionFilterDto {
     message: 'currency.invalid',
   })
   currency?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by seller ID',
-    example: 'user_123456789',
-  })
-  @IsOptional()
-  @IsString({ message: 'sellerId.invalid' })
-  sellerId?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by order ID',
-    example: 'order_123456789',
-  })
-  @IsOptional()
-  @IsString({ message: 'orderId.invalid' })
-  orderId?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by payout ID',
-    example: 'payout_123456789',
-  })
-  @IsOptional()
-  @IsString({ message: 'payoutId.invalid' })
-  payoutId?: string;
 
   @ApiPropertyOptional({
     description: 'Start date for date range filter (ISO format)',
@@ -79,8 +43,8 @@ export class TransactionFilterDto {
   endDate?: string;
 
   @ApiPropertyOptional({
-    description: 'Minimum transaction amount',
-    example: 1.00,
+    description: 'Minimum payout amount',
+    example: 10.00,
   })
   @IsOptional()
   @IsNumber({}, { message: 'minAmount.invalid' })
@@ -88,13 +52,21 @@ export class TransactionFilterDto {
   minAmount?: number;
 
   @ApiPropertyOptional({
-    description: 'Maximum transaction amount',
-    example: 10000.00,
+    description: 'Maximum payout amount',
+    example: 1000.00,
   })
   @IsOptional()
   @IsNumber({}, { message: 'maxAmount.invalid' })
   @Min(0, { message: 'maxAmount.tooSmall' })
   maxAmount?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter by seller ID',
+    example: 'user_123456789',
+  })
+  @IsOptional()
+  @IsString({ message: 'sellerId.invalid' })
+  sellerId?: string;
 
   @ApiPropertyOptional({
     description: 'Number of records per page',
@@ -125,14 +97,14 @@ export class TransactionFilterDto {
   @ApiPropertyOptional({
     description: 'Sort field',
     example: 'createdAt',
-    enum: ['createdAt', 'amount', 'type', 'status'],
+    enum: ['createdAt', 'amount', 'status', 'processedAt'],
     default: 'createdAt',
   })
   @IsOptional()
-  @IsIn(['createdAt', 'amount', 'type', 'status'], {
+  @IsIn(['createdAt', 'amount', 'status', 'processedAt'], {
     message: 'sortBy.invalid',
   })
-  sortBy?: 'createdAt' | 'amount' | 'type' | 'status';
+  sortBy?: 'createdAt' | 'amount' | 'status' | 'processedAt';
 
   @ApiPropertyOptional({
     description: 'Sort order',
@@ -145,19 +117,10 @@ export class TransactionFilterDto {
   sortOrder?: 'asc' | 'desc';
 
   @ApiPropertyOptional({
-    description: 'Search in description or Stripe transaction ID',
-    example: 'ch_1234567890',
+    description: 'Search by description or seller name',
+    example: 'weekly payout',
   })
   @IsOptional()
   @IsString({ message: 'search.invalid' })
   search?: string;
-
-  @ApiPropertyOptional({
-    description: 'Include related data (order, seller, payout)',
-    example: true,
-    default: false,
-  })
-  @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  includeRelations?: boolean;
 }
