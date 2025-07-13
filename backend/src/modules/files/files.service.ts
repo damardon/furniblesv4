@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { I18nService } from 'nestjs-i18n';
 import sharp from 'sharp';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -15,7 +14,6 @@ import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { FileType, FileStatus } from '@prisma/client';
 import { FileResponseDto, FileMetadataDto } from '../products/dto/file-response.dto';
-
 
 interface UploadedFile {
   fieldname: string;
@@ -47,7 +45,7 @@ export class FilesService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
-    private i18n: I18nService,
+    // I18nService removido temporalmente
   ) {
     this.uploadPath = this.config.get('UPLOAD_PATH', './uploads');
     this.maxFileSize = parseInt(this.config.get('MAX_FILE_SIZE', '10485760')); // 10MB
@@ -63,9 +61,7 @@ export class FilesService {
     // Validar tamaño
     if (file.size > this.maxFileSize) {
       throw new BadRequestException(
-        this.i18n.t('files.errors.file_too_large', {
-          args: { maxSize: this.formatFileSize(this.maxFileSize) },
-        })
+        `File too large. Maximum size allowed: ${this.formatFileSize(this.maxFileSize)}`
       );
     }
 
@@ -73,19 +69,17 @@ export class FilesService {
     const fileExtension = this.getFileExtension(file.originalname);
     if (!this.allowedMimeTypes.includes(fileExtension)) {
       throw new BadRequestException(
-        this.i18n.t('files.errors.invalid_file_type', {
-          args: { allowed: this.allowedMimeTypes.join(', ') },
-        })
+        `Invalid file type. Allowed types: ${this.allowedMimeTypes.join(', ')}`
       );
     }
 
     // Validaciones específicas por tipo
     if (expectedType === FileType.PDF && file.mimetype !== 'application/pdf') {
-      throw new BadRequestException(this.i18n.t('files.errors.not_pdf'));
+      throw new BadRequestException('File must be a PDF');
     }
 
     if (expectedType === FileType.IMAGE && !file.mimetype.startsWith('image/')) {
-      throw new BadRequestException(this.i18n.t('files.errors.not_image'));
+      throw new BadRequestException('File must be an image');
     }
 
     // Validar que es realmente el tipo de archivo (verificación binaria)
@@ -140,7 +134,7 @@ export class FilesService {
   // Subir múltiples imágenes
   async uploadImages(files: UploadedFile[], userId: string): Promise<ProcessedFile[]> {
     if (files.length > 5) {
-      throw new BadRequestException(this.i18n.t('files.errors.too_many_images'));
+      throw new BadRequestException('Too many images. Maximum 5 images allowed');
     }
 
     const processedFiles: ProcessedFile[] = [];
@@ -248,7 +242,7 @@ export class FilesService {
     });
 
     if (!file || file.status !== FileStatus.ACTIVE) {
-      throw new NotFoundException(this.i18n.t('files.errors.file_not_found'));
+      throw new NotFoundException('File not found');
     }
 
     let filePath: string;
@@ -263,14 +257,14 @@ export class FilesService {
         filePath = path.join(this.uploadPath, 'thumbnails', key);
         break;
       default:
-        throw new NotFoundException(this.i18n.t('files.errors.invalid_file_type'));
+        throw new NotFoundException('Invalid file type');
     }
 
     // Verificar que el archivo existe físicamente
     try {
       await fs.access(filePath);
     } catch {
-      throw new NotFoundException(this.i18n.t('files.errors.file_not_found'));
+      throw new NotFoundException('File not found');
     }
 
     return { file, filePath };
@@ -283,12 +277,12 @@ export class FilesService {
     });
 
     if (!file) {
-      throw new NotFoundException(this.i18n.t('files.errors.file_not_found'));
+      throw new NotFoundException('File not found');
     }
 
     // Solo el propietario o admin pueden eliminar
     if (file.uploadedById !== userId && userRole !== 'ADMIN') {
-      throw new ForbiddenException(this.i18n.t('files.errors.not_owner'));
+      throw new ForbiddenException('You are not the owner of this file');
     }
 
     // Marcar como eliminado en BD
@@ -347,230 +341,231 @@ export class FilesService {
       },
     });
   }
-// Obtener metadata completa de archivo
-async getFileMetadata(fileId: string, userId: string): Promise<FileMetadataDto> {
-  const file = await this.prisma.file.findUnique({
-    where: { id: fileId },
-    include: {
-      uploadedBy: {
-        select: { id: true, name: true }
-      }
-    }
-  });
 
-  if (!file) {
-    throw new NotFoundException(this.i18n.t('files.errors.file_not_found'));
-  }
-
-  // Solo el propietario o admin pueden ver metadata completa
-  if (file.uploadedById !== userId && !this.isAdmin(userId)) {
-    throw new ForbiddenException(this.i18n.t('files.errors.not_authorized'));
-  }
-
-  return {
-    id: file.id,
-    filename: file.filename,
-    key: file.key,
-    url: file.url,
-    type: file.type,
-    size: file.size,
-    mimeType: file.mimeType,
-    width: file.width,
-    height: file.height,
-    checksum: file.checksum,
-    metadata: file.metadata,
-    status: file.status,
-    uploadedById: file.uploadedById,
-    createdAt: file.createdAt,
-  };
-}
-
-// Limpiar archivos huérfanos
-async cleanupOrphanedFiles(): Promise<{ deletedFiles: number; freedSpace: string }> {
-  // Encontrar archivos que no están referenciados por ningún producto
-  const orphanedFiles = await this.prisma.file.findMany({
-    where: {
-      status: FileStatus.ACTIVE,
-      AND: [
-        {
-          productPdfs: {
-            none: {}
-          }
-        },
-        {
-          productImages: {
-            none: {}
-          }
-        },
-        {
-          productThumbs: {
-            none: {}
-          }
+  // Obtener metadata completa de archivo
+  async getFileMetadata(fileId: string, userId: string): Promise<FileMetadataDto> {
+    const file = await this.prisma.file.findUnique({
+      where: { id: fileId },
+      include: {
+        uploadedBy: {
+          select: { id: true,}
         }
-      ],
-      // Solo archivos más antiguos de 7 días
-      createdAt: {
-        lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
       }
+    });
+
+    if (!file) {
+      throw new NotFoundException('File not found');
     }
-  });
 
-  let totalSize = 0;
-  let deletedCount = 0;
-
-  for (const file of orphanedFiles) {
-    try {
-      // Marcar como eliminado
-      await this.prisma.file.update({
-        where: { id: file.id },
-        data: { status: FileStatus.DELETED }
-      });
-
-      // Eliminar archivo físico
-      let filePath: string;
-      switch (file.type) {
-        case FileType.PDF:
-          filePath = path.join(this.uploadPath, 'pdfs', file.key);
-          break;
-        case FileType.IMAGE:
-          filePath = path.join(this.uploadPath, 'images', file.key);
-          break;
-        case FileType.THUMBNAIL:
-          filePath = path.join(this.uploadPath, 'thumbnails', file.key);
-          break;
-      }
-
-      await fs.unlink(filePath);
-      totalSize += file.size;
-      deletedCount++;
-    } catch (error) {
-      console.error(`Error deleting orphaned file ${file.id}:`, error);
+    // Solo el propietario o admin pueden ver metadata completa
+    if (file.uploadedById !== userId && !this.isAdmin(userId)) {
+      throw new ForbiddenException('Not authorized to access this file');
     }
+
+    return {
+      id: file.id,
+      filename: file.filename,
+      key: file.key,
+      url: file.url,
+      type: file.type,
+      size: file.size,
+      mimeType: file.mimeType,
+      width: file.width,
+      height: file.height,
+      checksum: file.checksum,
+      metadata: file.metadata,
+      status: file.status,
+      uploadedById: file.uploadedById,
+      createdAt: file.createdAt,
+    };
   }
 
-  return {
-    deletedFiles: deletedCount,
-    freedSpace: this.formatFileSize(totalSize)
-  };
-}
+  // Limpiar archivos huérfanos
+  async cleanupOrphanedFiles(): Promise<{ deletedFiles: number; freedSpace: string }> {
+    // Encontrar archivos que no están referenciados por ningún producto
+    const orphanedFiles = await this.prisma.file.findMany({
+      where: {
+        status: FileStatus.ACTIVE,
+        AND: [
+          {
+            productPdfs: {
+              none: {}
+            }
+          },
+          {
+            productImages: {
+              none: {}
+            }
+          },
+          {
+            productThumbs: {
+              none: {}
+            }
+          }
+        ],
+        // Solo archivos más antiguos de 7 días
+        createdAt: {
+          lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        }
+      }
+    });
 
-// Estadísticas de almacenamiento
-async getStorageStats(): Promise<any> {
-  const stats = await this.prisma.file.groupBy({
-    by: ['type', 'status'],
-    _count: {
-      id: true
-    },
-    _sum: {
-      size: true
+    let totalSize = 0;
+    let deletedCount = 0;
+
+    for (const file of orphanedFiles) {
+      try {
+        // Marcar como eliminado
+        await this.prisma.file.update({
+          where: { id: file.id },
+          data: { status: FileStatus.DELETED }
+        });
+
+        // Eliminar archivo físico
+        let filePath: string;
+        switch (file.type) {
+          case FileType.PDF:
+            filePath = path.join(this.uploadPath, 'pdfs', file.key);
+            break;
+          case FileType.IMAGE:
+            filePath = path.join(this.uploadPath, 'images', file.key);
+            break;
+          case FileType.THUMBNAIL:
+            filePath = path.join(this.uploadPath, 'thumbnails', file.key);
+            break;
+        }
+
+        await fs.unlink(filePath);
+        totalSize += file.size;
+        deletedCount++;
+      } catch (error) {
+        console.error(`Error deleting orphaned file ${file.id}:`, error);
+      }
     }
-  });
 
-  const activeFiles = await this.prisma.file.findMany({
-    where: { status: FileStatus.ACTIVE },
-    select: { type: true, size: true }
-  });
-
-  const totalFiles = activeFiles.length;
-  const totalSize = activeFiles.reduce((sum, file) => sum + file.size, 0);
-
-  const filesByType = activeFiles.reduce((acc, file) => {
-    acc[file.type] = (acc[file.type] || 0) + 1;
-    return acc;
-  }, {});
-
-  const sizeByType = activeFiles.reduce((acc, file) => {
-    acc[file.type] = (acc[file.type] || 0) + file.size;
-    return acc;
-  }, {});
-
-  // Formatear tamaños
-  const formattedSizeByType = Object.entries(sizeByType).reduce((acc, [type, size]) => {
-    acc[type] = this.formatFileSize(size as number);
-    return acc;
-  }, {});
-
-  return {
-    totalFiles,
-    totalSize: this.formatFileSize(totalSize),
-    filesByType,
-    sizeByType: formattedSizeByType,
-    storageUsage: {
-      used: this.formatFileSize(totalSize),
-      // Calcular espacio disponible basado en configuración
-      limit: this.formatFileSize(1024 * 1024 * 1024), // 1GB ejemplo
-      percentage: Math.round((totalSize / (1024 * 1024 * 1024)) * 100)
-    },
-    rawStats: stats
-  };
-}
-
-// Verificar si usuario es admin
-private async isAdmin(userId: string): Promise<boolean> {
-  const user = await this.prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true }
-  });
-  
-  return user?.role === 'ADMIN';
-}
-
-// Obtener archivos por producto (para uso interno)
-async getProductFiles(productId: string): Promise<{
-  pdf?: FileResponseDto;
-  images: FileResponseDto[];
-  thumbnails: FileResponseDto[];
-}> {
-  const product = await this.prisma.product.findUnique({
-    where: { id: productId },
-    include: {
-      pdfFile: true,
-      imageFiles: true,
-      thumbnailFiles: true
-    }
-  });
-
-  if (!product) {
-    throw new NotFoundException('Product not found');
+    return {
+      deletedFiles: deletedCount,
+      freedSpace: this.formatFileSize(totalSize)
+    };
   }
 
-  return {
-    pdf: product.pdfFile ? this.mapFileToResponse(product.pdfFile) : undefined,
-    images: product.imageFiles.map(this.mapFileToResponse),
-    thumbnails: product.thumbnailFiles.map(this.mapFileToResponse)
-  };
-}
+  // Estadísticas de almacenamiento
+  async getStorageStats(): Promise<any> {
+    const stats = await this.prisma.file.groupBy({
+      by: ['type', 'status'],
+      _count: {
+        id: true
+      },
+      _sum: {
+        size: true
+      }
+    });
 
-// Mapper helper
-private mapFileToResponse(file: any): FileResponseDto {
-  return {
-    id: file.id,
-    filename: file.filename,
-    key: file.key,
-    url: file.url,
-    type: file.type,
-    size: file.size,
-    mimeType: file.mimeType,
-    width: file.width,
-    height: file.height,
-    createdAt: file.createdAt
-  };
-}
+    const activeFiles = await this.prisma.file.findMany({
+      where: { status: FileStatus.ACTIVE },
+      select: { type: true, size: true }
+    });
 
-// Validar que archivos pertenecen al usuario
-async validateFileOwnership(fileIds: string[], userId: string): Promise<boolean> {
-  if (!fileIds.length) return true;
+    const totalFiles = activeFiles.length;
+    const totalSize = activeFiles.reduce((sum, file) => sum + file.size, 0);
 
-  const files = await this.prisma.file.findMany({
-    where: {
-      id: { in: fileIds },
-      uploadedById: userId,
-      status: FileStatus.ACTIVE
+    const filesByType = activeFiles.reduce((acc, file) => {
+      acc[file.type] = (acc[file.type] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sizeByType = activeFiles.reduce((acc, file) => {
+      acc[file.type] = (acc[file.type] || 0) + file.size;
+      return acc;
+    }, {});
+
+    // Formatear tamaños
+    const formattedSizeByType = Object.entries(sizeByType).reduce((acc, [type, size]) => {
+      acc[type] = this.formatFileSize(size as number);
+      return acc;
+    }, {});
+
+    return {
+      totalFiles,
+      totalSize: this.formatFileSize(totalSize),
+      filesByType,
+      sizeByType: formattedSizeByType,
+      storageUsage: {
+        used: this.formatFileSize(totalSize),
+        // Calcular espacio disponible basado en configuración
+        limit: this.formatFileSize(1024 * 1024 * 1024), // 1GB ejemplo
+        percentage: Math.round((totalSize / (1024 * 1024 * 1024)) * 100)
+      },
+      rawStats: stats
+    };
+  }
+
+  // Verificar si usuario es admin
+  private async isAdmin(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true }
+    });
+    
+    return user?.role === 'ADMIN';
+  }
+
+  // Obtener archivos por producto (para uso interno)
+  async getProductFiles(productId: string): Promise<{
+    pdf?: FileResponseDto;
+    images: FileResponseDto[];
+    thumbnails: FileResponseDto[];
+  }> {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        pdfFile: true,
+        imageFiles: true,
+        thumbnailFiles: true
+      }
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
-  });
 
-  return files.length === fileIds.length;
-}
+    return {
+      pdf: product.pdfFile ? this.mapFileToResponse(product.pdfFile) : undefined,
+      images: product.imageFiles.map(this.mapFileToResponse),
+      thumbnails: product.thumbnailFiles.map(this.mapFileToResponse)
+    };
+  }
+
+  // Mapper helper
+  private mapFileToResponse(file: any): FileResponseDto {
+    return {
+      id: file.id,
+      filename: file.filename,
+      key: file.key,
+      url: file.url,
+      type: file.type,
+      size: file.size,
+      mimeType: file.mimeType,
+      width: file.width,
+      height: file.height,
+      createdAt: file.createdAt
+    };
+  }
+
+  // Validar que archivos pertenecen al usuario
+  async validateFileOwnership(fileIds: string[], userId: string): Promise<boolean> {
+    if (!fileIds.length) return true;
+
+    const files = await this.prisma.file.findMany({
+      where: {
+        id: { in: fileIds },
+        uploadedById: userId,
+        status: FileStatus.ACTIVE
+      }
+    });
+
+    return files.length === fileIds.length;
+  }
 
   // Utilidades privadas
   private generateFileKey(originalName: string, type: string): string {
@@ -633,9 +628,7 @@ async validateFileOwnership(fileIds: string[], userId: string): Promise<boolean>
     const isValid = signature.every((byte, index) => fileHeader[index] === byte);
 
     if (!isValid) {
-      throw new BadRequestException(
-        this.i18n.t('files.errors.corrupted_file')
-      );
+      throw new BadRequestException('Corrupted or invalid file');
     }
   }
 

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Difficulty, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -26,8 +26,7 @@ export async function setupTestDb() {
       password: 'hashedpassword',
       firstName: 'Test',
       lastName: 'Buyer',
-      role: 'BUYER',
-      isVerified: true
+      role: 'BUYER',      
     }
   });
   
@@ -38,35 +37,27 @@ export async function setupTestDb() {
       firstName: 'Test',
       lastName: 'Seller',
       role: 'SELLER',
-      isVerified: true,
       sellerProfile: {
-        create: {
-          storeName: 'Test Store',
-          storeDescription: 'Test Description',
-          isVerified: true
+        
         }
       }
-    }
-  });
+    })
+  
   
   // Create test product
   const product = await prisma.product.create({
     data: {
+      id: '100',
       title: 'Test Product',
       description: 'Test Description',
-      price: 100,
+      slug: 'test-product',
+      price: 5,
       category: 'TABLES',
-      sellerId: seller.id,
-      status: 'PUBLISHED',
-      files: {
-        create: {
-          filename: 'test-file.pdf',
-          originalName: 'test-file.pdf',
-          size: 1024,
-          mimetype: 'application/pdf',
-          path: '/test/path'
-        }
-      }
+      difficulty: "BEGINNER",
+      status: 'DRAFT',
+      seller: {
+        connect: { id: seller.id }
+    }
     }
   });
   
@@ -76,5 +67,3 @@ export async function setupTestDb() {
 export async function cleanupTestDb() {
   await prisma.$disconnect();
 }
-
-export { prisma };

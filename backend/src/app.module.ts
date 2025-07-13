@@ -4,8 +4,6 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
-import { I18nModule, AcceptLanguageResolver, QueryResolver, HeaderResolver } from 'nestjs-i18n';
-import * as path from 'path';
 
 // 🔧 Core modules (existentes)
 import { PrismaModule } from './modules/prisma/prisma.module';
@@ -33,23 +31,10 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { PayoutsModule } from './modules/payouts/payouts.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
-    // 🌍 Configuración I18n
-    I18nModule.forRoot({
-      fallbackLanguage: 'en',
-      loaderOptions: {
-        path: path.join(__dirname, '/i18n/'),
-        watch: true,
-      },
-      resolvers: [
-        { use: QueryResolver, options: ['lang'] },
-        AcceptLanguageResolver,
-        new HeaderResolver(['x-lang']),
-      ],
-    }),
-
     // 🔧 Configuration
     ConfigModule.forRoot({
       isGlobal: true,
@@ -93,6 +78,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
     PayoutsModule, // 🆕 AGREGADO
     TransactionsModule,
     InvoicesModule,
+    AnalyticsModule,
   ],
   controllers: [],
   providers: [

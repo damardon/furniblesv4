@@ -108,7 +108,7 @@ export class InvoicesService {
             taxAmount: taxAmount > 0 ? new Prisma.Decimal(taxAmount) : null,
             totalAmount: new Prisma.Decimal(totalAmount),
             status: 'ISSUED',
-            currency: order.currency || 'USD',
+            currency: 'USD',
             issuedAt: new Date(),
             dueAt: dto?.dueAt ? new Date(dto.dueAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
           },
@@ -481,7 +481,7 @@ export class InvoicesService {
       this.logger.log(`Invoice ${invoiceId} status updated to ${status}`);
       return updatedInvoice;
     } catch (error) {
-      this.logger.error(`Failed to update invoice status: ${error.message}`);
+        this.logger.error(`Failed to update invoice status: ${error.message}`);
       throw error;
     }
   }

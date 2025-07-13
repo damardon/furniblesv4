@@ -101,6 +101,28 @@ enum NotificationType {
   REVIEW_RESPONSE_RECEIVED
   REVIEW_FLAGGED
   REVIEW_REMOVED
+ // 🆕 NUEVOS TIPOS PARA ETAPA 10
+  REVIEW_HELPFUL_VOTE       // Review marcada como útil
+  REVIEW_WEEKLY_DIGEST      // Digest semanal de reviews
+  REVIEW_FOLLOW_UP          // Follow-up automático para reviews
+  REVIEW_MILESTONE          // Hitos de reviews (10, 50, 100 reviews)
+  SELLER_RATING_IMPROVED    // Rating del seller mejoró
+  PRODUCT_RATING_MILESTONE  // Producto alcanzó rating milestone
+  REVIEW_PENDING_REMINDER   // Recordatorio de review pendiente
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum DigestFrequency {
+  DISABLED
+  DAILY
+  WEEKLY
+  MONTHLY
 }
 
 enum FeeType {
@@ -161,12 +183,19 @@ enum ReviewHelpfulness {
   NOT_HELPFUL
 }
 
+// 🆕 Nuevos enums para notificaciones
+enum NotificationChannel {
+  EMAIL
+  WEB_PUSH
+  IN_APP
+  SMS  // Para futuro
+}
+
 // Models
 model User {
   id                     String     @id @default(cuid())
   email                  String     @unique
   password               String
-  name                   String
   role                   UserRole   @default(BUYER)
   isBoth                 Boolean    @default(false)
   firstName              String
@@ -224,6 +253,12 @@ model User {
   // Moderation Relations
   moderatedProducts Product[] @relation("ModeratedBy")
   moderatedReviews  Review[] @relation("ModeratedReviews") // 🆕
+
+// 🆕 NUEVAS RELACIONES PARA ETAPA 10
+  notificationPreferences NotificationPreference?
+  emailLogs              EmailLog[]
+  scheduledNotifications ScheduledNotification[]
+  notificationAnalytics  NotificationAnalytics[]
 
   @@map("User")
 }
@@ -564,12 +599,12 @@ model Order {
   platformFee     Float
   totalAmount     Float
   sellerAmount    Float
+
   
   // Split payment data
   transferGroup   String?     // Stripe Transfer Group ID
   applicationFee  Float?      // Application fee for Connect
   
-  status          OrderStatus @default(PENDING)
   paymentIntentId String?
   paymentStatus   String?
   
@@ -590,6 +625,7 @@ model Order {
   downloadTokens  DownloadToken[]
   reviews         Review[]
   notifications   Notification[]
+  status          OrderStatus  @default(PENDING)
   
   // New relations
   transactions    Transaction[]
@@ -923,11 +959,27 @@ model Notification {
   
   createdAt   DateTime         @default(now())
 
+// 🆕 NUEVOS CAMPOS PARA ETAPA 10
+  priority    NotificationPriority @default(NORMAL)
+  channel     NotificationChannel? // Canal principal usado
+  groupKey    String?          // Para agrupar notificaciones similares
+  expiresAt   DateTime?        // Para notificaciones temporales
+  
+  // 🆕 Engagement tracking
+  clickedAt   DateTime?        // Cuando hizo click en la notificación
+  clickCount  Int              @default(0)
+
+// 🆕 New relations
+  emailLog    EmailLog?
+  analytics   NotificationAnalytics[]
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
   @@index([type, createdAt])
   @@index([orderId])
+  @@index([groupKey, createdAt]) // 🆕 Para agrupar notificaciones
+  @@index([expiresAt])           // 🆕 Para cleanup de notificaciones expiradas
   @@map("Notification")
 }
 
@@ -960,4 +1012,194 @@ model BlacklistedToken {
   @@index([expiresAt])
   @@index([userId])
   @@map("BlacklistedToken")
+}
+// 🆕 NUEVA TABLA: Preferencias de Notificación
+model NotificationPreference {
+  id                    String            @id @default(cuid())
+  userId                String            @unique
+  
+  // Configuraciones generales
+  emailEnabled          Boolean           @default(true)
+  webPushEnabled        Boolean           @default(true)
+  inAppEnabled          Boolean           @default(true)
+  
+  // Preferencias por tipo de notificación
+  orderNotifications    Boolean           @default(true)
+  paymentNotifications  Boolean           @default(true)
+  reviewNotifications   Boolean           @default(true)
+  marketingEmails       Boolean           @default(false)
+  systemNotifications   Boolean           @default(true)
+  
+  // 🆕 Configuraciones específicas de reviews
+  reviewReceived        Boolean           @default(true)   // Cuando recibe review
+  reviewResponses       Boolean           @default(true)   // Cuando responden a su review
+  reviewHelpfulVotes    Boolean           @default(true)   // Cuando marcan su review como útil
+  reviewMilestones      Boolean           @default(true)   // Hitos de reviews
+  reviewReminders       Boolean           @default(true)   // Recordatorios de review pendiente
+  
+  // 🆕 Configuraciones de digest
+  digestFrequency       DigestFrequency   @default(WEEKLY)
+  digestDay             Int?              @default(1) // 1=Monday, 7=Sunday
+  digestTime            String?           @default("09:00") // HH:MM format
+  
+  // 🆕 Configuraciones avanzadas
+  quietHoursEnabled     Boolean           @default(false)
+  quietHoursStart       String?           @default("22:00") // HH:MM format
+  quietHoursEnd         String?           @default("08:00") // HH:MM format
+  timezone              String?           @default("UTC")
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notification_preferences")
+}
+
+// 🆕 NUEVA TABLA: Templates de Email Personalizados
+model EmailTemplate {
+  id                    String                   @id @default(cuid())
+  name                  String                   @unique // review-received, review-digest, etc.
+  type                  NotificationType
+  
+  // Template content
+  subject               String
+  htmlContent           String                   @db.Text
+  textContent           String?                  @db.Text
+  
+  // 🆕 Template variables
+  variables             Json?                    // Variables disponibles en el template
+  
+  // Metadata
+  isActive              Boolean                  @default(true)
+  isDefault             Boolean                  @default(false)
+  language              String                   @default("en")
+  version               Int                      @default(1)
+  
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  
+  // Relations
+  emailLogs             EmailLog[]
+  
+  @@index([type, language, isActive])
+  @@map("email_templates")
+}
+
+// 🆕 NUEVA TABLA: Log de Emails Enviados
+model EmailLog {
+  id                    String                   @id @default(cuid())
+  userId                String
+  templateId            String?
+  notificationId        String?                  @unique
+  
+  // Email details
+  toEmail               String
+  subject               String
+  status                String                   @default("pending") // pending, sent, delivered, failed, bounced, opened, clicked
+  
+  // 🆕 Engagement tracking
+  sentAt                DateTime?
+  deliveredAt           DateTime?
+  openedAt              DateTime?
+  firstOpenedAt         DateTime?
+  clickedAt             DateTime?
+  firstClickedAt        DateTime?
+  openCount             Int                      @default(0)
+  clickCount            Int                      @default(0)
+  
+  // Error handling
+  errorMessage          String?
+  providerResponse      Json?
+  
+  // Tracking
+  messageId             String?                  // Provider message ID
+  trackingPixelId       String?                  @unique
+  
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  
+  // Relations
+  user                  User                     @relation(fields: [userId], references: [id])
+  template              EmailTemplate?           @relation(fields: [templateId], references: [id])
+  notification          Notification?            @relation(fields: [notificationId], references: [id])
+  
+  @@index([userId, status])
+  @@index([status, sentAt])
+  @@index([templateId])
+  @@map("email_logs")
+}
+
+// 🆕 NUEVA TABLA: Notificaciones Programadas
+model ScheduledNotification {
+  id                    String                   @id @default(cuid())
+  userId                String
+  type                  NotificationType
+  
+  // Scheduling
+  scheduledFor          DateTime
+  status                String                   @default("pending") // pending, sent, failed, cancelled
+  
+  // Content
+  title                 String
+  message               String
+  data                  Json?
+  
+  // Retry mechanism
+  attempts              Int                      @default(0)
+  maxAttempts           Int                      @default(3)
+  lastAttemptAt         DateTime?
+  nextAttemptAt         DateTime?
+  
+  // Relations
+  orderId               String?
+  productId             String?
+  reviewId              String?
+  
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  processedAt           DateTime?
+  
+  user                  User                     @relation(fields: [userId], references: [id])
+  
+  @@index([scheduledFor, status])
+  @@index([userId, type])
+  @@index([status, nextAttemptAt])
+  @@map("scheduled_notifications")
+}
+
+// 🆕 NUEVA TABLA: Analytics de Notificaciones
+model NotificationAnalytics {
+  id                    String                   @id @default(cuid())
+  userId                String
+  notificationId        String?
+  type                  NotificationType
+  channel               NotificationChannel
+  
+  // Engagement metrics
+  sent                  Boolean                  @default(false)
+  delivered             Boolean                  @default(false)
+  read                  Boolean                  @default(false)
+  clicked               Boolean                  @default(false)
+  
+  // Timing
+  sentAt                DateTime?
+  deliveredAt           DateTime?
+  readAt                DateTime?
+  clickedAt             DateTime?
+  
+  // Device/Platform info
+  deviceType            String?                  // mobile, desktop, tablet
+  platform              String?                  // ios, android, web
+  userAgent             String?
+  
+  createdAt             DateTime                 @default(now())
+  
+  user                  User                     @relation(fields: [userId], references: [id])
+  notification          Notification?            @relation(fields: [notificationId], references: [id])
+  
+  @@index([userId, type, sentAt])
+  @@index([type, channel, sentAt])
+  @@index([notificationId])
+  @@map("notification_analytics")
 }

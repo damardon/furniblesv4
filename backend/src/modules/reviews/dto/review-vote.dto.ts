@@ -3,7 +3,7 @@ import { IsIn, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ReviewHelpfulness } from '@prisma/client';
 
-export class VoteReviewDto {
+export class ReviewVoteDto {
   @ApiProperty({
     description: 'Vote type',
     enum: ReviewHelpfulness,

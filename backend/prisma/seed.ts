@@ -38,7 +38,6 @@ async function createUsers() {
     create: {
       email: 'admin@furnibles.com',
       password: adminPassword,
-      name: 'Admin Furnibles',
       firstName: 'Admin',
       lastName: 'Furnibles',
       role: UserRole.ADMIN,
@@ -76,7 +75,6 @@ async function createUsers() {
     create: {
       email: 'seller@furnibles.com',
       password: sellerPassword,
-      name: 'Juan Carpintero',
       firstName: 'Juan',
       lastName: 'Carpintero',
       role: UserRole.SELLER,
@@ -106,7 +104,6 @@ async function createUsers() {
     create: {
       email: 'buyer@furnibles.com',
       password: buyerPassword,
-      name: 'Maria Compradora',
       firstName: 'Maria',
       lastName: 'Compradora',
       role: UserRole.BUYER,
@@ -135,7 +132,6 @@ async function createUsers() {
     create: {
       email: 'hybrid@furnibles.com',
       password: hybridPassword,
-      name: 'Ana Híbrida',
       firstName: 'Ana',
       lastName: 'Híbrida',
       role: UserRole.BUYER,
@@ -174,7 +170,6 @@ async function createUsers() {
     create: {
       email: 'seller-unverified@furnibles.com',
       password: unverifiedPassword,
-      name: 'Pedro Nuevo',
       firstName: 'Pedro',
       lastName: 'Nuevo',
       role: UserRole.SELLER,
@@ -503,6 +498,7 @@ async function createSampleOrderData() {
       sellerAmount: 19.78,
       status: 'COMPLETED',
       buyerEmail: buyer.email,
+      subtotalAmount: 120,
       paymentIntentId: 'pi_test_1234567890',
       paymentStatus: 'succeeded',
       paidAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 días atrás

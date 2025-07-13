@@ -30,7 +30,7 @@ import {
   CreateReviewDto, 
   UpdateReviewDto, 
   CreateReviewResponseDto,
-  VoteReviewDto,
+  ReviewVoteDto,
   ReportReviewDto,
   FilterReviewDto,
   ModerateReviewDto
@@ -140,7 +140,7 @@ export class ReviewsController {
   async voteReview(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseUUIDPipe) reviewId: string,
-    @Body() voteDto: VoteReviewDto
+    @Body() voteDto: ReviewVoteDto
   ) {
     return this.reviewsService.voteReview(userId, reviewId, voteDto);
   }

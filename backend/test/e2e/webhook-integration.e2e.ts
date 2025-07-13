@@ -15,10 +15,14 @@ describe('Webhook Integration (E2E)', () => {
         buyerId: buyer.id,
         status: 'PENDING',
         subtotalAmount: 100,
-        platformFeeAmount: 10,
+        platformFeeRate: 10,
         totalAmount: 110,
-        currency: 'USD',
-        paymentIntentId: 'pi_test_webhook_123'
+        paymentIntentId: 'pi_test_webhook_123',
+        subtotal: 100,
+        platformFee: 10,
+        sellerAmount: 90,
+        buyerEmail: buyer.email,
+        buyer: { connect: { id: buyer.id } }
       }
     });
   });
@@ -43,8 +47,14 @@ describe('Webhook Integration (E2E)', () => {
       };
       
       // Simulate webhook processing
+      // First, find the order by paymentIntentId since it's not unique in the schema
+      const orderToUpdate = await prisma.order.findFirst({
+        where: { paymentIntentId: mockStripeEvent.data.object.id }
+      });
+      if (!orderToUpdate) throw new Error('Order not found for paymentIntentId');
+
       const updatedOrder = await prisma.order.update({
-        where: { paymentIntentId: mockStripeEvent.data.object.id },
+        where: { id: orderToUpdate.id },
         data: {
           status: 'PROCESSING',
           paidAt: new Date(),
@@ -64,10 +74,14 @@ describe('Webhook Integration (E2E)', () => {
           buyerId: buyer.id,
           status: 'PENDING',
           subtotalAmount: 50,
-          platformFeeAmount: 5,
+          platformFeeRate: 5,
           totalAmount: 55,
-          currency: 'USD',
-          paymentIntentId: 'pi_test_failed_123'
+          paymentIntentId: 'pi_test_failed_123',
+          subtotal: 50,
+          platformFee: 5,
+          sellerAmount: 45,
+          buyerEmail: buyer.email,
+          buyer: { connect: { id: buyer.id } }
         }
       });
       
@@ -85,8 +99,13 @@ describe('Webhook Integration (E2E)', () => {
       };
       
       // Simulate failure processing
+      const orderToUpdate = await prisma.order.findFirst({
+        where: { paymentIntentId: mockFailureEvent.data.object.id }
+      });
+      if (!orderToUpdate) throw new Error('Order not found for paymentIntentId');
+
       const updatedOrder = await prisma.order.update({
-        where: { paymentIntentId: mockFailureEvent.data.object.id },
+        where: { id: orderToUpdate.id },
         data: {
           paymentStatus: 'failed',
           metadata: {

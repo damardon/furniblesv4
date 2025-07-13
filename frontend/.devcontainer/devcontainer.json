@@ -1,0 +1,11 @@
+{
+  "name": "Furnibles Dev Container",
+  "features": {
+    "ghcr.io/devcontainers/features/apt-packages:1": {
+      "packages": [
+        "libvips-dev"
+      ]
+    }
+  },
+  "postCreateCommand": "cd backend && npm install --include=optional sharp"
+}

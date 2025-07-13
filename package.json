@@ -46,9 +46,11 @@
     "npm": ">=9.0.0"
   },
   "dependencies": {
+    "@nestjs/schedule": "^6.0.0",
     "@nestjs/swagger": "^7.1.0",
     "@nestjs/typeorm": "^10.0.2",
     "@prisma/client": "^6.10.1",
+    "@stripe/stripe-js": "^7.4.0",
     "bcrypt": "^5.1.1",
     "class-validator-i18n": "^1.1.0",
     "compression": "^1.7.4",
@@ -58,6 +60,8 @@
     "helmet": "^7.0.0",
     "mysql2": "^3.14.1",
     "nestjs-i18n": "^10.5.1",
+    "sharp": "^0.34.2",
+    "tailwindcss-animate": "^1.0.7",
     "typeorm": "^0.3.25"
   }
 }

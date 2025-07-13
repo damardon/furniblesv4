@@ -3,7 +3,7 @@ import { Injectable, Logger, BadRequestException, NotFoundException, Inject, for
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { StripeService } from '../stripe/stripe.service';
-import { RequestPayoutDto, BulkPayoutDto } from './dto/request-payout.dto';
+import { RequestPayoutDto } from './dto/request-payout.dto';
 import { PayoutFilterDto } from './dto/payout-filter.dto';
 import { UpdatePayoutDto, PayoutActionDto } from './dto/update-payout.dto';
 import { PayoutStatus, UserRole, Prisma } from '@prisma/client';

@@ -473,7 +473,7 @@ async handleRefund(params: {
   }
 
   /**
-   * Completar orden (generar downloads y notificar)
+   * 🔄 MÉTODO ACTUALIZADO: Completar orden (generar downloads y notificar)
    */
   async completeOrder(orderId: string): Promise<void> {
     const order = await this.prisma.order.update({
@@ -500,6 +500,21 @@ async handleRefund(params: {
 
     // Enviar notificación de orden completada
     await this.notificationService.sendOrderCompletedNotification(order);
+
+    // 🆕 NUEVA INTEGRACIÓN: Programar recordatorios de reviews
+    try {
+      // Importar ReviewsService dinámicamente para evitar dependencia circular
+      const { ReviewsService } = await import('../reviews/reviews.service');
+      const reviewsService = new ReviewsService(this.prisma, this.notificationService);
+      
+      // Programar recordatorios de reviews para 3 días después
+      await reviewsService.scheduleReviewReminders(order.id, order.buyerId);
+      
+      console.log(`Review reminders scheduled for order ${order.orderNumber}`);
+    } catch (error) {
+      console.error('Error scheduling review reminders:', error);
+      // No interrumpir el flujo principal si falla la programación de recordatorios
+    }
   }
 
   /**
@@ -800,11 +815,19 @@ async handleRefund(params: {
   }
 
   /**
-   * Actualizar estado de orden manualmente
+   * 🔄 MÉTODO ACTUALIZADO: Actualizar estado de orden manualmente
    */
   async updateOrderStatus(orderId: string, status: OrderStatus, reason?: string) {
     const order = await this.prisma.order.findUnique({
-      where: { id: orderId }
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            product: true
+          }
+        },
+        buyer: true
+      }
     });
 
     if (!order) {
@@ -815,6 +838,7 @@ async handleRefund(params: {
       where: { id: orderId },
       data: {
         status,
+        ...(status === 'COMPLETED' && { completedAt: new Date() }),
         metadata: {
           ...(order.metadata as Record<string, any> || {}),
         statusUpdate: {
@@ -825,13 +849,31 @@ async handleRefund(params: {
           updatedBy: 'admin'
           }
         }
+      },
+      include: {
+        items: {
+          include: {
+            product: true
+          }
+        },
+        buyer: true
       }
     });
 
-    // Si se marca como completada, generar tokens de descarga
+    // Si se marca como completada, generar tokens de descarga y programar reviews
     if (status === 'COMPLETED' && order.status !== 'COMPLETED') {
       await this.generateDownloadTokens(updatedOrder);
       await this.notificationService.sendOrderCompletedNotification(updatedOrder);
+      
+      // 🆕 PROGRAMAR RECORDATORIOS DE REVIEWS
+      try {
+        const { ReviewsService } = await import('../reviews/reviews.service');
+        const reviewsService = new ReviewsService(this.prisma, this.notificationService);
+        await reviewsService.scheduleReviewReminders(updatedOrder.id, updatedOrder.buyerId);
+        console.log(`Review reminders scheduled for order ${updatedOrder.orderNumber} (manual completion)`);
+      } catch (error) {
+        console.error('Error scheduling review reminders on manual completion:', error);
+      }
     }
 
     return updatedOrder;

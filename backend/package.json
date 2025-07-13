@@ -43,13 +43,36 @@
     "test:e2e:stage7": "jest --config ./test/jest-e2e.json --testPathPattern=\"(cart|orders|downloads|webhook)\"",
     "test:e2e:cart": "jest --config ./test/jest-e2e.json --testPathPattern=\"cart\"",
     "test:e2e:orders": "jest --config ./test/jest-e2e.json --testPathPattern=\"orders\"",
+    "test:reviews": "jest --testPathPattern=reviews",
+    "test:reviews:watch": "jest --testPathPattern=reviews --watch",
+    "test:reviews:cov": "jest --testPathPattern=reviews --coverage",
+    "test:stage9": "jest --testPathPattern='reviews'",
+    "test:stage9:cov": "jest --testPathPattern='reviews' --coverage",
+    "test:stage9:watch": "jest --testPathPattern='reviews' --watch",
+    "test:e2e:reviews": "jest --config ./test/jest-e2e.json --testPathPattern=\"reviews\"",
+    "test:e2e:stage9": "jest --config ./test/jest-e2e.json --testPathPattern=\"reviews\"",
+    "test:e2e:stages1-9": "jest --config ./test/jest-e2e.json --testPathPattern=\"stages-1-9\"",
+    "test:stages1-9": "jest --testPathPattern='(auth|users|products|files|cart|orders|downloads|notifications|fees|reviews)'",
+    "test:stages1-9:cov": "jest --testPathPattern='(auth|users|products|files|cart|orders|downloads|notifications|fees|reviews)' --coverage",
     "test:db:reset": "npm run db:reset && npm run db:seed:test",
     "test:db:setup": "createdb furnibles_test && npm run db:migrate:test",
     "test:e2e:stage7:full": "jest --config ./test/jest-e2e.json --testPathPattern=\"e2e\"",
     "test:e2e:setup": "npm run db:reset && npm run db:seed:test",
     "clean": "rm -rf dist/ node_modules/.cache/ .tsbuildinfo tsconfig.tsbuildinfo",
     "clean:full": "npm run clean && rm -rf node_modules/ && npm install",
-    "dev:clean": "npm run clean && npm run start:dev"
+    "dev:clean": "npm run clean && npm run start:dev",
+    "dev": "npm run start:dev",
+    "test:analytics": "jest --testPathPattern=analytics",
+    "test:analytics:watch": "jest --testPathPattern=analytics --watch",
+    "test:analytics:cov": "jest --testPathPattern=analytics --coverage",
+    "test:stage11": "jest --testPathPattern='analytics'",
+    "test:stage11:cov": "jest --testPathPattern='analytics' --coverage",
+    "test:stage11:watch": "jest --testPathPattern='analytics' --watch",
+    "test:e2e:analytics": "jest --config ./test/jest-e2e.json --testPathPattern=\"analytics\"",
+    "test:e2e:stage11": "jest --config ./test/jest-e2e.json --testPathPattern=\"analytics\"",
+    "test:stages1-11": "jest --testPathPattern='(auth|users|products|files|cart|orders|downloads|notifications|fees|reviews|analytics)'",
+    "test:stages1-11:cov": "jest --testPathPattern='(auth|users|products|files|cart|orders|downloads|notifications|fees|reviews|analytics)' --coverage",
+    "test:e2e:stages1-11": "jest --config ./test/jest-e2e.json --testPathPattern=\"(analytics|reviews|notifications|orders|products|auth)\""
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
@@ -130,7 +153,8 @@
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "webpack-node-externals": "^3.0.0"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -148,7 +172,7 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
-    "moduleNameMapping": {
+    "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
     },
     "setupFilesAfterEnv": [

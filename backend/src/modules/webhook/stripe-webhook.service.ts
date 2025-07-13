@@ -1,10 +1,10 @@
-// src/modules/webhook/stripe-webhook.service.ts - CORREGIDO
+// src/modules/webhook/stripe-webhook.service.ts - TEMPORALMENTE SIN NOTIFICACIONES
 
 import { Injectable, Logger } from '@nestjs/common';
 import { StripeService } from '../stripe/stripe.service';
 import { OrdersService } from '../orders/orders.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationService } from '../notifications/notifications.service';
+// import { NotificationService } from '../notifications/notifications.service'; // Comentado temporalmente
 import { PaymentsService } from '../payments/payments.service';
 import Stripe from 'stripe';
 
@@ -17,7 +17,7 @@ export class StripeWebhookService {
     private readonly stripeService: StripeService,
     private readonly ordersService: OrdersService,
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService,
+    // private readonly notificationService: NotificationService, // Comentado temporalmente
     private readonly paymentsService: PaymentsService,
   ) {}
 
@@ -250,8 +250,8 @@ export class StripeWebhookService {
           this.logger.log(`Split payments processing deferred for order: ${orderId}`);
         } catch (splitError) {
           this.logger.error(`Split payment failed for order ${orderId}:`, splitError);
-          // No fallar el webhook, pero notificar al admin
-          await this.notifyAdminOfSplitFailure(orderId, splitError.message);
+          // No fallar el webhook, pero log el error
+          this.logger.error(`Split payment failure for order ${orderId}: ${splitError.message}`);
         }
       }
 
@@ -309,31 +309,11 @@ export class StripeWebhookService {
           }
         });
 
-        // Notificar admin del problema
-        await this.notifyAdminOfTransferFailure(transfer.id, orderId);
+        // Log admin del problema (sin notificación por ahora)
+        this.logger.error(`Transfer failure - admin should be notified: ${transfer.id} for order ${orderId}`);
       } else {
-        // Transfer exitoso - notificar al seller
-        const transaction = await tx.transaction.findFirst({
-          where: {
-            orderId,
-            stripeTransactionId: transfer.id
-          },
-          include: { seller: true }
-        });
-
-        if (transaction?.seller) {
-          await this.notificationService.createNotification({
-            userId: transaction.sellerId,
-            type: 'TRANSFER_COMPLETED' as any,
-            title: 'Pago transferido exitosamente',
-            message: `Tu pago de ${(transfer.amount / 100).toFixed(2)} ha sido transferido exitosamente.`,
-            data: {
-              orderId,
-              transferId: transfer.id,
-              amount: transfer.amount / 100
-            }
-          });
-        }
+        // Transfer exitoso - log instead of notification
+        this.logger.log(`Transfer completed successfully: ${transfer.id} for order ${orderId}, amount: ${transfer.amount / 100}`);
       }
     });
   }
@@ -364,97 +344,6 @@ export class StripeWebhookService {
         }
       });
     }
-  }
-
-  private async handleTransferPaid(transfer: Stripe.Transfer): Promise<void> {
-    const orderId = transfer.metadata?.orderId;
-    
-    if (!orderId) {
-      this.logger.warn(`Transfer paid without orderId: ${transfer.id}`);
-      return;
-    }
-
-    this.logger.log(`Transfer paid: ${transfer.id} for order ${orderId}`);
-
-    await this.prisma.$transaction(async (tx) => {
-      // Actualizar transacción como completada
-      await tx.transaction.updateMany({
-        where: {
-          orderId,
-          stripeTransactionId: transfer.id
-        },
-        data: {
-          status: 'COMPLETED'
-        }
-      });
-
-      // Verificar si el transfer fue revertido (eso indicaría un problema)
-      if (transfer.reversed) {
-        this.logger.error(`Transfer completed but was reversed: ${transfer.id}`);
-
-        // Actualizar como problemático
-        await tx.transaction.updateMany({
-          where: {
-            orderId,
-            stripeTransactionId: transfer.id
-          },
-          data: {
-            status: 'FAILED',
-            description: 'Transfer was reversed'
-          }
-        });
-
-        // Encontrar seller afectado y notificar
-        const transaction = await tx.transaction.findFirst({
-          where: {
-            orderId,
-            stripeTransactionId: transfer.id
-          },
-          include: { seller: true, order: true }
-        });
-
-        if (transaction?.seller) {
-          await this.notificationService.createNotification({
-            userId: transaction.sellerId,
-            type: 'TRANSFER_FAILED' as any,
-            title: 'Problema con transferencia de pago',
-            message: `Tu transferencia de pago para la orden ${transaction.order.orderNumber} fue revertida. Nuestro equipo lo está investigando.`,
-            data: {
-              orderId,
-              transferId: transfer.id,
-              amount: Number(transaction.amount),
-              reversed: true
-            }
-          });
-        }
-
-        // Notificar admin del problema
-        await this.notifyAdminOfTransferFailure(transfer.id, orderId);
-      } else {
-        // Transfer exitoso - notificar al seller
-        const transaction = await tx.transaction.findFirst({
-          where: {
-            orderId,
-            stripeTransactionId: transfer.id
-          },
-          include: { seller: true }
-        });
-
-        if (transaction?.seller) {
-          await this.notificationService.createNotification({
-            userId: transaction.sellerId,
-            type: 'TRANSFER_COMPLETED' as any,
-            title: 'Pago transferido exitosamente',
-            message: `Tu pago de ${(transfer.amount / 100).toFixed(2)} ha sido transferido exitosamente.`,
-            data: {
-              orderId,
-              transferId: transfer.id,
-              amount: transfer.amount / 100
-            }
-          });
-        }
-      }
-    });
   }
 
   private async handleTransferReversed(transfer: Stripe.Transfer): Promise<void> {
@@ -497,23 +386,8 @@ export class StripeWebhookService {
   private async handleExternalAccountCreated(externalAccount: Stripe.ExternalAccount, accountId: string): Promise<void> {
     this.logger.log(`External account created for: ${accountId}`);
     
-    // Notificar al seller que su cuenta bancaria fue agregada
-    const seller = await this.prisma.user.findFirst({
-      where: { stripeConnectId: accountId }
-    });
-
-    if (seller) {
-      await this.notificationService.createNotification({
-        userId: seller.id,
-        type: 'PAYMENT_METHOD_ADDED' as any,
-        title: 'Cuenta bancaria agregada',
-        message: 'Tu cuenta bancaria ha sido configurada exitosamente para recibir pagos.',
-        data: {
-          accountId,
-          externalAccountId: externalAccount.id
-        }
-      });
-    }
+    // Log instead of notification
+    this.logger.log(`Seller ${accountId} added external account ${externalAccount.id}`);
   }
 
   // Métodos para manejar eventos de payouts
@@ -541,25 +415,8 @@ export class StripeWebhookService {
         }
       });
 
-      // Encontrar seller y notificar
-      const seller = await tx.user.findFirst({
-        where: { stripeConnectId: accountId },
-        include: { sellerProfile: true }
-      });
-
-      if (seller) {
-        await this.notificationService.createNotification({
-          userId: seller.id,
-          type: 'PAYOUT_COMPLETED' as any,
-          title: 'Pago procesado',
-          message: `Tu pago de $${(payout.amount / 100).toFixed(2)} ha sido enviado a tu cuenta bancaria.`,
-          data: {
-            payoutId: payout.id,
-            amount: payout.amount / 100,
-            currency: payout.currency.toUpperCase()
-          }
-        });
-      }
+      // Log instead of notification
+      this.logger.log(`Payout completed: ${payout.id}, amount: ${payout.amount / 100}, account: ${accountId}`);
     });
   }
 
@@ -576,24 +433,8 @@ export class StripeWebhookService {
         }
       });
 
-      // Encontrar seller y notificar
-      const seller = await tx.user.findFirst({
-        where: { stripeConnectId: accountId }
-      });
-
-      if (seller) {
-        await this.notificationService.createNotification({
-          userId: seller.id,
-          type: 'PAYOUT_FAILED' as any,
-          title: 'Error en pago',
-          message: `Hubo un problema procesando tu pago. Por favor, verifica tu información bancaria.`,
-          data: {
-            payoutId: payout.id,
-            amount: payout.amount / 100,
-            failureReason: payout.failure_message
-          }
-        });
-      }
+      // Log instead of notification
+      this.logger.error(`Payout failed for account ${accountId}: ${payout.failure_message}`);
     });
   }
 
@@ -621,38 +462,6 @@ export class StripeWebhookService {
         processedAt: new Date()
       }
     });
-  }
-
-  private async notifyAdminOfSplitFailure(orderId: string, error: string): Promise<void> {
-    const admins = await this.prisma.user.findMany({
-      where: { role: 'ADMIN' }
-    });
-
-    for (const admin of admins) {
-      await this.notificationService.createNotification({
-        userId: admin.id,
-        type: 'SYSTEM_NOTIFICATION' as any,
-        title: 'Error en split payment',
-        message: `Fallo en el split payment para la orden ${orderId}: ${error}`,
-        data: { orderId, error, type: 'split_payment_failure' }
-      });
-    }
-  }
-
-  private async notifyAdminOfTransferFailure(transferId: string, orderId: string): Promise<void> {
-    const admins = await this.prisma.user.findMany({
-      where: { role: 'ADMIN' }
-    });
-
-    for (const admin of admins) {
-      await this.notificationService.createNotification({
-        userId: admin.id,
-        type: 'SYSTEM_NOTIFICATION' as any,
-        title: 'Fallo en transferencia',
-        message: `Transfer ${transferId} falló para la orden ${orderId}`,
-        data: { transferId, orderId, type: 'transfer_failure' }
-      });
-    }
   }
 
   // Métodos existentes
@@ -693,17 +502,8 @@ export class StripeWebhookService {
           }
         });
 
-        await this.notificationService.createNotification({
-          userId: order.buyerId,
-          type: 'SYSTEM_NOTIFICATION' as any,
-          title: 'Error en el pago',
-          message: `Hubo un problema procesando tu pago para la orden ${order.orderNumber}. Por favor, intenta nuevamente.`,
-          data: {
-            orderId: order.id,
-            paymentIntentId: paymentIntent.id,
-            errorType: 'payment_failed'
-          }
-        });
+        // Log instead of notification
+        this.logger.warn(`Payment failed for order ${order.orderNumber}: ${paymentIntent.last_payment_error?.message}`);
       });
 
     } catch (error) {

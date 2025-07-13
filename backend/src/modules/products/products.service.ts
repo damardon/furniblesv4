@@ -1,5 +1,4 @@
 // src/modules/products/products.service.ts
-// src/modules/products/products.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -14,13 +13,12 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFiltersDto } from './dto/product-filters.dto';
 import { PaginatedProductsDto } from './dto/paginated-products.dto';
 import { ProductStatus, UserRole, Prisma } from '@prisma/client';
-import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class ProductsService {
   constructor(
     private prisma: PrismaService,
-    private i18n: I18nService,
+    // I18nService removido temporalmente
   ) {}
 
   // Crear producto
@@ -31,9 +29,7 @@ export class ProductsService {
     });
 
     if (sellerProductCount >= 50) {
-      throw new BadRequestException(
-        this.i18n.t('products.errors.max_products_reached'),
-      );
+      throw new BadRequestException('Maximum products limit reached (50)');
     }
 
     // Generar slug único
@@ -51,7 +47,6 @@ export class ProductsService {
         seller: {
           select: {
             id: true,
-            name: true,
             email: true,
           },
         },
@@ -118,7 +113,6 @@ export class ProductsService {
           seller: {
             select: {
               id: true,
-              name: true,
               avatar: true,
             },
           },
@@ -151,7 +145,6 @@ export class ProductsService {
         seller: {
           select: {
             id: true,
-            name: true,
             avatar: true,
             createdAt: true,
           },
@@ -160,7 +153,7 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     // Solo mostrar productos aprobados a usuarios no propietarios
@@ -168,7 +161,7 @@ export class ProductsService {
       product.status !== ProductStatus.APPROVED &&
       product.sellerId !== userId
     ) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     // Incrementar contador de vistas (solo si no es el propietario)
@@ -205,7 +198,6 @@ export class ProductsService {
           seller: {
             select: {
               id: true,
-              name: true,
               avatar: true,
             },
           },
@@ -238,7 +230,6 @@ export class ProductsService {
         seller: {
           select: {
             id: true,
-            name: true,
             avatar: true,
             createdAt: true,
           },
@@ -247,7 +238,7 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     // Solo mostrar productos aprobados a usuarios no propietarios
@@ -255,7 +246,7 @@ export class ProductsService {
       product.status !== ProductStatus.APPROVED &&
       product.sellerId !== userId
     ) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     // Incrementar contador de vistas (solo si no es el propietario)
@@ -282,12 +273,12 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     // Solo el propietario o admin pueden editar
     if (product.sellerId !== userId && userRole !== UserRole.ADMIN) {
-      throw new ForbiddenException(this.i18n.t('products.errors.not_owner'));
+      throw new ForbiddenException('You are not the owner of this product');
     }
 
     // Si se cambia el título, regenerar slug
@@ -323,7 +314,6 @@ export class ProductsService {
         seller: {
           select: {
             id: true,
-            name: true,
             avatar: true,
           },
         },
@@ -343,26 +333,24 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     // Solo el propietario o admin pueden eliminar
     if (product.sellerId !== userId && userRole !== UserRole.ADMIN) {
-      throw new ForbiddenException(this.i18n.t('products.errors.not_owner'));
+      throw new ForbiddenException('You are not the owner of this product');
     }
 
     // No permitir eliminación si hay órdenes asociadas
     if (product.orderItems.length > 0) {
-      throw new ConflictException(
-        this.i18n.t('products.errors.has_orders'),
-      );
+      throw new ConflictException('Cannot delete product with associated orders');
     }
 
     await this.prisma.product.delete({
       where: { id },
     });
 
-    return { message: this.i18n.t('products.messages.deleted') };
+    return { message: 'Product deleted successfully' };
   }
 
   // Aprobar producto (solo admin)
@@ -372,13 +360,11 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     if (product.status !== ProductStatus.PENDING) {
-      throw new BadRequestException(
-        this.i18n.t('products.errors.cannot_approve'),
-      );
+      throw new BadRequestException('Product cannot be approved');
     }
 
     const updatedProduct = await this.prisma.product.update({
@@ -391,7 +377,6 @@ export class ProductsService {
         seller: {
           select: {
             id: true,
-            name: true,
             email: true,
           },
         },
@@ -408,13 +393,11 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     if (product.status !== ProductStatus.PENDING) {
-      throw new BadRequestException(
-        this.i18n.t('products.errors.cannot_reject'),
-      );
+      throw new BadRequestException('Product cannot be rejected');
     }
 
     const updatedProduct = await this.prisma.product.update({
@@ -433,7 +416,6 @@ export class ProductsService {
         seller: {
           select: {
             id: true,
-            name: true,
             email: true,
           },
         },
@@ -450,7 +432,7 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     return {
@@ -469,24 +451,20 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(this.i18n.t('products.errors.not_found'));
+      throw new NotFoundException('Product not found');
     }
 
     if (product.sellerId !== userId) {
-      throw new ForbiddenException(this.i18n.t('products.errors.not_owner'));
+      throw new ForbiddenException('You are not the owner of this product');
     }
 
     if (product.status !== ProductStatus.DRAFT) {
-      throw new BadRequestException(
-        this.i18n.t('products.errors.cannot_publish'),
-      );
+      throw new BadRequestException('Product cannot be published');
     }
 
     // Validar que tenga archivos necesarios
     if (!product.imageFileIds || product.imageFileIds.length === 0) {
-      throw new BadRequestException(
-        this.i18n.t('products.errors.no_images'),
-      );
+      throw new BadRequestException('Product must have at least one image');
     }
 
     const updatedProduct = await this.prisma.product.update({

@@ -8,12 +8,13 @@ import * as path from 'path';
       fallbackLanguage: 'en',
       loaderOptions: {
         path: path.join(__dirname, './'),
-        watch: true,
+        watch: false, // Simplificado
       },
       resolvers: [
         { use: QueryResolver, options: ['lang'] },
         AcceptLanguageResolver,
       ],
+      throwOnMissingKey: false,
     }),
   ],
   exports: [I18nModule],
