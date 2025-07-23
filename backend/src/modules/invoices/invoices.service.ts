@@ -102,11 +102,11 @@ export class InvoicesService {
             invoiceNumber,
             sellerId,
             orderId,
-            subtotal: new Prisma.Decimal(subtotal),
-            platformFee: new Prisma.Decimal(platformFee),
-            netAmount: new Prisma.Decimal(netAmount),
-            taxAmount: taxAmount > 0 ? new Prisma.Decimal(taxAmount) : null,
-            totalAmount: new Prisma.Decimal(totalAmount),
+            subtotal: subtotal,
+            platformFee: platformFee,
+            netAmount: netAmount,
+            taxAmount: taxAmount > 0 ? taxAmount : null,
+            totalAmount: totalAmount,
             status: 'ISSUED',
             currency: 'USD',
             issuedAt: new Date(),
@@ -171,19 +171,19 @@ export class InvoicesService {
       if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
         where.totalAmount = {};
         if (filters.minAmount !== undefined) {
-          where.totalAmount.gte = new Prisma.Decimal(filters.minAmount);
+          where.totalAmount.gte = filters.minAmount;
         }
         if (filters.maxAmount !== undefined) {
-          where.totalAmount.lte = new Prisma.Decimal(filters.maxAmount);
+          where.totalAmount.lte = filters.maxAmount;
         }
       }
 
       if (filters.search) {
         where.OR = [
-          { invoiceNumber: { contains: filters.search, mode: 'insensitive' } },
+          { invoiceNumber: { contains: filters.search } },
           {
             order: {
-              orderNumber: { contains: filters.search, mode: 'insensitive' },
+              orderNumber: { contains: filters.search },
             },
           },
         ];
@@ -290,27 +290,27 @@ export class InvoicesService {
       if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
         where.totalAmount = {};
         if (filters.minAmount !== undefined) {
-          where.totalAmount.gte = new Prisma.Decimal(filters.minAmount);
+          where.totalAmount.gte = filters.minAmount;
         }
         if (filters.maxAmount !== undefined) {
-          where.totalAmount.lte = new Prisma.Decimal(filters.maxAmount);
+          where.totalAmount.lte = filters.maxAmount;
         }
       }
 
       if (filters.search) {
         where.OR = [
-          { invoiceNumber: { contains: filters.search, mode: 'insensitive' } },
+          { invoiceNumber: { contains: filters.search } },
           {
             order: {
-              orderNumber: { contains: filters.search, mode: 'insensitive' },
+              orderNumber: { contains: filters.search },
             },
           },
           {
             seller: {
               OR: [
-                { firstName: { contains: filters.search, mode: 'insensitive' } },
-                { lastName: { contains: filters.search, mode: 'insensitive' } },
-                { email: { contains: filters.search, mode: 'insensitive' } },
+                { firstName: { contains: filters.search } },
+                { lastName: { contains: filters.search } },
+                { email: { contains: filters.search } },
               ],
             },
           },

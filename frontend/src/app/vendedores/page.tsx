@@ -53,6 +53,7 @@ export default function SellersPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   const t = useTranslations('sellers')
+  const tCommon = useTranslations('common')
 
   // Mock data mientras implementas la API real
   useEffect(() => {
@@ -199,7 +200,7 @@ export default function SellersPage() {
         <div className="relative h-32 overflow-hidden border-b-4 border-black">
           <Image
             src={seller.banner}
-            alt={`Banner de ${seller.storeName}`}
+            alt={t('banner_alt', { storeName: seller.storeName })}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
@@ -242,12 +243,15 @@ export default function SellersPage() {
               </h3>
               {seller.isVerified && (
                 <span className="bg-blue-500 text-white text-xs font-black px-2 py-1 border-2 border-black">
-                  VERIFICADO
+                  {t('verified')}
                 </span>
               )}
             </div>
             <p className="text-sm text-gray-600 font-bold">
-              Por {seller.user.firstName} {seller.user.lastName}
+              {t('by_seller', { 
+                firstName: seller.user.firstName, 
+                lastName: seller.user.lastName 
+              })}
             </p>
           </div>
         </div>
@@ -266,21 +270,23 @@ export default function SellersPage() {
               <Star className="w-4 h-4 fill-orange-500 text-orange-500" />
               <span className="font-black text-black">{seller.rating.toFixed(1)}</span>
             </div>
-            <p className="text-xs font-bold text-gray-600">{seller.totalReviews} reviews</p>
+            <p className="text-xs font-bold text-gray-600">
+              {t('stats.reviews_count', { count: seller.totalReviews })}
+            </p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <ShoppingBag className="w-4 h-4 text-green-600" />
               <span className="font-black text-black">{formatNumber(seller.totalSales)}</span>
             </div>
-            <p className="text-xs font-bold text-gray-600">ventas</p>
+            <p className="text-xs font-bold text-gray-600">{t('stats.sales')}</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <Package className="w-4 h-4 text-blue-600" />
               <span className="font-black text-black">+</span>
             </div>
-            <p className="text-xs font-bold text-gray-600">productos</p>
+            <p className="text-xs font-bold text-gray-600">{t('stats.products')}</p>
           </div>
         </div>
 
@@ -293,6 +299,7 @@ export default function SellersPage() {
               rel="noopener noreferrer"
               className="p-2 bg-blue-400 border-2 border-black hover:bg-blue-500 transition-all"
               style={{ boxShadow: '2px 2px 0 #000000' }}
+              title={t('contact.website')}
             >
               <Globe className="w-4 h-4 text-black" />
             </a>
@@ -302,6 +309,7 @@ export default function SellersPage() {
               href={`tel:${seller.phone}`}
               className="p-2 bg-green-400 border-2 border-black hover:bg-green-500 transition-all"
               style={{ boxShadow: '2px 2px 0 #000000' }}
+              title={t('contact.phone')}
             >
               <Phone className="w-4 h-4 text-black" />
             </a>
@@ -314,7 +322,7 @@ export default function SellersPage() {
             className="w-full bg-orange-500 border-3 border-black font-black text-black text-sm uppercase py-3 hover:bg-yellow-400 transition-all"
             style={{ boxShadow: '4px 4px 0 #000000' }}
           >
-            VER TIENDA
+            {t('actions.view_store')}
           </button>
         </Link>
       </div>
@@ -365,7 +373,10 @@ export default function SellersPage() {
             )}
           </div>
           <p className="text-sm text-gray-600 font-bold mb-2">
-            {seller.description || `Tienda de ${seller.user.firstName} ${seller.user.lastName}`}
+            {seller.description || t('default_description', { 
+              firstName: seller.user.firstName, 
+              lastName: seller.user.lastName 
+            })}
           </p>
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1">
@@ -374,7 +385,7 @@ export default function SellersPage() {
             </span>
             <span className="flex items-center gap-1">
               <ShoppingBag className="w-3 h-3 text-green-600" />
-              <strong>{formatNumber(seller.totalSales)} ventas</strong>
+              <strong>{formatNumber(seller.totalSales)} {t('stats.sales')}</strong>
             </span>
           </div>
         </div>
@@ -386,7 +397,7 @@ export default function SellersPage() {
               className="px-4 py-2 bg-orange-500 border-2 border-black font-black text-black text-xs uppercase hover:bg-yellow-400 transition-all"
               style={{ boxShadow: '2px 2px 0 #000000' }}
             >
-              VER TIENDA
+              {t('actions.view_store')}
             </button>
           </Link>
         </div>
@@ -401,11 +412,10 @@ export default function SellersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-black uppercase text-black mb-4">
-              🏪 DIRECTORIO DE VENDEDORES
+              {t('title')}            
             </h1>
             <p className="text-lg font-bold text-gray-700 max-w-2xl mx-auto">
-              Descubre las mejores tiendas de muebles artesanales. 
-              Conecta directamente con diseñadores y carpinteros expertos.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -416,7 +426,7 @@ export default function SellersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar tiendas..."
+                placeholder={t('search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
@@ -433,9 +443,9 @@ export default function SellersPage() {
                 className="px-3 py-2 border-2 border-black font-bold bg-white focus:outline-none focus:bg-yellow-400"
                 style={{ boxShadow: '2px 2px 0 #000000' }}
               >
-                <option value="rating">Mejor valorados</option>
-                <option value="sales">Más ventas</option>
-                <option value="newest">Más recientes</option>
+                <option value="rating">{t('sort.best_rated')}</option>
+                <option value="sales">{t('sort.most_sales')}</option>
+                <option value="newest">{t('sort.newest')}</option>
               </select>
 
               {/* Vista */}
@@ -443,12 +453,14 @@ export default function SellersPage() {
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 ${viewMode === 'grid' ? 'bg-orange-500' : 'bg-white'} border-r border-black`}
+                  title={t('view.grid')}
                 >
                   <Grid3X3 className="w-4 h-4 text-black" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 ${viewMode === 'list' ? 'bg-orange-500' : 'bg-white'}`}
+                  title={t('view.list')}
                 >
                   <List className="w-4 h-4 text-black" />
                 </button>
@@ -463,7 +475,10 @@ export default function SellersPage() {
         {/* Stats */}
         <div className="mb-8">
           <p className="text-black font-bold">
-            {isLoading ? 'Cargando...' : `${filteredSellers.length} vendedores encontrados`}
+            {isLoading ? 
+              tCommon('loading') : 
+              t('results_count', { count: filteredSellers.length })
+            }
           </p>
         </div>
 
@@ -472,14 +487,14 @@ export default function SellersPage() {
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
-              <p className="text-xl font-bold text-gray-600">Cargando vendedores...</p>
+              <p className="text-xl font-bold text-gray-600">{t('loading_sellers')}</p>
             </div>
           </div>
         ) : filteredSellers.length === 0 ? (
           <div className="text-center py-20">
             <Users className="h-24 w-24 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-black text-gray-600 mb-2">No se encontraron vendedores</h3>
-            <p className="text-gray-500">Intenta con otros términos de búsqueda</p>
+            <h3 className="text-2xl font-black text-gray-600 mb-2">{t('no_sellers.title')}</h3>
+            <p className="text-gray-500">{t('no_sellers.description')}</p>
           </div>
         ) : (
           <div className={viewMode === 'grid' 

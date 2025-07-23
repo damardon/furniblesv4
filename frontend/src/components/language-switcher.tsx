@@ -17,24 +17,23 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex border-2 border-black" style={{ boxShadow: '3px 3px 0 #000000' }}>
       <button 
         onClick={() => switchLanguage('es')}
-        className={`text-sm transition-colors ${
+        className={`px-3 py-2 font-black text-xs uppercase transition-all border-r border-black ${
           locale === 'es' 
-            ? 'text-orange-600 dark:text-orange-400 font-semibold' 
-            : 'text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400'
+            ? 'bg-orange-500 text-black' 
+            : 'bg-white text-black hover:bg-yellow-400'
         }`}
       >
         🇪🇸 ES
       </button>
-      <span className="text-gray-300">|</span>
       <button 
         onClick={() => switchLanguage('en')}
-        className={`text-sm transition-colors ${
+        className={`px-3 py-2 font-black text-xs uppercase transition-all ${
           locale === 'en' 
-            ? 'text-orange-600 dark:text-orange-400 font-semibold' 
-            : 'text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400'
+            ? 'bg-orange-500 text-black' 
+            : 'bg-white text-black hover:bg-yellow-400'
         }`}
       >
         🇺🇸 EN

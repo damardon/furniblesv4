@@ -35,6 +35,8 @@ import {
 
 export default function DownloadsPage() {
   const t = useTranslations('downloads')
+  const tCommon = useTranslations('common')
+  const tProducts = useTranslations('products')
   const router = useRouter()
   
   // Stores
@@ -158,7 +160,7 @@ export default function DownloadsPage() {
       return {
         color: 'bg-red-400 text-black border-black',
         icon: XCircleIcon,
-        text: 'Expirado'
+        text: t('status.expired')
       }
     }
 
@@ -166,7 +168,7 @@ export default function DownloadsPage() {
       return {
         color: 'bg-gray-400 text-black border-black',
         icon: AlertCircleIcon,
-        text: 'Agotado'
+        text: t('status.exhausted')
       }
     }
 
@@ -174,14 +176,14 @@ export default function DownloadsPage() {
       return {
         color: 'bg-green-500 text-white border-black',
         icon: CheckCircleIcon,
-        text: 'Activo'
+        text: t('status.active')
       }
     }
 
     return {
       color: 'bg-yellow-400 text-black border-black',
       icon: ClockIcon,
-      text: 'Inactivo'
+      text: t('status.inactive')
     }
   }
 
@@ -244,10 +246,10 @@ export default function DownloadsPage() {
         )
 
         // TODO: Mostrar toast de éxito
-        console.log('Descarga iniciada:', result.message)
+        console.log(t('actions.download_started'), result.message)
       } else {
         // TODO: Mostrar toast de error
-        console.error('Error en descarga:', result.message)
+        console.error(t('actions.download_error'), result.message)
       }
     } catch (error) {
       console.error('Error downloading file:', error)
@@ -267,7 +269,7 @@ export default function DownloadsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">Acceso restringido</p>
+          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
         </div>
       </div>
     )
@@ -280,10 +282,10 @@ export default function DownloadsPage() {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              Inicio
+              {tCommon('navigation.home')}
             </Link>
             <span>/</span>
-            <span className="text-orange-500">Mis Descargas</span>
+            <span className="text-orange-500">{t('title')}</span>
           </div>
         </div>
       </div>
@@ -298,16 +300,16 @@ export default function DownloadsPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ArrowLeftIcon className="w-4 h-4" />
-              Volver a Pedidos
+              {t('navigation.back_to_orders')}
             </Link>
             
             <div>
               <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
                 <DownloadIcon className="w-8 h-8" />
-                Mis Descargas
+                {t('title')}
               </h1>
               <p className="text-gray-600 font-bold mt-2">
-                Planos PDF que has comprado y puedes descargar
+                {t('subtitle')}
               </p>
             </div>
           </div>
@@ -320,7 +322,7 @@ export default function DownloadsPage() {
             >
               <FolderIcon className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <div className="text-xl font-black text-black mb-1">{stats.totalProducts}</div>
-              <div className="text-xs font-black text-black uppercase">Total PDFs</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.total_pdfs')}</div>
             </div>
             
             <div 
@@ -329,7 +331,7 @@ export default function DownloadsPage() {
             >
               <CheckCircleIcon className="w-6 h-6 mx-auto mb-2 text-green-600" />
               <div className="text-xl font-black text-black mb-1">{stats.activeTokens}</div>
-              <div className="text-xs font-black text-black uppercase">Activos</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.active')}</div>
             </div>
             
             <div 
@@ -338,7 +340,7 @@ export default function DownloadsPage() {
             >
               <XCircleIcon className="w-6 h-6 mx-auto mb-2 text-red-600" />
               <div className="text-xl font-black text-black mb-1">{stats.expiredTokens}</div>
-              <div className="text-xs font-black text-black uppercase">Expirados</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.expired')}</div>
             </div>
             
             <div 
@@ -347,7 +349,7 @@ export default function DownloadsPage() {
             >
               <ActivityIcon className="w-6 h-6 mx-auto mb-2 text-purple-600" />
               <div className="text-xl font-black text-black mb-1">{stats.totalDownloads}</div>
-              <div className="text-xs font-black text-black uppercase">Descargas</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.downloads')}</div>
             </div>
             
             <div 
@@ -356,7 +358,7 @@ export default function DownloadsPage() {
             >
               <CalendarIcon className="w-6 h-6 mx-auto mb-2 text-orange-600" />
               <div className="text-xl font-black text-black mb-1">{stats.downloadsThisMonth}</div>
-              <div className="text-xs font-black text-black uppercase">Este Mes</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.this_month')}</div>
             </div>
             
             <div 
@@ -365,7 +367,7 @@ export default function DownloadsPage() {
             >
               <HardDriveIcon className="w-6 h-6 mx-auto mb-2 text-cyan-600" />
               <div className="text-xl font-black text-black mb-1">{formatFileSize(stats.totalFileSize)}</div>
-              <div className="text-xs font-black text-black uppercase">Tamaño Total</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.total_size')}</div>
             </div>
           </div>
         </div>
@@ -381,7 +383,7 @@ export default function DownloadsPage() {
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black" />
               <input
                 type="text"
-                placeholder="Buscar por producto o vendedor..."
+                placeholder={t('filters.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
@@ -396,10 +398,10 @@ export default function DownloadsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">Todos los estados</option>
-              <option value="ACTIVE">Activos</option>
-              <option value="EXPIRED">Expirados</option>
-              <option value="EXHAUSTED">Agotados</option>
+              <option value="ALL">{t('filters.all_statuses')}</option>
+              <option value="ACTIVE">{t('filters.active')}</option>
+              <option value="EXPIRED">{t('filters.expired')}</option>
+              <option value="EXHAUSTED">{t('filters.exhausted')}</option>
             </select>
 
             {/* Sort By */}
@@ -409,10 +411,10 @@ export default function DownloadsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="date">Ordenar por fecha</option>
-              <option value="name">Ordenar por nombre</option>
-              <option value="downloads">Ordenar por descargas</option>
-              <option value="expiry">Ordenar por expiración</option>
+              <option value="date">{t('filters.sort_by_date')}</option>
+              <option value="name">{t('filters.sort_by_name')}</option>
+              <option value="downloads">{t('filters.sort_by_downloads')}</option>
+              <option value="expiry">{t('filters.sort_by_expiry')}</option>
             </select>
 
             {/* Sort Order */}
@@ -422,8 +424,8 @@ export default function DownloadsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="desc">Más reciente</option>
-              <option value="asc">Más antiguo</option>
+              <option value="desc">{t('filters.most_recent')}</option>
+              <option value="asc">{t('filters.oldest')}</option>
             </select>
           </div>
         </div>
@@ -436,12 +438,12 @@ export default function DownloadsPage() {
           >
             <div className="text-6xl mb-4">📄</div>
             <h2 className="text-2xl font-black text-black uppercase mb-4">
-              {downloadTokens.length === 0 ? 'No tienes descargas disponibles' : 'No se encontraron resultados'}
+              {downloadTokens.length === 0 ? t('empty.no_downloads_title') : t('empty.no_results_title')}
             </h2>
             <p className="text-gray-600 font-bold mb-6">
               {downloadTokens.length === 0 
-                ? 'Compra planos PDF para poder descargarlos aquí'
-                : 'Intenta ajustar los filtros de búsqueda'
+                ? t('empty.no_downloads_subtitle')
+                : t('empty.no_results_subtitle')
               }
             </p>
             <Link 
@@ -450,7 +452,7 @@ export default function DownloadsPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ShoppingCartIcon className="w-4 h-4" />
-              Explorar Productos
+              {t('empty.explore_products')}
             </Link>
           </div>
         ) : (
@@ -502,7 +504,9 @@ export default function DownloadsPage() {
                       {token.productTitle}
                     </Link>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-sm text-gray-600 font-bold">Por: {token.sellerName}</span>
+                      <span className="text-sm text-gray-600 font-bold">
+                        {t('card.by')}: {token.sellerName}
+                      </span>
                       <span className="text-sm text-gray-400">•</span>
                       <span className="text-sm text-gray-600 font-bold">{formatPrice(token.purchasePrice)}</span>
                     </div>
@@ -511,7 +515,7 @@ export default function DownloadsPage() {
                   {/* Download Progress */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-black text-black uppercase">Descargas:</span>
+                      <span className="text-sm font-black text-black uppercase">{t('card.downloads')}:</span>
                       <span className="text-sm font-black text-black">
                         {token.downloadCount} / {token.downloadLimit}
                       </span>
@@ -535,7 +539,7 @@ export default function DownloadsPage() {
                     >
                       <AlertTriangleIcon className="w-4 h-4 text-yellow-600" />
                       <span className="text-yellow-800 font-bold text-sm">
-                        Expira en {daysUntilExpiry} {daysUntilExpiry === 1 ? 'día' : 'días'}
+                        {t('card.expires_in', { days: daysUntilExpiry, unit: daysUntilExpiry === 1 ? t('card.day') : t('card.days') })}
                       </span>
                     </div>
                   )}
@@ -543,21 +547,21 @@ export default function DownloadsPage() {
                   {/* Metadata */}
                   <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                     <div>
-                      <span className="block text-gray-600 font-bold">Comprado:</span>
+                      <span className="block text-gray-600 font-bold">{t('card.purchased')}:</span>
                       <span className="text-black font-black">{formatDate(token.purchaseDate)}</span>
                     </div>
                     <div>
-                      <span className="block text-gray-600 font-bold">Expira:</span>
+                      <span className="block text-gray-600 font-bold">{t('card.expires')}:</span>
                       <span className="text-black font-black">{formatDate(token.expiresAt)}</span>
                     </div>
                     {token.lastDownloadAt && (
                       <>
                         <div>
-                          <span className="block text-gray-600 font-bold">Última descarga:</span>
+                          <span className="block text-gray-600 font-bold">{t('card.last_download')}:</span>
                           <span className="text-black font-black">{formatDate(token.lastDownloadAt)}</span>
                         </div>
                         <div>
-                          <span className="block text-gray-600 font-bold">Desde IP:</span>
+                          <span className="block text-gray-600 font-bold">{t('card.from_ip')}:</span>
                           <span className="text-black font-black">{token.lastIpAddress}</span>
                         </div>
                       </>
@@ -573,7 +577,7 @@ export default function DownloadsPage() {
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
                         <EyeIcon className="w-3 h-3" />
-                        Ver Producto
+                        {t('actions.view_product')}
                       </Link>
                       
                       <Link
@@ -582,7 +586,7 @@ export default function DownloadsPage() {
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
                         <ExternalLinkIcon className="w-3 h-3" />
-                        Ver Pedido
+                        {t('actions.view_order')}
                       </Link>
                     </div>
 
@@ -600,17 +604,17 @@ export default function DownloadsPage() {
                       {isDownloading ? (
                         <>
                           <RefreshCwIcon className="w-4 h-4 animate-spin" />
-                          Descargando...
+                          {t('actions.downloading')}
                         </>
                       ) : canDownload ? (
                         <>
                           <DownloadIcon className="w-4 h-4" />
-                          Descargar PDF
+                          {t('actions.download_pdf')}
                         </>
                       ) : (
                         <>
                           <XCircleIcon className="w-4 h-4" />
-                          No Disponible
+                          {t('actions.not_available')}
                         </>
                       )}
                     </button>
@@ -625,7 +629,7 @@ export default function DownloadsPage() {
         {filteredTokens.length > 0 && (
           <div className="mt-8 text-center">
             <p className="text-gray-600 font-bold">
-              Mostrando {filteredTokens.length} de {downloadTokens.length} productos
+              {t('results.showing', { current: filteredTokens.length, total: downloadTokens.length })}
             </p>
           </div>
         )}
@@ -635,22 +639,22 @@ export default function DownloadsPage() {
           className="bg-blue-100 border-4 border-black p-6 mt-8"
           style={{ boxShadow: '4px 4px 0 #000000' }}
         >
-          <h3 className="text-xl font-black text-black uppercase mb-4">💡 Información Importante</h3>
+          <h3 className="text-xl font-black text-black uppercase mb-4">💡 {t('help.title')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <h4 className="font-black text-black uppercase mb-2">Límites de Descarga:</h4>
+              <h4 className="font-black text-black uppercase mb-2">{t('help.download_limits.title')}:</h4>
               <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• Máximo 5 descargas por producto</li>
-                <li className="font-medium">• Los tokens expiran después de 30 días</li>
-                <li className="font-medium">• Las descargas son válidas solo para el comprador</li>
+                <li className="font-medium">• {t('help.download_limits.max_downloads')}</li>
+                <li className="font-medium">• {t('help.download_limits.token_expiry')}</li>
+                <li className="font-medium">• {t('help.download_limits.buyer_only')}</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-black text-black uppercase mb-2">Problemas de Descarga:</h4>
+              <h4 className="font-black text-black uppercase mb-2">{t('help.download_issues.title')}:</h4>
               <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• Verifica que tu conexión sea estable</li>
-                <li className="font-medium">• Si el token expiró, contacta soporte</li>
-                <li className="font-medium">• Los archivos son PDF optimizados para impresión</li>
+                <li className="font-medium">• {t('help.download_issues.stable_connection')}</li>
+                <li className="font-medium">• {t('help.download_issues.expired_token')}</li>
+                <li className="font-medium">• {t('help.download_issues.pdf_optimized')}</li>
               </ul>
             </div>
           </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { CartItem } from '@/types/additional'
 
@@ -11,6 +12,9 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ items, subtotal, platformFee, total }: OrderSummaryProps) {
+  const t = useTranslations('checkout.summary')
+  const tCommon = useTranslations('common')
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
@@ -22,7 +26,7 @@ export function OrderSummary({ items, subtotal, platformFee, total }: OrderSumma
   return (
     <div>
       <h2 className="text-3xl font-black text-black mb-6 uppercase">
-        Resumen del Pedido
+        {t('title')}
       </h2>
 
       {/* Items */}
@@ -51,7 +55,7 @@ export function OrderSummary({ items, subtotal, platformFee, total }: OrderSumma
               </p>
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold bg-blue-200 text-black px-2 py-1 border border-black">
-                  Qty: {item.quantity}
+                  {t('quantity_label')}: {item.quantity}
                 </span>
                 <span className="font-black text-black">
                   {formatPrice(item.priceSnapshot * item.quantity)}
@@ -68,19 +72,19 @@ export function OrderSummary({ items, subtotal, platformFee, total }: OrderSumma
         style={{ boxShadow: '3px 3px 0 #000000' }}
       >
         <div className="flex justify-between items-center">
-          <span className="font-bold text-black">Subtotal:</span>
+          <span className="font-bold text-black">{t('subtotal')}:</span>
           <span className="font-black text-black">{formatPrice(subtotal)}</span>
         </div>
         
         <div className="flex justify-between items-center text-sm">
-          <span className="font-bold text-black">Fee plataforma (10%):</span>
+          <span className="font-bold text-black">{t('platform_fee')}:</span>
           <span className="font-bold text-black">{formatPrice(platformFee)}</span>
         </div>
         
         <div className="h-[2px] bg-black my-3"></div>
         
         <div className="flex justify-between items-center">
-          <span className="font-black text-black text-xl uppercase">Total:</span>
+          <span className="font-black text-black text-xl uppercase">{t('total')}:</span>
           <span className="font-black text-orange-500 text-2xl">
             {formatPrice(total)}
           </span>

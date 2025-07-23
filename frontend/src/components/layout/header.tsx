@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useTranslations } from 'next-intl'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import {
   Search,
   ShoppingCart,
@@ -60,7 +61,10 @@ export function Header() {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  
+  // ✅ Traducciones
   const t = useTranslations('header')
+  const tCommon = useTranslations('common')
 
   // Stores
   const { user, isAuthenticated, logout, setLoginModalOpen, setRegisterModalOpen } = useAuthStore()
@@ -96,12 +100,12 @@ export function Header() {
     }
   }, [user, isAuthenticated, fetchPendingProducts, fetchPendingReviews, fetchFlaggedContent])
 
-  // Navegación principal
+  // ✅ Navegación principal con traducciones
   const mainNavItems = [
-    { href: '/', label: 'Inicio', icon: Home },
-    { href: '/productos', label: 'Productos', icon: Grid3X3 },
-    { href: '/vendedores', label: 'Vendedores', icon: Users },
-    { href: '/ayuda', label: 'Ayuda', icon: HelpCircle },
+    { href: '/', label: t('home'), icon: Home },
+    { href: '/productos', label: t('products'), icon: Grid3X3 },
+    { href: '/vendedores', label: t('sellers'), icon: Users },
+    { href: '/ayuda', label: t('help'), icon: HelpCircle },
   ]
 
   // Manejar búsqueda
@@ -174,7 +178,7 @@ export function Header() {
             <form onSubmit={handleSearch} className="relative w-full">
               <input
                 type="text"
-                placeholder="Buscar productos..."
+                placeholder={t('search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="
@@ -227,7 +231,7 @@ export function Header() {
                   style={{ boxShadow: '5px 5px 0 #000000' }}
                 >
                   <DropdownMenuLabel className="font-black text-black uppercase text-xs">
-                    🚨 MODERACIÓN PENDIENTE
+                    🚨 {t('admin_moderation_pending')}
                   </DropdownMenuLabel>
                   
                   <div className="h-[2px] bg-black my-2" />
@@ -238,7 +242,7 @@ export function Header() {
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
                           <FileCheck className="mr-2 h-4 w-4" />
-                          <span className="text-xs">PRODUCTOS</span>
+                          <span className="text-xs">{t('admin_products')}</span>
                         </div>
                         {(pendingProducts?.length || 0) > 0 && (
                           <span className="bg-orange-500 text-black text-xs font-black px-2 py-1 border border-black">
@@ -255,7 +259,7 @@ export function Header() {
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
                           <MessageSquare className="mr-2 h-4 w-4" />
-                          <span className="text-xs">REVIEWS</span>
+                          <span className="text-xs">{t('admin_reviews')}</span>
                         </div>
                         {(pendingReviews?.length || 0) > 0 && (
                           <span className="bg-orange-500 text-black text-xs font-black px-2 py-1 border border-black">
@@ -272,7 +276,7 @@ export function Header() {
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
                           <Flag className="mr-2 h-4 w-4" />
-                          <span className="text-xs">REPORTES</span>
+                          <span className="text-xs">{t('admin_reports')}</span>
                         </div>
                         {((flaggedContent?.reviews?.length || 0) + (flaggedContent?.users?.length || 0)) > 0 && (
                           <span className="bg-red-500 text-white text-xs font-black px-2 py-1 border border-black">
@@ -289,7 +293,7 @@ export function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/admin" className="cursor-pointer font-bold text-black hover:bg-green-400 px-2 py-1">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      <span className="text-xs">DASHBOARD ADMIN</span>
+                      <span className="text-xs">{t('admin_dashboard')}</span>
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -388,21 +392,21 @@ export function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/perfil" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                       <User className="mr-2 h-4 w-4" />
-                      <span>MI PERFIL</span>
+                      <span>{t('my_profile')}</span>
                     </Link>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem asChild>
                     <Link href="/pedidos" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                       <Package className="mr-2 h-4 w-4" />
-                      <span>MIS PEDIDOS</span>
+                      <span>{t('my_orders')}</span>
                     </Link>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem asChild>
                     <Link href="/favoritos" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                       <Heart className="mr-2 h-4 w-4" />
-                      <span>FAVORITOS</span>
+                      <span>{t('favorites')}</span>
                     </Link>
                   </DropdownMenuItem>
 
@@ -413,14 +417,14 @@ export function Header() {
                       <DropdownMenuItem asChild>
                         <Link href="/vendedor/dashboard" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                           <BarChart3 className="mr-2 h-4 w-4" />
-                          <span>DASHBOARD</span>
+                          <span>{t('seller_dashboard')}</span>
                         </Link>
                       </DropdownMenuItem>
                       
                       <DropdownMenuItem asChild>
                         <Link href="/vendedor/productos/nuevo" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                           <Plus className="mr-2 h-4 w-4" />
-                          <span>SUBIR PRODUCTO</span>
+                          <span>{t('upload_product')}</span>
                         </Link>
                       </DropdownMenuItem>
                     </>
@@ -433,21 +437,21 @@ export function Header() {
                       <DropdownMenuItem asChild>
                         <Link href="/admin" className="cursor-pointer font-bold text-black hover:bg-green-400 px-2 py-1">
                           <Shield className="mr-2 h-4 w-4" />
-                          <span>PANEL ADMIN</span>
+                          <span>{t('admin_panel')}</span>
                         </Link>
                       </DropdownMenuItem>
 
                       <DropdownMenuItem asChild>
                         <Link href="/admin/usuarios" className="cursor-pointer font-bold text-black hover:bg-green-400 px-2 py-1">
                           <UserCheck className="mr-2 h-4 w-4" />
-                          <span>USUARIOS</span>
+                          <span>{t('admin_users')}</span>
                         </Link>
                       </DropdownMenuItem>
 
                       <DropdownMenuItem asChild>
                         <Link href="/admin/analytics" className="cursor-pointer font-bold text-black hover:bg-green-400 px-2 py-1">
                           <Activity className="mr-2 h-4 w-4" />
-                          <span>ANALYTICS</span>
+                          <span>{t('admin_analytics')}</span>
                         </Link>
                       </DropdownMenuItem>
 
@@ -456,7 +460,7 @@ export function Header() {
                         <div className="px-2 py-1 mt-2">
                           <div className="bg-red-500 text-white text-xs font-black px-2 py-1 border-2 border-black text-center">
                             <AlertTriangle className="inline h-3 w-3 mr-1" />
-                            {getPendingModerationCount()} PENDIENTES
+                            {getPendingModerationCount()} {t('admin_pending')}
                           </div>
                         </div>
                       )}
@@ -468,7 +472,7 @@ export function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/configuracion" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                       <Settings className="mr-2 h-4 w-4" />
-                      <span>CONFIGURACIÓN</span>
+                      <span>{tCommon('settings')}</span>
                     </Link>
                   </DropdownMenuItem>
 
@@ -477,7 +481,7 @@ export function Header() {
                     className="cursor-pointer font-bold text-red-600 hover:bg-red-100 px-2 py-1"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>CERRAR SESIÓN</span>
+                    <span>{t('logout')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -489,17 +493,20 @@ export function Header() {
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                   onClick={() => setLoginModalOpen(true)}
                 >
-                  ENTRAR
+                  {t('login')}
                 </button>
                 <button
                   className="px-3 lg:px-4 py-2 bg-orange-500 border-2 border-black font-black text-black text-xs lg:text-sm uppercase hover:bg-yellow-400 transition-all"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                   onClick={() => setRegisterModalOpen(true)}
                 >
-                  REGISTRO
+                  {t('register')}
                 </button>
               </div>
             )}
+            {/* Selector de idioma SABDA  */}
+            <LanguageSwitcher />
+
 
             {/* Mobile Menu Toggle */}
             <button
@@ -522,7 +529,7 @@ export function Header() {
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
-                placeholder="Buscar productos..."
+                placeholder={t('search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="
@@ -577,7 +584,7 @@ export function Header() {
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                   >
                     <Shield className="h-5 w-5" />
-                    <span>ADMIN PANEL</span>
+                    <span>{t('admin_panel')}</span>
                     {getPendingModerationCount() > 0 && (
                       <span className="bg-yellow-400 text-black text-xs font-black px-2 py-1 border border-black">
                         {getPendingModerationCount()}
@@ -602,7 +609,7 @@ export function Header() {
                     }}
                   >
                     <User className="h-4 w-4" />
-                    ENTRAR
+                    {t('login')}
                   </button>
                   <button
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 border-2 border-black font-black text-black text-sm uppercase hover:bg-yellow-400 transition-all"
@@ -613,7 +620,7 @@ export function Header() {
                     }}
                   >
                     <Plus className="h-4 w-4" />
-                    REGISTRO
+                    {t('register')}
                   </button>
                 </div>
               )}

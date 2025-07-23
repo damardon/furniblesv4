@@ -32,6 +32,7 @@ import { PayoutsModule } from './modules/payouts/payouts.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -80,7 +81,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     InvoicesModule,
     AnalyticsModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [
     {
       provide: APP_GUARD,

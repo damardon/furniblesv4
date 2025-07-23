@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Search,
   Filter,
@@ -23,9 +24,9 @@ import {
 import { useSellerStore } from '@/lib/stores/seller-store'
 import { ReviewStatus } from '@/types/additional'
 
-// Funciones de formato
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('es-ES', {
+// Funciones de formato - internacionalizadas
+const formatDate = (dateString: string, locale: string = 'es-ES') => {
+  return new Date(dateString).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -55,6 +56,10 @@ export default function SellerReviewsPage() {
   const [selectedReview, setSelectedReview] = useState<any>(null)
   const [responseText, setResponseText] = useState('')
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false)
+
+  // Traducciones
+  const t = useTranslations('seller.reviews')
+  const tCommon = useTranslations('common')
 
   const {
     reviews,
@@ -157,6 +162,11 @@ export default function SellerReviewsPage() {
     }
   }
 
+  // Función para obtener texto del estado
+  const getStatusText = (status: ReviewStatus) => {
+    return t(`status.${status.toLowerCase().replace('_', '.')}`)
+  }
+
   // Calcular estadísticas de reviews
   const reviewStats = {
     total: reviews.length,
@@ -179,9 +189,9 @@ export default function SellerReviewsPage() {
       {/* HEADER */}
       <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
         <div>
-          <h1 className="text-2xl font-black uppercase text-black">Mis Reviews</h1>
+          <h1 className="text-2xl font-black uppercase text-black">{t('title')}</h1>
           <p className="text-gray-600 font-bold">
-            Gestiona las reviews de tus productos
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -192,7 +202,7 @@ export default function SellerReviewsPage() {
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 uppercase">Total Reviews</p>
+              <p className="text-sm font-bold text-gray-600 uppercase">{t('stats.total_reviews')}</p>
               <p className="text-2xl font-black text-black">
                 {reviewStats.total}
               </p>
@@ -213,12 +223,14 @@ export default function SellerReviewsPage() {
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 uppercase">Con Respuesta</p>
+              <p className="text-sm font-bold text-gray-600 uppercase">{t('stats.with_response')}</p>
               <p className="text-2xl font-black text-black">
                 {reviewStats.withResponse}
               </p>
               <p className="text-xs font-bold text-green-600 mt-1">
-                {reviewStats.total > 0 ? Math.round((reviewStats.withResponse / reviewStats.total) * 100) : 0}% respondidas
+                {t('stats.response_rate', { 
+                  percentage: reviewStats.total > 0 ? Math.round((reviewStats.withResponse / reviewStats.total) * 100) : 0 
+                })}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 border-2 border-black flex items-center justify-center">
@@ -231,12 +243,12 @@ export default function SellerReviewsPage() {
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 uppercase">Pendientes</p>
+              <p className="text-sm font-bold text-gray-600 uppercase">{t('stats.pending')}</p>
               <p className="text-2xl font-black text-black">
                 {reviewStats.pending}
               </p>
               <p className="text-xs font-bold text-orange-600 mt-1">
-                Sin responder
+                {t('stats.without_response')}
               </p>
             </div>
             <div className="w-12 h-12 bg-orange-500 border-2 border-black flex items-center justify-center">
@@ -248,7 +260,7 @@ export default function SellerReviewsPage() {
         {/* Distribución */}
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div>
-            <p className="text-sm font-bold text-gray-600 uppercase mb-3">Distribución</p>
+            <p className="text-sm font-bold text-gray-600 uppercase mb-3">{t('stats.distribution')}</p>
             <div className="space-y-1">
               {[5, 4, 3, 2, 1].map((rating) => (
                 <div key={rating} className="flex items-center gap-2 text-xs">
@@ -284,7 +296,7 @@ export default function SellerReviewsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
               <input
                 type="text"
-                placeholder="Buscar por producto o comentario..."
+                placeholder={t('search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border-2 border-black font-bold focus:outline-none focus:bg-yellow-400"
@@ -302,7 +314,7 @@ export default function SellerReviewsPage() {
             style={{ boxShadow: '3px 3px 0 #000000' }}
           >
             <Filter className="h-4 w-4" />
-            FILTROS
+            {t('filters.title')}
           </button>
         </div>
 
@@ -312,57 +324,57 @@ export default function SellerReviewsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Rating */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">RATING</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.rating')}</label>
                 <select
                   value={reviewsFilters.rating || ''}
                   onChange={(e) => handleFilterChange('rating', parseInt(e.target.value) || 0)}
                   className="w-full border-2 border-black font-bold p-2 focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  <option value="">Todos los ratings</option>
-                  <option value="5">5 estrellas</option>
-                  <option value="4">4 estrellas</option>
-                  <option value="3">3 estrellas</option>
-                  <option value="2">2 estrellas</option>
-                  <option value="1">1 estrella</option>
+                  <option value="">{t('filters.all_ratings')}</option>
+                  <option value="5">{t('filters.stars', { count: 5 })}</option>
+                  <option value="4">{t('filters.stars', { count: 4 })}</option>
+                  <option value="3">{t('filters.stars', { count: 3 })}</option>
+                  <option value="2">{t('filters.stars', { count: 2 })}</option>
+                  <option value="1">{t('filters.stars', { count: 1 })}</option>
                 </select>
               </div>
 
               {/* Estado */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">ESTADO</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.status')}</label>
                 <select
                   value={reviewsFilters.status || ''}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                   className="w-full border-2 border-black font-bold p-2 focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  <option value="">Todos los estados</option>
-                  <option value={ReviewStatus.PUBLISHED}>Publicadas</option>
-                  <option value={ReviewStatus.PENDING_MODERATION}>Pendiente moderación</option>
-                  <option value={ReviewStatus.FLAGGED}>Reportadas</option>
-                  <option value={ReviewStatus.REMOVED}>Removidas</option>
+                  <option value="">{t('filters.all_statuses')}</option>
+                  <option value={ReviewStatus.PUBLISHED}>{t('status.published')}</option>
+                  <option value={ReviewStatus.PENDING_MODERATION}>{t('status.pending.moderation')}</option>
+                  <option value={ReviewStatus.FLAGGED}>{t('status.flagged')}</option>
+                  <option value={ReviewStatus.REMOVED}>{t('status.removed')}</option>
                 </select>
               </div>
 
               {/* Con Respuesta */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">RESPUESTA</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.response')}</label>
                 <select
                   value={reviewsFilters.hasResponse ? 'true' : 'false'}
                   onChange={(e) => handleFilterChange('hasResponse', e.target.value === 'true')}
                   className="w-full border-2 border-black font-bold p-2 focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  <option value="">Todas</option>
-                  <option value="true">Con respuesta</option>
-                  <option value="false">Sin respuesta</option>
+                  <option value="">{t('filters.all_responses')}</option>
+                  <option value="true">{t('filters.with_response')}</option>
+                  <option value="false">{t('filters.without_response')}</option>
                 </select>
               </div>
 
               {/* Ordenar */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">ORDENAR POR</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.sort_by')}</label>
                 <select
                   value={`${reviewsFilters.sortBy}-${reviewsFilters.sortOrder}`}
                   onChange={(e) => {
@@ -373,11 +385,11 @@ export default function SellerReviewsPage() {
                   className="w-full border-2 border-black font-bold p-2 focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  <option value="createdAt-desc">Más recientes</option>
-                  <option value="createdAt-asc">Más antiguos</option>
-                  <option value="rating-desc">Mayor rating</option>
-                  <option value="rating-asc">Menor rating</option>
-                  <option value="helpfulCount-desc">Más útiles</option>
+                  <option value="createdAt-desc">{t('sort.newest')}</option>
+                  <option value="createdAt-asc">{t('sort.oldest')}</option>
+                  <option value="rating-desc">{t('sort.highest_rating')}</option>
+                  <option value="rating-asc">{t('sort.lowest_rating')}</option>
+                  <option value="helpfulCount-desc">{t('sort.most_helpful')}</option>
                 </select>
               </div>
             </div>
@@ -390,15 +402,15 @@ export default function SellerReviewsPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-bold">Cargando reviews...</p>
+            <p className="text-gray-600 font-bold">{t('loading_reviews')}</p>
           </div>
         </div>
       ) : reviews.length === 0 ? (
         <div className="bg-white border-[3px] border-black p-12 text-center" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-black text-black mb-2">No tienes reviews aún</h3>
+          <h3 className="text-xl font-black text-black mb-2">{t('no_reviews.title')}</h3>
           <p className="text-gray-600 font-bold mb-6">
-            Las reviews aparecerán aquí cuando los compradores evalúen tus productos.
+            {t('no_reviews.description')}
           </p>
         </div>
       ) : (
@@ -439,13 +451,13 @@ export default function SellerReviewsPage() {
                     <div className="flex items-center gap-2 mb-3">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-black border border-black ${getStatusColor(review.status)}`}>
                         {getStatusIcon(review.status)}
-                        {review.status}
+                        {getStatusText(review.status)}
                       </span>
                       
                       {review.helpfulCount > 0 && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold bg-green-100 text-green-800 border border-green-300">
                           <ThumbsUp className="h-3 w-3" />
-                          {review.helpfulCount} útiles
+                          {t('helpful_count', { count: review.helpfulCount })}
                         </span>
                       )}
                     </div>
@@ -465,13 +477,13 @@ export default function SellerReviewsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                         {review.pros && (
                           <div className="bg-green-50 border-2 border-green-300 p-3">
-                            <h5 className="font-black text-green-800 mb-1 text-sm">PROS:</h5>
+                            <h5 className="font-black text-green-800 mb-1 text-sm">{t('pros')}:</h5>
                             <p className="text-green-700 text-sm font-bold">{review.pros}</p>
                           </div>
                         )}
                         {review.cons && (
                           <div className="bg-red-50 border-2 border-red-300 p-3">
-                            <h5 className="font-black text-red-800 mb-1 text-sm">CONTRAS:</h5>
+                            <h5 className="font-black text-red-800 mb-1 text-sm">{t('cons')}:</h5>
                             <p className="text-red-700 text-sm font-bold">{review.cons}</p>
                           </div>
                         )}
@@ -483,7 +495,7 @@ export default function SellerReviewsPage() {
                       <div className="bg-blue-50 border-2 border-blue-300 p-4 mt-4">
                         <div className="flex items-center gap-2 mb-2">
                           <Reply className="h-4 w-4 text-blue-600" />
-                          <span className="font-black text-blue-800 text-sm">TU RESPUESTA:</span>
+                          <span className="font-black text-blue-800 text-sm">{t('your_response')}:</span>
                           <span className="text-xs text-blue-600 font-bold">
                             {formatDate(review.response.createdAt)}
                           </span>
@@ -493,7 +505,7 @@ export default function SellerReviewsPage() {
                           onClick={() => openResponseModal(review)}
                           className="mt-2 text-blue-600 hover:text-blue-800 font-bold text-sm"
                         >
-                          Editar respuesta
+                          {t('edit_response')}
                         </button>
                       </div>
                     ) : (
@@ -504,7 +516,7 @@ export default function SellerReviewsPage() {
                           style={{ boxShadow: '3px 3px 0 #000000' }}
                         >
                           <Reply className="h-4 w-4" />
-                          RESPONDER
+                          {t('respond')}
                         </button>
                       </div>
                     )}
@@ -519,7 +531,11 @@ export default function SellerReviewsPage() {
             <div className="bg-white border-[3px] border-black p-4" style={{ boxShadow: '6px 6px 0 #000000' }}>
               <div className="flex items-center justify-between">
                 <div className="text-sm font-bold text-gray-600">
-                  Mostrando {((reviewsPagination.page - 1) * reviewsPagination.limit) + 1} - {Math.min(reviewsPagination.page * reviewsPagination.limit, reviewsPagination.total)} de {reviewsPagination.total} reviews
+                  {t('pagination.showing', {
+                    start: ((reviewsPagination.page - 1) * reviewsPagination.limit) + 1,
+                    end: Math.min(reviewsPagination.page * reviewsPagination.limit, reviewsPagination.total),
+                    total: reviewsPagination.total
+                  })}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -530,7 +546,7 @@ export default function SellerReviewsPage() {
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Anterior
+                    {tCommon('previous')}
                   </button>
 
                   <div className="flex items-center gap-1">
@@ -561,7 +577,7 @@ export default function SellerReviewsPage() {
                     className="flex items-center gap-2 px-3 py-2 border-2 border-black font-bold text-black hover:bg-yellow-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    Siguiente
+                    {tCommon('next')}
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -578,7 +594,7 @@ export default function SellerReviewsPage() {
             {/* Header del modal */}
             <div className="flex items-center justify-between p-6 border-b-2 border-black">
               <h3 className="text-xl font-black uppercase text-black">
-                {selectedReview.response ? 'Editar Respuesta' : 'Responder Review'}
+                {selectedReview.response ? t('modal.edit_response') : t('modal.respond_review')}
               </h3>
               <button
                 onClick={closeResponseModal}
@@ -602,12 +618,12 @@ export default function SellerReviewsPage() {
               {/* Textarea para respuesta */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  TU RESPUESTA:
+                  {t('modal.your_response')}:
                 </label>
                 <textarea
                   value={responseText}
                   onChange={(e) => setResponseText(e.target.value)}
-                  placeholder="Escribe tu respuesta..."
+                  placeholder={t('modal.response_placeholder')}
                   rows={6}
                   className="w-full p-3 border-2 border-black font-bold resize-none focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
@@ -615,7 +631,7 @@ export default function SellerReviewsPage() {
                 />
                 <div className="flex justify-between mt-1">
                   <span className="text-sm text-gray-500 font-bold">
-                    Sé profesional y útil en tu respuesta
+                    {t('modal.response_tip')}
                   </span>
                   <span className="text-sm text-gray-500 font-bold">
                     {responseText.length}/1000
@@ -634,12 +650,12 @@ export default function SellerReviewsPage() {
                   {isSubmittingResponse ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-                      ENVIANDO...
+                      {t('modal.sending')}
                     </>
                   ) : (
                     <>
                       <Send className="h-5 w-5" />
-                      {selectedReview.response ? 'ACTUALIZAR' : 'ENVIAR'} RESPUESTA
+                      {selectedReview.response ? t('modal.update_response') : t('modal.send_response')}
                     </>
                   )}
                 </button>
@@ -649,7 +665,7 @@ export default function SellerReviewsPage() {
                   className="flex items-center gap-2 px-6 py-3 bg-gray-500 border-2 border-black font-bold text-white hover:bg-gray-400 transition-all"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  CANCELAR
+                  {tCommon('cancel')}
                 </button>
               </div>
             </div>
@@ -657,5 +673,4 @@ export default function SellerReviewsPage() {
         </div>
       )}
     </div>
-  )
-}
+  )}

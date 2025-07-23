@@ -1,499 +1,218 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import {
-  Users,
-  Package,
-  DollarSign,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Activity,
-  FileCheck,
-  MessageSquare,
-  Flag,
-  Shield,
-  Database,
-  Server,
-  Mail,
-  CreditCard,
-  Eye,
-  Download,
-  Star,
-  ShoppingCart,
-  UserCheck,
-  Calendar,
-  ArrowUp,
-  ArrowDown,
-  RefreshCw
-} from 'lucide-react'
+import { Shield, Eye, EyeOff, AlertTriangle, Database, Server, Activity } from 'lucide-react'
+import { useAuthStore } from '@/lib/stores/auth-store'
+import { UserRole } from '@/types'
 
-// Stores
-import { useAdminStore } from '@/lib/stores/admin-store'
+export default function AdminLoginPage() {
+  const t = useTranslations('admin.login')
+  const tCommon = useTranslations('common')
+  
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: ''
+  })
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
-// UI Components
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+  const router = useRouter()
+  const { login, user, isAuthenticated } = useAuthStore()
 
-export default function AdminDashboard() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const t = useTranslations('admin')
-
-  // Store
-  const { 
-    dashboardStats, 
-    analytics,
-    pendingProducts,
-    pendingReviews,
-    flaggedContent,
-    fetchDashboardStats,
-    fetchAnalytics,
-    refreshStats,
-    isLoading: storeLoading,
-    error
-  } = useAdminStore()
-
-  // Cargar datos iniciales
+  // Si ya está logueado como admin, redirigir al dashboard
   useEffect(() => {
-    const loadDashboard = async () => {
-      setIsLoading(true)
-      try {
-        await refreshStats()
-        await fetchAnalytics('30d')
-      } catch (error) {
-        console.error('Error loading dashboard:', error)
-      } finally {
-        setIsLoading(false)
-        setLastRefresh(new Date())
-      }
+    if (isAuthenticated && user?.role === UserRole.ADMIN) {
+      router.push('/admin/dashboard')
     }
+  }, [isAuthenticated, user, router])
 
-    loadDashboard()
-  }, [refreshStats, fetchAnalytics])
-
-  // Manejar refresh manual
-  const handleRefresh = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
     setIsLoading(true)
+
     try {
-      await refreshStats()
-      setLastRefresh(new Date())
+      // Intentar login con el backend
+      const result = await login(credentials.email, credentials.password)
+      
+      if (result.success && result.data?.user.role === UserRole.ADMIN) {
+        // Login exitoso como admin, redirigir
+        router.push('/admin/dashboard')
+      } else if (result.success && result.data?.user.role !== UserRole.ADMIN) {
+        setError(t('no_admin_permissions'))
+      } else {
+        setError(result.error || t('invalid_credentials'))
+      }
     } catch (error) {
-      console.error('Error refreshing:', error)
+      console.error('Admin login error:', error)
+      setError(t('connection_error'))
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Calcular totales de moderación
-  const getPendingModerationCount = () => {
-    const products = pendingProducts?.length || 0
-    const reviews = pendingReviews?.length || 0
-    const flagged = (flaggedContent?.reviews?.length || 0) + (flaggedContent?.users?.length || 0)
-    return { products, reviews, flagged, total: products + reviews + flagged }
-  }
-
-  // Obtener estado del sistema
-  const getSystemHealthStatus = () => {
-    if (!dashboardStats?.platformHealth) return 'unknown'
-    
-    const { serverStatus, dbStatus, paymentStatus, emailStatus } = dashboardStats.platformHealth
-    const statuses = [serverStatus, dbStatus, paymentStatus, emailStatus]
-    
-    if (statuses.includes('error')) return 'error'
-    if (statuses.includes('warning')) return 'warning'
-    return 'healthy'
-  }
-
-  const pendingModeration = getPendingModerationCount()
-  const systemHealth = getSystemHealthStatus()
-
-  if (isLoading && !dashboardStats) {
+  // Mostrar loading si ya está logueado y redirigiendo
+  if (isAuthenticated && user?.role === UserRole.ADMIN) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <RefreshCw className="h-12 w-12 text-gray-400 animate-spin mx-auto mb-4" />
-            <p className="text-lg font-bold text-gray-600">Cargando dashboard...</p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-red-200 to-orange-200 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+          <p className="text-lg font-bold text-gray-600">{t('redirecting')}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header con acciones */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black uppercase text-black">Dashboard Admin</h1>
-          <p className="text-gray-600 font-bold">
-            Vista general de la plataforma - Actualizado: {lastRefresh.toLocaleTimeString()}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="bg-orange-500 hover:bg-orange-600 text-black font-black border-2 border-black"
-            style={{ boxShadow: '3px 3px 0 #000000' }}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            ACTUALIZAR
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-red-200 to-orange-200 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Card principal */}
+        <div 
+          className="bg-white border-[5px] border-black p-8"
+          style={{ boxShadow: '10px 10px 0 #000000' }}
+        >
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="p-4 bg-red-500 border-3 border-black mx-auto w-fit mb-4">
+              <Shield className="h-12 w-12 text-white" />
+            </div>
+            <h1 className="text-3xl font-black uppercase text-black mb-2">
+              {t('title')}
+            </h1>
+            <p className="text-gray-600 font-bold">
+              {t('subtitle')}
+            </p>
+          </div>
 
-      {/* Alertas críticas */}
-      {(pendingModeration.total > 0 || systemHealth !== 'healthy') && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Alerta de moderación */}
-          {pendingModeration.total > 0 && (
-            <Card className="border-3 border-red-500" style={{ boxShadow: '5px 5px 0 #000000' }}>
-              <CardHeader className="bg-red-500 text-white">
-                <CardTitle className="flex items-center gap-2 font-black">
-                  <AlertTriangle className="h-5 w-5" />
-                  MODERACIÓN PENDIENTE
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  {pendingModeration.products > 0 && (
-                    <Link href="/admin/productos" className="flex items-center justify-between p-2 bg-orange-100 hover:bg-orange-200 border border-orange-300">
-                      <span className="font-bold">Productos pendientes</span>
-                      <Badge variant="secondary" className="bg-orange-500 text-black">
-                        {pendingModeration.products}
-                      </Badge>
-                    </Link>
-                  )}
-                  {pendingModeration.reviews > 0 && (
-                    <Link href="/admin/reviews" className="flex items-center justify-between p-2 bg-orange-100 hover:bg-orange-200 border border-orange-300">
-                      <span className="font-bold">Reviews pendientes</span>
-                      <Badge variant="secondary" className="bg-orange-500 text-black">
-                        {pendingModeration.reviews}
-                      </Badge>
-                    </Link>
-                  )}
-                  {pendingModeration.flagged > 0 && (
-                    <Link href="/admin/reportes" className="flex items-center justify-between p-2 bg-red-100 hover:bg-red-200 border border-red-300">
-                      <span className="font-bold">Contenido reportado</span>
-                      <Badge variant="destructive">
-                        {pendingModeration.flagged}
-                      </Badge>
-                    </Link>
-                  )}
+          {/* Sistema de estadísticas (decorativo) */}
+          <div className="mb-6 p-4 bg-gray-100 border-2 border-gray-300">
+            <h3 className="font-black text-sm uppercase text-black mb-3 flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              {t('system_status')}
+            </h3>
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Database className="h-3 w-3 text-green-600" />
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 </div>
-              </CardContent>
-            </Card>
+                <span className="font-bold text-gray-600">{t('db_online')}</span>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Server className="h-3 w-3 text-green-600" />
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                </div>
+                <span className="font-bold text-gray-600">{t('api_active')}</span>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Shield className="h-3 w-3 text-green-600" />
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                </div>
+                <span className="font-bold text-gray-600">{t('secure')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 border-2 border-red-500">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <span className="font-bold text-red-600">{error}</span>
+              </div>
+            </div>
           )}
 
-          {/* Estado del sistema */}
-          <Card className={`border-3 ${
-            systemHealth === 'error' ? 'border-red-500' : 
-            systemHealth === 'warning' ? 'border-yellow-500' : 
-            'border-green-500'
-          }`} style={{ boxShadow: '5px 5px 0 #000000' }}>
-            <CardHeader className={`${
-              systemHealth === 'error' ? 'bg-red-500 text-white' : 
-              systemHealth === 'warning' ? 'bg-yellow-500 text-black' : 
-              'bg-green-500 text-black'
-            }`}>
-              <CardTitle className="flex items-center gap-2 font-black">
-                {systemHealth === 'error' ? <XCircle className="h-5 w-5" /> :
-                 systemHealth === 'warning' ? <AlertTriangle className="h-5 w-5" /> :
-                 <CheckCircle className="h-5 w-5" />}
-                ESTADO DEL SISTEMA
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Server className="h-4 w-4" />
-                    Servidor
-                  </span>
-                  <div className={`w-3 h-3 rounded-full ${
-                    dashboardStats?.platformHealth?.serverStatus === 'healthy' ? 'bg-green-500' :
-                    dashboardStats?.platformHealth?.serverStatus === 'warning' ? 'bg-yellow-500' :
-                    'bg-red-500'
-                  }`} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Database className="h-4 w-4" />
-                    Base de datos
-                  </span>
-                  <div className={`w-3 h-3 rounded-full ${
-                    dashboardStats?.platformHealth?.dbStatus === 'healthy' ? 'bg-green-500' :
-                    dashboardStats?.platformHealth?.dbStatus === 'warning' ? 'bg-yellow-500' :
-                    'bg-red-500'
-                  }`} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <CreditCard className="h-4 w-4" />
-                    Pagos
-                  </span>
-                  <div className={`w-3 h-3 rounded-full ${
-                    dashboardStats?.platformHealth?.paymentStatus === 'healthy' ? 'bg-green-500' :
-                    dashboardStats?.platformHealth?.paymentStatus === 'warning' ? 'bg-yellow-500' :
-                    'bg-red-500'
-                  }`} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </span>
-                  <div className={`w-3 h-3 rounded-full ${
-                    dashboardStats?.platformHealth?.emailStatus === 'healthy' ? 'bg-green-500' :
-                    dashboardStats?.platformHealth?.emailStatus === 'warning' ? 'bg-yellow-500' :
-                    'bg-red-500'
-                  }`} />
-                </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-black uppercase text-black mb-2">
+                {t('admin_email')}
+              </label>
+              <input
+                type="email"
+                value={credentials.email}
+                onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full px-4 py-3 border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
+                style={{ boxShadow: '3px 3px 0 #000000' }}
+                placeholder={t('email_placeholder')}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-black uppercase text-black mb-2">
+                {t('password')}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={credentials.password}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full px-4 py-3 pr-12 border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
+                  style={{ boxShadow: '3px 3px 0 #000000' }}
+                  placeholder={t('password_placeholder')}
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-black"
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Submit button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-4 bg-red-500 border-3 border-black font-black text-white text-lg uppercase hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ boxShadow: '5px 5px 0 #000000' }}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  {t('verifying')}
+                </div>
+              ) : (
+                t('access_panel')
+              )}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t-2 border-gray-200 text-center">
+            <p className="text-sm text-gray-600 font-bold">
+              {t('not_admin')}{' '}
+              <a 
+                href="/" 
+                className="text-red-600 hover:text-red-800 font-black underline"
+              >
+                {t('back_to_site')}
+              </a>
+            </p>
+          </div>
         </div>
-      )}
 
-      {/* Métricas principales */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Usuarios */}
-        <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-black uppercase">Total Usuarios</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-black">{dashboardStats?.totalUsers || 0}</div>
-            <div className="flex items-center text-xs text-gray-600 font-bold">
-              {dashboardStats?.monthlyGrowth?.users && dashboardStats.monthlyGrowth.users > 0 ? (
-                <>
-                  <ArrowUp className="h-3 w-3 text-green-600 mr-1" />
-                  +{dashboardStats.monthlyGrowth.users} este mes
-                </>
-              ) : (
-                <span>Sin cambios este mes</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Productos */}
-        <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-black uppercase">Total Productos</CardTitle>
-            <Package className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-black">{dashboardStats?.totalProducts || 0}</div>
-            <div className="flex items-center text-xs text-gray-600 font-bold">
-              {dashboardStats?.monthlyGrowth?.products && dashboardStats.monthlyGrowth.products > 0 ? (
-                <>
-                  <ArrowUp className="h-3 w-3 text-green-600 mr-1" />
-                  +{dashboardStats.monthlyGrowth.products} este mes
-                </>
-              ) : (
-                <span>Sin cambios este mes</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Órdenes */}
-        <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-black uppercase">Total Órdenes</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-black">{dashboardStats?.totalOrders || 0}</div>
-            <div className="flex items-center text-xs text-gray-600 font-bold">
-              {dashboardStats?.monthlyGrowth?.orders && dashboardStats.monthlyGrowth.orders > 0 ? (
-                <>
-                  <ArrowUp className="h-3 w-3 text-green-600 mr-1" />
-                  +{dashboardStats.monthlyGrowth.orders} este mes
-                </>
-              ) : (
-                <span>Sin cambios este mes</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Revenue Total */}
-        <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-black uppercase">Revenue Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-black text-black">${dashboardStats?.totalRevenue || 0}</div>
-            <div className="flex items-center text-xs text-gray-600 font-bold">
-              {dashboardStats?.monthlyGrowth?.revenue && dashboardStats.monthlyGrowth.revenue > 0 ? (
-                <>
-                  <ArrowUp className="h-3 w-3 text-green-600 mr-1" />
-                  +${dashboardStats.monthlyGrowth.revenue} este mes
-                </>
-              ) : (
-                <span>Sin cambios este mes</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Warning notice */}
+        <div className="mt-6 p-4 bg-gray-800 text-white border-3 border-black text-center">
+          <p className="text-sm font-bold">
+            {t('restricted_area')}
+          </p>
+        </div>
       </div>
-
-      {/* Widgets de actividad */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Actividad de moderación */}
-        <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-black">
-              <Shield className="h-5 w-5 text-red-600" />
-              ACTIVIDAD DE MODERACIÓN
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold">
-                <FileCheck className="h-4 w-4" />
-                Productos pendientes
-              </span>
-              <Link href="/admin/productos">
-                <Badge variant={pendingModeration.products > 0 ? "destructive" : "secondary"}>
-                  {pendingModeration.products}
-                </Badge>
-              </Link>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold">
-                <MessageSquare className="h-4 w-4" />
-                Reviews pendientes
-              </span>
-              <Link href="/admin/reviews">
-                <Badge variant={pendingModeration.reviews > 0 ? "destructive" : "secondary"}>
-                  {pendingModeration.reviews}
-                </Badge>
-              </Link>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-bold">
-                <Flag className="h-4 w-4" />
-                Contenido reportado
-              </span>
-              <Link href="/admin/reportes">
-                <Badge variant={pendingModeration.flagged > 0 ? "destructive" : "secondary"}>
-                  {pendingModeration.flagged}
-                </Badge>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top vendedores */}
-        <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-black">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-              TOP VENDEDORES
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analytics?.topSellers?.length ? (
-              <div className="space-y-3">
-                {analytics.topSellers.slice(0, 5).map((seller, index) => (
-                  <div key={seller.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 bg-orange-500 text-black text-xs font-black rounded-full flex items-center justify-center">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm">{seller.storeName}</p>
-                        <p className="text-xs text-gray-600">{seller.totalSales} ventas</p>
-                      </div>
-                    </div>
-                    <span className="font-black text-green-600">${seller.revenue}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">No hay datos disponibles</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Acciones rápidas */}
-        <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-black">
-              <Activity className="h-5 w-5 text-blue-600" />
-              ACCIONES RÁPIDAS
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Link
-              href="/admin/usuarios"
-              className="flex items-center gap-2 p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all font-bold"
-              style={{ boxShadow: '2px 2px 0 #000000' }}
-            >
-              <Users className="h-4 w-4" />
-              Gestionar usuarios
-            </Link>
-            <Link
-              href="/admin/productos"
-              className="flex items-center gap-2 p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all font-bold"
-              style={{ boxShadow: '2px 2px 0 #000000' }}
-            >
-              <Package className="h-4 w-4" />
-              Moderar productos
-            </Link>
-            <Link
-              href="/admin/analytics"
-              className="flex items-center gap-2 p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all font-bold"
-              style={{ boxShadow: '2px 2px 0 #000000' }}
-            >
-              <TrendingUp className="h-4 w-4" />
-              Ver analytics
-            </Link>
-            <Link
-              href="/admin/configuracion"
-              className="flex items-center gap-2 p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all font-bold"
-              style={{ boxShadow: '2px 2px 0 #000000' }}
-            >
-              <Shield className="h-4 w-4" />
-              Configuración
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Error handling */}
-      {error && (
-        <Card className="border-3 border-red-500" style={{ boxShadow: '5px 5px 0 #000000' }}>
-          <CardHeader className="bg-red-500 text-white">
-            <CardTitle className="flex items-center gap-2 font-black">
-              <XCircle className="h-5 w-5" />
-              ERROR
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <p className="text-red-600 font-bold">{error}</p>
-            <Button 
-              onClick={handleRefresh}
-              className="mt-4 bg-red-500 hover:bg-red-600 text-white"
-            >
-              Reintentar
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

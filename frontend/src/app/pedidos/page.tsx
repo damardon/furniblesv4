@@ -27,6 +27,7 @@ import { getOrdersByUserId, getOrderStats } from '@/data/mockOrders'
 
 export default function OrdersPage() {
   const t = useTranslations('orders')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   
   // Stores
@@ -124,33 +125,38 @@ export default function OrdersPage() {
       [OrderStatus.PENDING]: {
         color: 'bg-yellow-400 text-black border-black',
         icon: ClockIcon,
-        text: 'Pendiente'
+        text: t('status.pending')
       },
       [OrderStatus.PROCESSING]: {
         color: 'bg-blue-400 text-black border-black',
         icon: PackageIcon,
-        text: 'Procesando'
+        text: t('status.processing')
       },
       [OrderStatus.PAID]: {
         color: 'bg-green-400 text-black border-black',
         icon: CreditCardIcon,
-        text: 'Pagado'
+        text: t('status.paid')
       },
       [OrderStatus.COMPLETED]: {
         color: 'bg-green-500 text-white border-black',
         icon: CheckCircleIcon,
-        text: 'Completado'
+        text: t('status.completed')
       },
-      [OrderStatus.FAILED]: {
+      [OrderStatus.CANCELLED]: {
         color: 'bg-red-400 text-black border-black',
         icon: XCircleIcon,
-        text: 'Fallido'
+        text: t('status.cancelled')
       },
       [OrderStatus.REFUNDED]: {
         color: 'bg-gray-400 text-black border-black',
         icon: AlertCircleIcon,
-        text: 'Reembolsado'
-      }
+        text: t('status.refunded')
+      },
+      [OrderStatus.DISPUTED]: {
+        color: 'bg-purple-400 text-black border-black',
+        icon: AlertCircleIcon,
+        text: t('status.disputed')
+      },
     }
 
     const config = statusConfig[status]
@@ -191,7 +197,7 @@ export default function OrdersPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">Acceso restringido</p>
+          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
         </div>
       </div>
     )
@@ -204,10 +210,10 @@ export default function OrdersPage() {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              Inicio
+              {tCommon('navigation.home')}
             </Link>
             <span>/</span>
-            <span className="text-orange-500">Mis Pedidos</span>
+            <span className="text-orange-500">{t('title')}</span>
           </div>
         </div>
       </div>
@@ -222,16 +228,16 @@ export default function OrdersPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ArrowLeftIcon className="w-4 h-4" />
-              Volver
+              {tCommon('actions.back')}
             </Link>
             
             <div>
               <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
                 <ShoppingBagIcon className="w-8 h-8" />
-                Mis Pedidos
+                {t('title')}
               </h1>
               <p className="text-gray-600 font-bold mt-2">
-                Historial completo de tus compras
+                {t('subtitle')}
               </p>
             </div>
           </div>
@@ -243,7 +249,7 @@ export default function OrdersPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <div className="text-2xl font-black text-black mb-2">{stats.totalOrders}</div>
-              <div className="text-sm font-black text-black uppercase">Total Pedidos</div>
+              <div className="text-sm font-black text-black uppercase">{t('stats.total_orders')}</div>
             </div>
             
             <div 
@@ -251,7 +257,7 @@ export default function OrdersPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <div className="text-2xl font-black text-black mb-2">{stats.completedOrders}</div>
-              <div className="text-sm font-black text-black uppercase">Completados</div>
+              <div className="text-sm font-black text-black uppercase">{t('stats.completed')}</div>
             </div>
             
             <div 
@@ -259,7 +265,7 @@ export default function OrdersPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <div className="text-2xl font-black text-black mb-2">{stats.pendingOrders}</div>
-              <div className="text-sm font-black text-black uppercase">Pendientes</div>
+              <div className="text-sm font-black text-black uppercase">{t('stats.pending')}</div>
             </div>
             
             <div 
@@ -267,7 +273,7 @@ export default function OrdersPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <div className="text-2xl font-black text-black mb-2">{formatPrice(stats.totalSpent)}</div>
-              <div className="text-sm font-black text-black uppercase">Total Gastado</div>
+              <div className="text-sm font-black text-black uppercase">{t('stats.total_spent')}</div>
             </div>
           </div>
         </div>
@@ -283,7 +289,7 @@ export default function OrdersPage() {
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black" />
               <input
                 type="text"
-                placeholder="Buscar por número o producto..."
+                placeholder={t('search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
@@ -298,13 +304,14 @@ export default function OrdersPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">Todos los estados</option>
-              <option value={OrderStatus.PENDING}>Pendiente</option>
-              <option value={OrderStatus.PROCESSING}>Procesando</option>
-              <option value={OrderStatus.PAID}>Pagado</option>
-              <option value={OrderStatus.COMPLETED}>Completado</option>
-              <option value={OrderStatus.FAILED}>Fallido</option>
-              <option value={OrderStatus.REFUNDED}>Reembolsado</option>
+              <option value="ALL">{t('filters.all_statuses')}</option>
+              <option value={OrderStatus.PENDING}>{t('status.pending')}</option>
+              <option value={OrderStatus.PROCESSING}>{t('status.processing')}</option>
+              <option value={OrderStatus.PAID}>{t('status.paid')}</option>
+              <option value={OrderStatus.COMPLETED}>{t('status.completed')}</option>
+              <option value={OrderStatus.CANCELLED}>{t('status.cancelled')}</option>
+              <option value={OrderStatus.REFUNDED}>{t('status.refunded')}</option>
+              <option value={OrderStatus.DISPUTED}>{t('status.disputed')}</option>
             </select>
 
             {/* Sort By */}
@@ -314,9 +321,9 @@ export default function OrdersPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="date">Ordenar por fecha</option>
-              <option value="amount">Ordenar por monto</option>
-              <option value="status">Ordenar por estado</option>
+              <option value="date">{t('sort.by_date')}</option>
+              <option value="amount">{t('sort.by_amount')}</option>
+              <option value="status">{t('sort.by_status')}</option>
             </select>
 
             {/* Sort Order */}
@@ -326,8 +333,8 @@ export default function OrdersPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="desc">Más reciente</option>
-              <option value="asc">Más antiguo</option>
+              <option value="desc">{t('sort.newest')}</option>
+              <option value="asc">{t('sort.oldest')}</option>
             </select>
           </div>
         </div>
@@ -340,13 +347,10 @@ export default function OrdersPage() {
           >
             <div className="text-6xl mb-4">📦</div>
             <h2 className="text-2xl font-black text-black uppercase mb-4">
-              {orders.length === 0 ? 'No tienes pedidos aún' : 'No se encontraron pedidos'}
+              {orders.length === 0 ? t('empty.no_orders') : t('empty.no_results')}
             </h2>
             <p className="text-gray-600 font-bold mb-6">
-              {orders.length === 0 
-                ? 'Comienza explorando nuestro catálogo de productos'
-                : 'Intenta ajustar los filtros de búsqueda'
-              }
+              {orders.length === 0 ? t('empty.start_shopping') : t('empty.adjust_filters')}
             </p>
             <Link 
               href="/productos"
@@ -354,7 +358,7 @@ export default function OrdersPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ShoppingBagIcon className="w-4 h-4" />
-              Ver Productos
+              {t('actions.view_products')}
             </Link>
           </div>
         ) : (
@@ -386,7 +390,10 @@ export default function OrdersPage() {
                         {formatPrice(order.totalAmount)}
                       </div>
                       <div className="text-sm text-gray-600 font-bold">
-                        {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+                        {t('items_count', { 
+                          count: order.items.length,
+                          item: order.items.length === 1 ? t('item.singular') : t('item.plural')
+                        })}
                       </div>
                     </div>
                     
@@ -396,7 +403,7 @@ export default function OrdersPage() {
                       style={{ boxShadow: '3px 3px 0 #000000' }}
                     >
                       <EyeIcon className="w-4 h-4" />
-                      Ver
+                      {t('actions.view')}
                     </Link>
                   </div>
                 </div>
@@ -430,7 +437,7 @@ export default function OrdersPage() {
                         </h4>
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold bg-blue-200 text-black px-2 py-1 border border-black">
-                            Qty: {item.quantity}
+                            {t('quantity_label')}: {item.quantity}
                           </span>
                           <span className="font-black text-black text-sm">
                             {formatPrice(item.price * item.quantity)}
@@ -445,7 +452,9 @@ export default function OrdersPage() {
                 <div className="flex items-center justify-between mt-4 pt-4 border-t-2 border-gray-200">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     {order.paymentIntentId && (
-                      <span className="font-bold">ID: {order.paymentIntentId.slice(-8)}</span>
+                      <span className="font-bold">
+                        {t('payment_id')}: {order.paymentIntentId.slice(-8)}
+                      </span>
                     )}
                   </div>
                   
@@ -457,7 +466,7 @@ export default function OrdersPage() {
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
                         <DownloadIcon className="w-3 h-3" />
-                        Descargar
+                        {t('actions.download')}
                       </Link>
                     )}
                     
@@ -466,7 +475,7 @@ export default function OrdersPage() {
                       className="flex items-center gap-1 text-sm bg-white border-2 border-black px-3 py-1 font-black text-black uppercase hover:bg-gray-100 transition-all"
                       style={{ boxShadow: '2px 2px 0 #000000' }}
                     >
-                      Ver Detalle
+                      {t('actions.view_detail')}
                       <ChevronRightIcon className="w-3 h-3" />
                     </Link>
                   </div>
@@ -480,7 +489,10 @@ export default function OrdersPage() {
         {filteredOrders.length > 0 && (
           <div className="mt-8 text-center">
             <p className="text-gray-600 font-bold">
-              Mostrando {filteredOrders.length} de {orders.length} pedidos
+              {t('results_showing', { 
+                showing: filteredOrders.length, 
+                total: orders.length 
+              })}
             </p>
           </div>
         )}

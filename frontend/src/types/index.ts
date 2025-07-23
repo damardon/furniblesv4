@@ -41,6 +41,7 @@ export interface SellerProfile {
   storeName: string;
   slug: string;
   description?: string;
+  feeBreakdown?: FeeBreakdownItem[];
   website?: string;
   phone?: string;
   avatar?: string;
@@ -51,6 +52,16 @@ export interface SellerProfile {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
+}
+export interface FeeBreakdownItem {
+  type: 'PLATFORM_FEE' | 'STRIPE_FEE' | 'SELLER_AMOUNT' | 'TAX'
+  description: string
+  amount: number
+  percentage?: number
+  sellerId?: string
+}
+export interface OrderWithFeeBreakdown {
+feeBreakdown: FeeBreakdownItem[]
 }
 
 export interface BuyerProfile {
@@ -66,33 +77,23 @@ export interface BuyerProfile {
   updatedAt: string;
 }
 
-// Product Types
+// Product Types - CORREGIDO: Solo categorías del Prisma Schema
 export enum ProductCategory {
-  TABLES = 'TABLES',
+  FURNITURE = 'FURNITURE',
   CHAIRS = 'CHAIRS',
+  TABLES = 'TABLES',
   BEDS = 'BEDS',
-  SHELVES = 'SHELVES',
   STORAGE = 'STORAGE',
-  DESKS = 'DESKS',
   OUTDOOR = 'OUTDOOR',
   DECORATIVE = 'DECORATIVE',
-  FURNITURES = 'FURNITURES',
-  FURNITURE = 'FURNITURE',
-  LIGHTING = 'LIGHTING',
-  KITCHEN = 'KITCHEN',
-  BATHROOM = 'BATHROOM',
-  OFFICE = 'OFFICE',
-  GARDEN = 'GARDEN',
-  TOYS = 'TOYS',
-  SPORTS = 'SPORTS',
-  ELECTRONICS = 'ELECTRONICS',
+  OFFICE = 'OFFICE'
 }
 
 export enum Difficulty {
   BEGINNER = 'BEGINNER',
   INTERMEDIATE = 'INTERMEDIATE', 
   ADVANCED = 'ADVANCED',
-  EXPERT = 'EXPERT',
+  EXPERT = 'EXPERT'
 }
 
 export enum ProductStatus {
@@ -112,7 +113,9 @@ export interface Product {
   category: ProductCategory;
   difficulty: Difficulty;
   pdfUrl: string;
-  previewImages: string[];
+  pdfFileId?: string;           // ID del archivo PDF principal
+  previewImages: string[];      // URLs de imágenes de vista previa
+  thumbnails?: string[];
   tags: string[];
   estimatedTime?: string;
   toolsRequired: string[];
@@ -121,6 +124,7 @@ export interface Product {
   specifications?: any;
   status: ProductStatus;
   sellerId: string;
+  // Estadísticas
   viewCount: number;
   downloadCount: number;
   favoriteCount: number;
@@ -146,7 +150,6 @@ export enum OrderStatus {
   PAID = 'PAID',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
-  FAILED = 'FAILED',
   REFUNDED = 'REFUNDED',
   DISPUTED = 'DISPUTED'
 }
@@ -162,21 +165,21 @@ export interface Order {
   totalAmount: number;
   sellerAmount: number;
   transferGroup?: string;
-  applicationFee: number;
+  applicationFee?: number;
   status: OrderStatus;
   paymentIntentId?: string;
   paymentStatus?: string;
   buyerEmail: string;
-  billingData: any;
+  billingData?: any;
+  billingAddress: any,
   metadata?: any;
-  feeBreakdown?: any;
   items: OrderItem[];
   createdAt: string;
   paidAt?: string;
   completedAt?: string;
   cancelledAt?: string;
   updatedAt: string;
-}
+ }
 
 export interface OrderItem {
   id: string;
@@ -211,6 +214,20 @@ export interface Review {
   orderId: string;
   productId: string;
   buyerId: string;
+  buyerName?: string
+  productTitle?: string
+  productSlug?: string
+  sellerName?: string
+  reportsCount?: number
+  moderationReason?: string
+  moderatedBy?: string
+  moderatedAt?: string
+  response?: {
+    id: string
+    comment: string
+    createdAt: string
+    sellerId: string
+  }
   sellerId: string;
   rating: number;
   title?: string;
@@ -219,17 +236,13 @@ export interface Review {
   cons?: string;
   status: ReviewStatus;
   isVerified: boolean;
-  helpfulCount: number;
   notHelpfulCount: number;
-  moderatedBy?: string;
-  moderatedAt?: string;
-  moderationReason?: string;
+  helpfulCount: number
   createdAt: string;
   updatedAt: string;
   // Relations
   buyer: User;
   product: Product;
-  response?: ReviewResponse;
   images?: ReviewImage[];
 }
 
@@ -260,18 +273,73 @@ export interface ReviewVote {
   createdAt: string;
 }
 
-// Notification Types
+// AGREGADO: Rating Types del Prisma Schema
+export interface ProductRating {
+  id: string;
+  productId: string;
+  totalReviews: number;
+  averageRating: number;
+  oneStar: number;
+  twoStar: number;
+  threeStar: number;
+  fourStar: number;
+  fiveStar: number;
+  recommendationRate: number;
+  updatedAt: string;
+}
+
+export interface SellerRating {
+  id: string;
+  sellerId: string;
+  totalReviews: number;
+  averageRating: number;
+  communicationRating?: number;
+  qualityRating?: number;
+  valueRating?: number;
+  shippingRating?: number;
+  oneStar: number;
+  twoStar: number;
+  threeStar: number;
+  fourStar: number;
+  fiveStar: number;
+  updatedAt: string;
+}
+
+// Notification Types - CORREGIDO: Todos los tipos del Prisma
 export enum NotificationType {
   ORDER_CREATED = 'ORDER_CREATED',
   ORDER_PAID = 'ORDER_PAID',
   ORDER_COMPLETED = 'ORDER_COMPLETED',
   ORDER_CANCELLED = 'ORDER_CANCELLED',
-  PRODUCT_APPROVED = 'PRODUCT_APPROVED',
-  PRODUCT_REJECTED = 'PRODUCT_REJECTED',
+  ORDER_DISPUTED = 'ORDER_DISPUTED',
+  ORDER_REFUNDED = 'ORDER_REFUNDED',
+  PRODUCT_SOLD = 'PRODUCT_SOLD',
+  DOWNLOAD_READY = 'DOWNLOAD_READY',
+  SYSTEM_NOTIFICATION = 'SYSTEM_NOTIFICATION',
+  // Payment related notifications
+  PAYMENT_SETUP = 'PAYMENT_SETUP',
+  PAYMENT_SETUP_COMPLETE = 'PAYMENT_SETUP_COMPLETE',
+  PAYMENT_METHOD_ADDED = 'PAYMENT_METHOD_ADDED',
+  PAYOUT_REQUESTED = 'PAYOUT_REQUESTED',
+  PAYOUT_COMPLETED = 'PAYOUT_COMPLETED',
+  PAYOUT_FAILED = 'PAYOUT_FAILED',
+  TRANSFER_FAILED = 'TRANSFER_FAILED',
+  DISPUTE_CREATED = 'DISPUTE_CREATED',
+  REFUND_PROCESSED = 'REFUND_PROCESSED',
+  SALE_COMPLETED = 'SALE_COMPLETED',
+  // Review related notifications
   REVIEW_RECEIVED = 'REVIEW_RECEIVED',
-  REVIEW_RESPONSE = 'REVIEW_RESPONSE',
-  PAYOUT_PROCESSED = 'PAYOUT_PROCESSED',
-  SYSTEM_ANNOUNCEMENT = 'SYSTEM_ANNOUNCEMENT'
+  REVIEW_RESPONSE_RECEIVED = 'REVIEW_RESPONSE_RECEIVED',
+  REVIEW_FLAGGED = 'REVIEW_FLAGGED',
+  REVIEW_REMOVED = 'REVIEW_REMOVED',
+  // Advanced review notifications
+  REVIEW_HELPFUL_VOTE = 'REVIEW_HELPFUL_VOTE',
+  REVIEW_WEEKLY_DIGEST = 'REVIEW_WEEKLY_DIGEST',
+  REVIEW_FOLLOW_UP = 'REVIEW_FOLLOW_UP',
+  REVIEW_MILESTONE = 'REVIEW_MILESTONE',
+  SELLER_RATING_IMPROVED = 'SELLER_RATING_IMPROVED',
+  PRODUCT_RATING_MILESTONE = 'PRODUCT_RATING_MILESTONE',
+  REVIEW_PENDING_REMINDER = 'REVIEW_PENDING_REMINDER'
 }
 
 export enum NotificationPriority {
@@ -279,6 +347,21 @@ export enum NotificationPriority {
   NORMAL = 'NORMAL',
   HIGH = 'HIGH',
   URGENT = 'URGENT'
+}
+
+// AGREGADO: Nuevos enums del Prisma Schema
+export enum NotificationChannel {
+  EMAIL = 'EMAIL',
+  WEB_PUSH = 'WEB_PUSH',
+  IN_APP = 'IN_APP',
+  SMS = 'SMS'
+}
+
+export enum DigestFrequency {
+  DISABLED = 'DISABLED',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY'
 }
 
 export interface Notification {
@@ -293,11 +376,41 @@ export interface Notification {
   sentAt: string;
   emailSent: boolean;
   priority: NotificationPriority;
+  channel?: NotificationChannel;
+  groupKey?: string;
   orderId?: string;
   expiresAt?: string;
   clickedAt?: string;
   clickCount: number;
   createdAt: string;
+}
+
+// AGREGADO: Notification Preferences del Prisma Schema
+export interface NotificationPreference {
+  id: string;
+  userId: string;
+  emailEnabled: boolean;
+  webPushEnabled: boolean;
+  inAppEnabled: boolean;
+  orderNotifications: boolean;
+  paymentNotifications: boolean;
+  reviewNotifications: boolean;
+  marketingEmails: boolean;
+  systemNotifications: boolean;
+  reviewReceived: boolean;
+  reviewResponses: boolean;
+  reviewHelpfulVotes: boolean;
+  reviewMilestones: boolean;
+  reviewReminders: boolean;
+  digestFrequency: DigestFrequency;
+  digestDay?: number;
+  digestTime?: string;
+  quietHoursEnabled: boolean;
+  quietHoursStart?: string;
+  quietHoursEnd?: string;
+  timezone?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Transaction Types
@@ -361,6 +474,48 @@ export interface Payout {
   seller: User;
 }
 
+// AGREGADO: Fee Types del Prisma Schema
+export enum FeeType {
+  PLATFORM_FEE = 'PLATFORM_FEE',
+  PAYMENT_PROCESSING = 'PAYMENT_PROCESSING',
+  TAX = 'TAX',
+  REGIONAL_FEE = 'REGIONAL_FEE'
+}
+
+export enum SellerFeeType {
+  PERCENTAGE = 'PERCENTAGE',
+  FIXED = 'FIXED',
+  TIERED = 'TIERED'
+}
+
+export enum InvoiceStatus {
+  PENDING = 'PENDING',
+  ISSUED = 'ISSUED',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+  CANCELLED = 'CANCELLED'
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  sellerId: string;
+  orderId: string;
+  subtotal: number;
+  platformFee: number;
+  netAmount: number;
+  taxAmount?: number;
+  totalAmount: number;
+  status: InvoiceStatus;
+  currency: string;
+  issuedAt: string;
+  dueAt?: string;
+  paidAt?: string;
+  pdfUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // File Types
 export enum FileType {
   PDF = 'PDF',
@@ -393,6 +548,39 @@ export interface File {
   uploadedById: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// AGREGADO: Download Token Types del Prisma Schema
+export interface DownloadToken {
+  id: string;
+  token: string;
+  orderId: string;
+  productId: string;
+  buyerId: string;
+  downloadLimit: number;
+  downloadCount: number;
+  expiresAt: string;
+  isActive: boolean;
+  createdAt: string;
+  lastDownloadAt?: string;
+  lastIpAddress?: string;
+  lastUserAgent?: string;
+}
+
+export interface Download {
+  id: string;
+  downloadToken: string;
+  orderId: string;
+  productId: string;
+  buyerId: string;
+  expiresAt: string;
+  downloadCount: number;
+  maxDownloads: number;
+  isActive: boolean;
+  createdAt: string;
+  lastDownloadAt?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 // Analytics Types

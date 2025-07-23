@@ -1,5 +1,4 @@
-// Seed data para productos de prueba
-// prisma/seed-products.ts
+// prisma/seed-products.ts - Corregido para SQLite
 import { PrismaClient, ProductCategory, Difficulty, ProductStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -12,13 +11,15 @@ const sampleProducts = [
     category: ProductCategory.TABLES,
     difficulty: Difficulty.INTERMEDIATE,
     status: ProductStatus.APPROVED,
-    tags: ['mesa', 'comedor', 'escandinavo', 'moderno', 'madera'],
+    // Arrays convertidos a JSON strings
+    tags: JSON.stringify(['mesa', 'comedor', 'escandinavo', 'moderno', 'madera']),
     estimatedTime: '8-12 horas',
-    toolsRequired: ['sierra circular', 'taladro', 'lijadora orbital', 'router'],
-    materials: ['tablero de roble', 'patas torneadas', 'tornillos', 'pegamento', 'barniz'],
+    toolsRequired: JSON.stringify(['sierra circular', 'taladro', 'lijadora orbital', 'router']),
+    materials: JSON.stringify(['tablero de roble', 'patas torneadas', 'tornillos', 'pegamento', 'barniz']),
     dimensions: '180cm x 90cm x 75cm',
-    pdfUrl: 'placeholder-pdf-url',
-    previewImages: ['mesa-comedor-1.jpg', 'mesa-comedor-2.jpg'],
+    // Archivos como JSON strings (IDs de archivos)
+    imageFileIds: JSON.stringify(['mesa-comedor-1.jpg', 'mesa-comedor-2.jpg']),
+    thumbnailFileIds: JSON.stringify(['mesa-comedor-thumb.jpg']),
   },
   {
     title: 'Silla de Oficina Ergonómica DIY',
@@ -27,13 +28,13 @@ const sampleProducts = [
     category: ProductCategory.CHAIRS,
     difficulty: Difficulty.ADVANCED,
     status: ProductStatus.APPROVED,
-    tags: ['silla', 'oficina', 'ergonomica', 'tapizado'],
+    tags: JSON.stringify(['silla', 'oficina', 'ergonomica', 'tapizado']),
     estimatedTime: '6-8 horas',
-    toolsRequired: ['sierra de calar', 'taladro', 'grapadora', 'destornillador'],
-    materials: ['contrachapado', 'espuma', 'tela', 'tornillería', 'ruedas'],
+    toolsRequired: JSON.stringify(['sierra de calar', 'taladro', 'grapadora', 'destornillador']),
+    materials: JSON.stringify(['contrachapado', 'espuma', 'tela', 'tornillería', 'ruedas']),
     dimensions: '60cm x 55cm x 85-95cm',
-    pdfUrl: 'placeholder-pdf-url',
-    previewImages: ['silla-oficina-1.jpg'],
+    imageFileIds: JSON.stringify(['silla-oficina-1.jpg']),
+    thumbnailFileIds: JSON.stringify(['silla-oficina-thumb.jpg']),
   },
   {
     title: 'Estantería Modular Minimalista',
@@ -42,13 +43,13 @@ const sampleProducts = [
     category: ProductCategory.STORAGE,
     difficulty: Difficulty.BEGINNER,
     status: ProductStatus.APPROVED,
-    tags: ['estanteria', 'modular', 'minimalista', 'facil'],
+    tags: JSON.stringify(['estanteria', 'modular', 'minimalista', 'facil']),
     estimatedTime: '2-3 horas',
-    toolsRequired: ['taladro', 'nivel', 'destornillador'],
-    materials: ['tablero melamina', 'escuadras', 'tornillos'],
+    toolsRequired: JSON.stringify(['taladro', 'nivel', 'destornillador']),
+    materials: JSON.stringify(['tablero melamina', 'escuadras', 'tornillos']),
     dimensions: '80cm x 30cm x 200cm (por módulo)',
-    pdfUrl: 'placeholder-pdf-url',
-    previewImages: ['estanteria-1.jpg', 'estanteria-2.jpg', 'estanteria-3.jpg'],
+    imageFileIds: JSON.stringify(['estanteria-1.jpg', 'estanteria-2.jpg', 'estanteria-3.jpg']),
+    thumbnailFileIds: JSON.stringify(['estanteria-thumb.jpg']),
   },
 ];
 
@@ -74,21 +75,25 @@ export async function seedProducts() {
       .replace(/-+/g, '-')
       .trim();
 
-    const product = await prisma.product.create({
-      data: {
-        ...productData,
-        slug,
-        sellerId: seller.id,
-        publishedAt: new Date(),
-        specifications: {
-          featured: true,
-          difficulty_level: productData.difficulty,
-          style: 'modern',
+    try {
+      const product = await prisma.product.create({
+        data: {
+          ...productData,
+          slug,
+          sellerId: seller.id,
+          publishedAt: new Date(),
+          specifications: {
+            featured: true,
+            difficulty_level: productData.difficulty,
+            style: 'modern',
+          },
         },
-      },
-    });
+      });
 
-    console.log(`✅ Created product: ${product.title}`);
+      console.log(`✅ Created product: ${product.title}`);
+    } catch (error) {
+      console.error(`❌ Error creating product ${productData.title}:`, error);
+    }
   }
 
   console.log('🎉 Products seeded successfully!');
@@ -106,232 +111,60 @@ if (require.main === module) {
     });
 }
 
-// API Documentation Examples
-// Para usar con herramientas como Postman o Insomnia
+// Función helper para crear un usuario seller si no existe
+export async function createSellerIfNotExists() {
+  const bcrypt = require('bcryptjs');
+  
+  const existingSeller = await prisma.user.findFirst({
+    where: { role: 'SELLER' },
+  });
 
-export const ProductsAPIExamples = {
-  // POST /api/products
-  createProduct: {
-    method: 'POST',
-    url: '/api/products',
-    headers: {
-      'Authorization': 'Bearer <jwt_token>',
-      'Content-Type': 'application/json',
-      'Accept-Language': 'es', // o 'en'
-    },
-    body: {
-      title: 'Mesa de Centro Vintage',
-      description: 'Hermosa mesa de centro con diseño vintage que combinará perfectamente con tu sala de estar. Los planos incluyen medidas detalladas y técnicas de envejecido de la madera.',
-      price: 9.99,
-      category: 'TABLES',
-      difficulty: 'INTERMEDIATE',
-      tags: ['mesa', 'centro', 'vintage', 'sala'],
-      estimatedTime: '4-6 horas',
-      toolsRequired: ['sierra', 'lijadora', 'taladro'],
-      materials: ['madera de pino', 'tornillos', 'tinte'],
-      dimensions: '100cm x 60cm x 45cm',
-      specifications: {
-        style: 'vintage',
-        weight_capacity: '50kg',
-        finish: 'natural'
-      }
-    }
-  },
-
-  // GET /api/products (público)
-  listProducts: {
-    method: 'GET',
-    url: '/api/products?category=TABLES&difficulty=INTERMEDIATE&priceMin=5&priceMax=20&sortBy=popular&page=1&limit=12',
-    headers: {
-      'Accept-Language': 'es'
-    }
-  },
-
-  // GET /api/products/search
-  searchProducts: {
-    method: 'GET',
-    url: '/api/products/search?q=mesa%20comedor&tags=moderno,madera&sortBy=rating',
-    headers: {
-      'Accept-Language': 'es'
-    }
-  },
-
-  // GET /api/products/my (seller)
-  myProducts: {
-    method: 'GET',
-    url: '/api/products/my?status=APPROVED&page=1&limit=10',
-    headers: {
-      'Authorization': 'Bearer <jwt_token>',
-      'Accept-Language': 'es'
-    }
-  },
-
-  // PATCH /api/products/:id
-  updateProduct: {
-    method: 'PATCH',
-    url: '/api/products/clrk123456789',
-    headers: {
-      'Authorization': 'Bearer <jwt_token>',
-      'Content-Type': 'application/json'
-    },
-    body: {
-      price: 14.99,
-      tags: ['mesa', 'comedor', 'premium'],
-      description: 'Descripción actualizada con más detalles...'
-    }
-  },
-
-  // POST /api/products/:id/publish
-  publishProduct: {
-    method: 'POST',
-    url: '/api/products/clrk123456789/publish',
-    headers: {
-      'Authorization': 'Bearer <jwt_token>'
-    }
-  },
-
-  // POST /api/products/:id/approve (admin)
-  approveProduct: {
-    method: 'POST',
-    url: '/api/products/clrk123456789/approve',
-    headers: {
-      'Authorization': 'Bearer <admin_jwt_token>'
-    }
-  },
-
-  // POST /api/products/:id/reject (admin)
-  rejectProduct: {
-    method: 'POST',
-    url: '/api/products/clrk123456789/reject',
-    headers: {
-      'Authorization': 'Bearer <admin_jwt_token>',
-      'Content-Type': 'application/json'
-    },
-    body: {
-      reason: 'Las imágenes no son claras suficientes. Por favor, suba imágenes de mejor calidad.'
-    }
+  if (existingSeller) {
+    console.log('✅ Seller already exists');
+    return existingSeller;
   }
-};
 
-// Estados de respuesta esperados
-export const ExpectedResponses = {
-  // Producto creado exitosamente
-  created: {
-    status: 201,
-    body: {
-      id: 'clrk123456789',
-      title: 'Mesa de Centro Vintage',
-      description: 'Hermosa mesa de centro...',
-      slug: 'mesa-de-centro-vintage',
-      price: 9.99,
-      category: 'TABLES',
-      difficulty: 'INTERMEDIATE',
-      status: 'DRAFT',
-      tags: ['mesa', 'centro', 'vintage', 'sala'],
-      viewCount: 0,
-      downloadCount: 0,
-      favoriteCount: 0,
-      rating: 0,
-      reviewCount: 0,
-      seller: {
-        id: 'seller_id',
-        name: 'Juan Pérez',
-        avatar: null
-      },
-      createdAt: '2024-01-15T10:30:00.000Z',
-      updatedAt: '2024-01-15T10:30:00.000Z'
-    }
-  },
-
-  // Lista paginada de productos
-  productsList: {
-    status: 200,
-    body: {
-      data: [
-        {
-          id: 'clrk123456789',
-          title: 'Mesa de Comedor Moderna',
-          // ... otros campos
-        }
-      ],
-      total: 45,
-      page: 1,
-      limit: 12,
-      totalPages: 4,
-      hasNext: true,
-      hasPrev: false
-    }
-  },
-
-  // Errores comunes
-  errors: {
-    notFound: {
-      status: 404,
-      body: {
-        statusCode: 404,
-        message: 'Producto no encontrado',
-        error: 'Not Found'
-      }
+  console.log('🆕 Creating seller...');
+  
+  const hashedPassword = await bcrypt.hash('seller123', 12);
+  
+  const seller = await prisma.user.create({
+    data: {
+      email: 'seller@furnibles.com',
+      password: hashedPassword,
+      firstName: 'Vendedor',
+      lastName: 'Prueba',
+      role: 'SELLER',
+      emailVerified: true,
+      isActive: true,
+      status: 'ACTIVE',
     },
-    validation: {
-      status: 400,
-      body: {
-        statusCode: 400,
-        message: [
-          'El título debe tener al menos 10 caracteres',
-          'El precio debe ser un número válido'
-        ],
-        error: 'Bad Request'
-      }
-    },
-    unauthorized: {
-      status: 401,
-      body: {
-        statusCode: 401,
-        message: 'Token inválido',
-        error: 'Unauthorized'
-      }
-    },
-    forbidden: {
-      status: 403,
-      body: {
-        statusCode: 403,
-        message: 'No tienes autorización para modificar este producto',
-        error: 'Forbidden'
-      }
-    }
-  }
-};
+  });
 
-// Comandos de testing
-export const TestingCommands = {
-  // Tests unitarios
-  unit: 'npm run test -- products',
-  
-  // Tests de integración
-  integration: 'npm run test:e2e -- products',
-  
-  // Coverage
-  coverage: 'npm run test:cov -- products',
-  
-  // Watch mode
-  watch: 'npm run test:watch -- products'
-};
+  // Crear perfil de seller
+  await prisma.sellerProfile.create({
+    data: {
+      userId: seller.id,
+      storeName: 'Muebles Artesanales',
+      slug: 'muebles-artesanales',
+      description: 'Especialistas en muebles de madera artesanales',
+      isVerified: true,
+    },
+  });
 
-// Script de migración y seed
-export const SetupCommands = {
-  // Aplicar cambios de schema
-  dbPush: 'npx prisma db push',
+  console.log('✅ Seller created with profile');
+  return seller;
+}
+
+// Script completo de seed
+export async function fullSeed() {
+  console.log('🚀 Starting full seed...');
   
-  // Generar cliente
-  generate: 'npx prisma generate',
+  // 1. Crear seller si no existe
+  await createSellerIfNotExists();
   
-  // Ejecutar seeds
-  seed: 'npx ts-node prisma/seed-products.ts',
+  // 2. Crear productos
+  await seedProducts();
   
-  // Ver base de datos
-  studio: 'npx prisma studio',
-  
-  // Reset completo (¡cuidado en producción!)
-  reset: 'npx prisma migrate reset'
-};
+  console.log('🎉 Full seed completed!');
+}

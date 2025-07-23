@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   TrendingUp,
   TrendingDown,
@@ -21,16 +22,16 @@ import {
 
 import { useSellerStore } from '@/lib/stores/seller-store'
 
-// Funciones de formato
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-ES', {
+// Funciones de formato - internacionalizadas
+const formatCurrency = (amount: number, locale: string = 'es-ES') => {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD'
   }).format(amount)
 }
 
-const formatNumber = (num: number) => {
-  return new Intl.NumberFormat('es-ES').format(num)
+const formatNumber = (num: number, locale: string = 'es-ES') => {
+  return new Intl.NumberFormat(locale).format(num)
 }
 
 const formatPercentage = (value: number) => {
@@ -41,6 +42,10 @@ export default function SellerAnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month')
   const [isLoading, setIsLoading] = useState(true)
   const [analyticsData, setAnalyticsData] = useState<any>(null)
+
+  // Traducciones
+  const t = useTranslations('seller.analytics')
+  const tCommon = useTranslations('common')
 
   const {
     dashboardStats,
@@ -89,19 +94,19 @@ export default function SellerAnalyticsPage() {
             revenue: p.price * (Math.floor(Math.random() * 50) + 10)
           })),
           revenueByMonth: [
-            { month: 'Ene', revenue: 1200, sales: 24 },
-            { month: 'Feb', revenue: 1800, sales: 36 },
-            { month: 'Mar', revenue: 2400, sales: 48 },
-            { month: 'Abr', revenue: 1900, sales: 38 },
-            { month: 'May', revenue: 2800, sales: 56 },
-            { month: 'Jun', revenue: 3200, sales: 64 },
+            { month: t('months.jan'), revenue: 1200, sales: 24 },
+            { month: t('months.feb'), revenue: 1800, sales: 36 },
+            { month: t('months.mar'), revenue: 2400, sales: 48 },
+            { month: t('months.apr'), revenue: 1900, sales: 38 },
+            { month: t('months.may'), revenue: 2800, sales: 56 },
+            { month: t('months.jun'), revenue: 3200, sales: 64 },
           ],
           categoryBreakdown: [
-            { category: 'Mesas', sales: 45, percentage: 35 },
-            { category: 'Sillas', sales: 32, percentage: 25 },
-            { category: 'Almacenamiento', sales: 28, percentage: 22 },
-            { category: 'Decorativo', sales: 15, percentage: 12 },
-            { category: 'Otros', sales: 8, percentage: 6 },
+            { category: t('categories.tables'), sales: 45, percentage: 35 },
+            { category: t('categories.chairs'), sales: 32, percentage: 25 },
+            { category: t('categories.storage'), sales: 28, percentage: 22 },
+            { category: t('categories.decorative'), sales: 15, percentage: 12 },
+            { category: t('categories.others'), sales: 8, percentage: 6 },
           ]
         }
         
@@ -114,7 +119,7 @@ export default function SellerAnalyticsPage() {
     }
 
     loadData()
-  }, [selectedPeriod, loadDashboardStats, loadProducts, loadAnalytics, dashboardStats])
+  }, [selectedPeriod, loadDashboardStats, loadProducts, loadAnalytics, dashboardStats, t])
 
   // Componente para mostrar métricas con tendencia
   const MetricCard = ({ 
@@ -151,7 +156,7 @@ export default function SellerAnalyticsPage() {
             {formatPercentage(Math.abs(trend))}
           </div>
           <span className="text-xs text-gray-600 font-bold">
-            vs periodo anterior
+            {t('vs_previous_period')}
           </span>
         </div>
       </div>
@@ -163,7 +168,7 @@ export default function SellerAnalyticsPage() {
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-bold">Cargando analytics...</p>
+          <p className="text-gray-600 font-bold">{t('loading_analytics')}</p>
         </div>
       </div>
     )
@@ -175,9 +180,9 @@ export default function SellerAnalyticsPage() {
       <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black uppercase text-black">Analytics</h1>
+            <h1 className="text-2xl font-black uppercase text-black">{t('title')}</h1>
             <p className="text-gray-600 font-bold">
-              Analiza el rendimiento de tu tienda
+              {t('subtitle')}
             </p>
           </div>
 
@@ -186,10 +191,10 @@ export default function SellerAnalyticsPage() {
             <Calendar className="h-5 w-5 text-gray-600" />
             <div className="flex border-2 border-black bg-white">
               {[
-                { key: 'week', label: 'Semana' },
-                { key: 'month', label: 'Mes' },
-                { key: 'quarter', label: 'Trimestre' },
-                { key: 'year', label: 'Año' }
+                { key: 'week', label: t('periods.week') },
+                { key: 'month', label: t('periods.month') },
+                { key: 'quarter', label: t('periods.quarter') },
+                { key: 'year', label: t('periods.year') }
               ].map((period) => (
                 <button
                   key={period.key}
@@ -211,7 +216,7 @@ export default function SellerAnalyticsPage() {
       {/* MÉTRICAS PRINCIPALES */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Ingresos"
+          title={t('metrics.revenue')}
           value={analyticsData?.revenue.current || 0}
           previousValue={analyticsData?.revenue.previous || 0}
           trend={analyticsData?.revenue.trend || 0}
@@ -221,7 +226,7 @@ export default function SellerAnalyticsPage() {
         />
         
         <MetricCard
-          title="Ventas"
+          title={t('metrics.sales')}
           value={analyticsData?.sales.current || 0}
           previousValue={analyticsData?.sales.previous || 0}
           trend={analyticsData?.sales.trend || 0}
@@ -230,7 +235,7 @@ export default function SellerAnalyticsPage() {
         />
         
         <MetricCard
-          title="Clientes"
+          title={t('metrics.customers')}
           value={analyticsData?.customers.current || 0}
           previousValue={analyticsData?.customers.previous || 0}
           trend={analyticsData?.customers.trend || 0}
@@ -239,7 +244,7 @@ export default function SellerAnalyticsPage() {
         />
         
         <MetricCard
-          title="Conversión"
+          title={t('metrics.conversion')}
           value={analyticsData?.conversionRate.current || 0}
           previousValue={analyticsData?.conversionRate.previous || 0}
           trend={analyticsData?.conversionRate.trend || 0}
@@ -253,7 +258,7 @@ export default function SellerAnalyticsPage() {
         {/* GRÁFICO DE INGRESOS */}
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-black uppercase text-black">Ingresos por Mes</h3>
+            <h3 className="text-xl font-black uppercase text-black">{t('charts.revenue_by_month')}</h3>
             <BarChart3 className="h-6 w-6 text-gray-600" />
           </div>
           
@@ -269,7 +274,7 @@ export default function SellerAnalyticsPage() {
                       {formatCurrency(data.revenue)}
                     </span>
                     <span className="text-xs text-gray-600 font-bold">
-                      {data.sales} ventas
+                      {t('sales_count', { count: data.sales })}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 h-3 border border-black">
@@ -289,7 +294,7 @@ export default function SellerAnalyticsPage() {
         {/* PRODUCTOS TOP */}
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-black uppercase text-black">Top Productos</h3>
+            <h3 className="text-xl font-black uppercase text-black">{t('charts.top_products')}</h3>
             <Award className="h-6 w-6 text-gray-600" />
           </div>
           
@@ -307,7 +312,7 @@ export default function SellerAnalyticsPage() {
                   <div className="flex items-center gap-4 text-xs text-gray-600 mt-1">
                     <span className="flex items-center gap-1">
                       <Package className="h-3 w-3" />
-                      {product.salesCount} ventas
+                      {t('product_stats.sales', { count: product.salesCount })}
                     </span>
                     <span className="flex items-center gap-1">
                       <Eye className="h-3 w-3" />
@@ -325,7 +330,7 @@ export default function SellerAnalyticsPage() {
                     {formatCurrency(product.revenue)}
                   </p>
                   <p className="text-xs text-gray-600 font-bold">
-                    {formatCurrency(product.price)} c/u
+                    {formatCurrency(product.price)} {t('product_stats.each')}
                   </p>
                 </div>
               </div>
@@ -338,7 +343,7 @@ export default function SellerAnalyticsPage() {
         {/* BREAKDOWN POR CATEGORÍA */}
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-black uppercase text-black">Ventas por Categoría</h3>
+            <h3 className="text-xl font-black uppercase text-black">{t('charts.sales_by_category')}</h3>
             <PieChart className="h-6 w-6 text-gray-600" />
           </div>
           
@@ -356,7 +361,7 @@ export default function SellerAnalyticsPage() {
                         {category.category}
                       </span>
                       <span className="text-sm font-bold text-black">
-                        {category.sales} ventas
+                        {t('category_sales', { count: category.sales })}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 h-2 border border-black">
@@ -380,7 +385,7 @@ export default function SellerAnalyticsPage() {
         {/* MÉTRICAS ADICIONALES */}
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-black uppercase text-black">Métricas Clave</h3>
+            <h3 className="text-xl font-black uppercase text-black">{t('charts.key_metrics')}</h3>
             <Activity className="h-6 w-6 text-gray-600" />
           </div>
           
@@ -388,7 +393,7 @@ export default function SellerAnalyticsPage() {
             {/* Average Order Value */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-gray-600 text-sm">VALOR PROMEDIO PEDIDO</span>
+                <span className="font-bold text-gray-600 text-sm">{t('key_metrics.avg_order_value')}</span>
                 <span className="font-black text-black">
                   {formatCurrency((analyticsData?.revenue.current || 0) / (analyticsData?.sales.current || 1))}
                 </span>
@@ -401,7 +406,7 @@ export default function SellerAnalyticsPage() {
             {/* Customer Retention */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-gray-600 text-sm">RETENCIÓN CLIENTES</span>
+                <span className="font-bold text-gray-600 text-sm">{t('key_metrics.customer_retention')}</span>
                 <span className="font-black text-black">67%</span>
               </div>
               <div className="w-full bg-gray-200 h-2 border border-black">
@@ -412,7 +417,7 @@ export default function SellerAnalyticsPage() {
             {/* Product Views */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-gray-600 text-sm">VISTAS TOTALES</span>
+                <span className="font-bold text-gray-600 text-sm">{t('key_metrics.total_views')}</span>
                 <span className="font-black text-black">
                   {formatNumber(products.reduce((sum, p) => sum + p.viewCount, 0))}
                 </span>
@@ -425,7 +430,7 @@ export default function SellerAnalyticsPage() {
             {/* Downloads */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-gray-600 text-sm">DESCARGAS TOTALES</span>
+                <span className="font-bold text-gray-600 text-sm">{t('key_metrics.total_downloads')}</span>
                 <span className="font-black text-black">
                   {formatNumber(products.reduce((sum, p) => sum + p.downloadCount, 0))}
                 </span>
@@ -438,7 +443,7 @@ export default function SellerAnalyticsPage() {
             {/* Average Rating */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-gray-600 text-sm">RATING PROMEDIO</span>
+                <span className="font-bold text-gray-600 text-sm">{t('key_metrics.avg_rating')}</span>
                 <div className="flex items-center gap-1">
                   <span className="font-black text-black">
                     {(products.reduce((sum, p) => sum + p.rating, 0) / (products.length || 1)).toFixed(1)}
@@ -458,7 +463,7 @@ export default function SellerAnalyticsPage() {
       <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
         <div className="flex items-center gap-3 mb-6">
           <Target className="h-6 w-6 text-orange-500" />
-          <h3 className="text-xl font-black uppercase text-black">Insights y Recomendaciones</h3>
+          <h3 className="text-xl font-black uppercase text-black">{t('insights.title')}</h3>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -466,11 +471,12 @@ export default function SellerAnalyticsPage() {
           <div className="bg-green-50 border-2 border-green-500 p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="h-5 w-5 text-green-600" />
-              <span className="font-black text-green-800 text-sm">CRECIMIENTO</span>
+              <span className="font-black text-green-800 text-sm">{t('insights.growth.title')}</span>
             </div>
             <p className="text-green-700 font-bold text-sm">
-              Tus ventas han crecido {analyticsData?.revenue.trend.toFixed(1)}% este período. 
-              Continúa subiendo productos de calidad para mantener el crecimiento.
+              {t('insights.growth.description', { 
+                percentage: analyticsData?.revenue.trend.toFixed(1) 
+              })}
             </p>
           </div>
 
@@ -478,11 +484,10 @@ export default function SellerAnalyticsPage() {
           <div className="bg-blue-50 border-2 border-blue-500 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Star className="h-5 w-5 text-blue-600" />
-              <span className="font-black text-blue-800 text-sm">CALIDAD</span>
+              <span className="font-black text-blue-800 text-sm">{t('insights.quality.title')}</span>
             </div>
             <p className="text-blue-700 font-bold text-sm">
-              Tu rating promedio es excelente. Los productos bien valorados tienen 
-              40% más probabilidad de ser comprados.
+              {t('insights.quality.description')}
             </p>
           </div>
 
@@ -490,11 +495,10 @@ export default function SellerAnalyticsPage() {
           <div className="bg-orange-50 border-2 border-orange-500 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Clock className="h-5 w-5 text-orange-600" />
-              <span className="font-black text-orange-800 text-sm">OPORTUNIDAD</span>
+              <span className="font-black text-orange-800 text-sm">{t('insights.opportunity.title')}</span>
             </div>
             <p className="text-orange-700 font-bold text-sm">
-              Considera expandir tu catálogo en categorías con alta demanda 
-              como almacenamiento y muebles de oficina.
+              {t('insights.opportunity.description')}
             </p>
           </div>
         </div>

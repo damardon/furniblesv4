@@ -12,7 +12,7 @@ export class CheckoutDto {
   @ApiProperty({
     description: 'URL de éxito después del pago',
     required: false,
-    default: 'http://localhost:3000/orders/success'
+    default: 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev/orders/success'
   })
   @IsOptional()
   @IsUrl()
@@ -21,7 +21,7 @@ export class CheckoutDto {
   @ApiProperty({
     description: 'URL de cancelación',
     required: false,
-    default: 'http://localhost:3000/cart'
+    default: 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev/cart'
   })
   @IsOptional()
   @IsUrl()

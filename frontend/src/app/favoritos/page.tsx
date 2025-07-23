@@ -34,6 +34,8 @@ import { ProductCategory, Difficulty } from '@/types'
 
 export default function FavoritesPage() {
   const t = useTranslations('favorites')
+  const tCommon = useTranslations('common')
+  const tProducts = useTranslations('products')
   const router = useRouter()
   
   // Stores
@@ -231,7 +233,7 @@ export default function FavoritesPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">Acceso restringido</p>
+          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
         </div>
       </div>
     )
@@ -244,10 +246,10 @@ export default function FavoritesPage() {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              Inicio
+              {tCommon('navigation.home')}
             </Link>
             <span>/</span>
-            <span className="text-orange-500">Favoritos</span>
+            <span className="text-orange-500">{t('title')}</span>
           </div>
         </div>
       </div>
@@ -262,16 +264,16 @@ export default function FavoritesPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ArrowLeftIcon className="w-4 h-4" />
-              Volver
+              {tCommon('actions.back')}
             </Link>
             
             <div>
               <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
                 <HeartIcon className="w-8 h-8 fill-red-500 text-red-500" />
-                Mis Favoritos
+                {t('title')}
               </h1>
               <p className="text-gray-600 font-bold mt-2">
-                Productos que has guardado para más tarde
+                {t('subtitle')}
               </p>
             </div>
           </div>
@@ -284,7 +286,7 @@ export default function FavoritesPage() {
             >
               <HeartIcon className="w-6 h-6 mx-auto mb-2 text-red-600" />
               <div className="text-xl font-black text-black mb-1">{stats.totalFavorites}</div>
-              <div className="text-xs font-black text-black uppercase">Total Favoritos</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.total_favorites')}</div>
             </div>
             
             <div 
@@ -293,7 +295,7 @@ export default function FavoritesPage() {
             >
               <TagIcon className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <div className="text-xl font-black text-black mb-1">{Object.keys(stats.byCategory).length}</div>
-              <div className="text-xs font-black text-black uppercase">Categorías</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.categories')}</div>
             </div>
             
             <div 
@@ -302,7 +304,7 @@ export default function FavoritesPage() {
             >
               <WrenchIcon className="w-6 h-6 mx-auto mb-2 text-green-600" />
               <div className="text-xl font-black text-black mb-1">{Object.keys(stats.byDifficulty).length}</div>
-              <div className="text-xs font-black text-black uppercase">Dificultades</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.difficulties')}</div>
             </div>
             
             <div 
@@ -313,7 +315,7 @@ export default function FavoritesPage() {
               <div className="text-xl font-black text-black mb-1">
                 {formatPrice(favorites.reduce((sum, fav) => sum + fav.product.price, 0))}
               </div>
-              <div className="text-xs font-black text-black uppercase">Valor Total</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.total_value')}</div>
             </div>
             
             <div 
@@ -322,7 +324,7 @@ export default function FavoritesPage() {
             >
               <CalendarIcon className="w-6 h-6 mx-auto mb-2 text-purple-600" />
               <div className="text-xl font-black text-black mb-1">{stats.recentlyAdded}</div>
-              <div className="text-xs font-black text-black uppercase">Esta Semana</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.this_week')}</div>
             </div>
           </div>
 
@@ -334,7 +336,7 @@ export default function FavoritesPage() {
             >
               <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                 <BarChartIcon className="w-5 h-5" />
-                Favoritos por Categoría
+                {t('category_distribution.title')}
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {Object.entries(stats.byCategory).map(([category, count]) => (
@@ -363,7 +365,7 @@ export default function FavoritesPage() {
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black" />
               <input
                 type="text"
-                placeholder="Buscar favoritos..."
+                placeholder={t('filters.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
@@ -378,7 +380,7 @@ export default function FavoritesPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">Todas las categorías</option>
+              <option value="ALL">{t('filters.all_categories')}</option>
               {Object.values(ProductCategory).map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
@@ -391,7 +393,7 @@ export default function FavoritesPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">Todas las dificultades</option>
+              <option value="ALL">{t('filters.all_difficulties')}</option>
               {Object.values(Difficulty).map(difficulty => (
                 <option key={difficulty} value={difficulty}>{difficulty}</option>
               ))}
@@ -404,11 +406,11 @@ export default function FavoritesPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">Todos los precios</option>
-              <option value="under10">Menos de $10</option>
-              <option value="10-20">$10 - $20</option>
-              <option value="20-30">$20 - $30</option>
-              <option value="over30">Más de $30</option>
+              <option value="ALL">{t('filters.all_prices')}</option>
+              <option value="under10">{t('filters.under_10')}</option>
+              <option value="10-20">{t('filters.10_to_20')}</option>
+              <option value="20-30">{t('filters.20_to_30')}</option>
+              <option value="over30">{t('filters.over_30')}</option>
             </select>
 
             {/* Sort By */}
@@ -418,10 +420,10 @@ export default function FavoritesPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="date">Ordenar por fecha</option>
-              <option value="name">Ordenar por nombre</option>
-              <option value="price">Ordenar por precio</option>
-              <option value="rating">Ordenar por rating</option>
+              <option value="date">{t('filters.sort_by_date')}</option>
+              <option value="name">{t('filters.sort_by_name')}</option>
+              <option value="price">{t('filters.sort_by_price')}</option>
+              <option value="rating">{t('filters.sort_by_rating')}</option>
             </select>
 
             {/* Sort Order */}
@@ -431,8 +433,8 @@ export default function FavoritesPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="desc">Más reciente</option>
-              <option value="asc">Más antiguo</option>
+              <option value="desc">{t('filters.most_recent')}</option>
+              <option value="asc">{t('filters.oldest')}</option>
             </select>
           </div>
 
@@ -465,7 +467,7 @@ export default function FavoritesPage() {
             </div>
             
             <p className="text-gray-600 font-bold text-sm">
-              {filteredFavorites.length} de {favorites.length} favoritos
+              {t('results.showing', { current: filteredFavorites.length, total: favorites.length })}
             </p>
           </div>
         </div>
@@ -478,12 +480,12 @@ export default function FavoritesPage() {
           >
             <div className="text-6xl mb-4">💝</div>
             <h2 className="text-2xl font-black text-black uppercase mb-4">
-              {favorites.length === 0 ? 'No tienes favoritos aún' : 'No se encontraron favoritos'}
+              {favorites.length === 0 ? t('empty.no_favorites_title') : t('empty.no_results_title')}
             </h2>
             <p className="text-gray-600 font-bold mb-6">
               {favorites.length === 0 
-                ? 'Explora nuestro catálogo y guarda los productos que te gusten'
-                : 'Intenta ajustar los filtros de búsqueda'
+                ? t('empty.no_favorites_subtitle')
+                : t('empty.no_results_subtitle')
               }
             </p>
             <Link 
@@ -492,7 +494,7 @@ export default function FavoritesPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <EyeIcon className="w-4 h-4" />
-              Explorar Productos
+              {t('empty.explore_products')}
             </Link>
           </div>
         ) : viewMode === 'grid' ? (
@@ -505,7 +507,7 @@ export default function FavoritesPage() {
                   disabled={removingFavorites.has(favorite.productId)}
                   className="absolute top-2 right-2 z-10 p-2 bg-red-500 border-2 border-black text-white hover:bg-red-600 transition-all disabled:opacity-50"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
-                  title="Quitar de favoritos"
+                  title={t('actions.remove_favorite')}
                 >
                   <HeartIcon className="w-4 h-4 fill-current" />
                 </button>
@@ -516,7 +518,7 @@ export default function FavoritesPage() {
                   disabled={addingToCart.has(favorite.productId)}
                   className="absolute top-2 left-2 z-10 p-2 bg-green-500 border-2 border-black text-white hover:bg-yellow-400 hover:text-black transition-all disabled:opacity-50"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
-                  title="Agregar al carrito"
+                  title={t('actions.add_to_cart')}
                 >
                   <ShoppingCartIcon className="w-4 h-4" />
                 </button>
@@ -606,7 +608,7 @@ export default function FavoritesPage() {
                       
                       <span 
                         className={`${
-                          favorite.product.difficulty === 'EASY' ? 'bg-green-400' :
+                          favorite.product.difficulty === 'BEGINNER' ? 'bg-green-400' :
                           favorite.product.difficulty === 'INTERMEDIATE' ? 'bg-yellow-400' : 'bg-orange-400'
                         } text-black text-xs font-black px-2 py-1 border-2 border-black uppercase`}
                         style={{ boxShadow: '2px 2px 0 #000000' }}
@@ -615,7 +617,7 @@ export default function FavoritesPage() {
                       </span>
 
                       <span className="text-xs text-gray-600 font-bold">
-                        Agregado: {formatDate(favorite.createdAt)}
+                        {t('list.added')}: {formatDate(favorite.createdAt)}
                       </span>
                     </div>
 
@@ -627,7 +629,7 @@ export default function FavoritesPage() {
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       >
                         <EyeIcon className="w-4 h-4" />
-                        Ver Producto
+                        {t('actions.view_product')}
                       </Link>
 
                       <button
@@ -637,7 +639,7 @@ export default function FavoritesPage() {
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       >
                         <ShoppingCartIcon className="w-4 h-4" />
-                        {addingToCart.has(favorite.productId) ? 'Agregando...' : 'Agregar al Carrito'}
+                        {addingToCart.has(favorite.productId) ? t('actions.adding') : t('actions.add_to_cart')}
                       </button>
 
                       <button
@@ -647,7 +649,7 @@ export default function FavoritesPage() {
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       >
                         <HeartIcon className="w-4 h-4" />
-                        {removingFavorites.has(favorite.productId) ? 'Quitando...' : 'Quitar'}
+                        {removingFavorites.has(favorite.productId) ? t('actions.removing') : t('actions.remove')}
                       </button>
                     </div>
                   </div>
@@ -665,10 +667,10 @@ export default function FavoritesPage() {
           >
             <h2 className="text-2xl font-black text-black uppercase mb-4 flex items-center gap-2">
               <TrendingUpIcon className="w-6 h-6" />
-              Te Podría Interesar
+              {t('recommendations.title')}
             </h2>
             <p className="text-gray-700 font-bold mb-6">
-              Basado en tus favoritos, estos productos podrían gustarte
+              {t('recommendations.subtitle')}
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -684,24 +686,24 @@ export default function FavoritesPage() {
           className="bg-blue-100 border-4 border-black p-6 mt-8"
           style={{ boxShadow: '4px 4px 0 #000000' }}
         >
-          <h3 className="text-xl font-black text-black uppercase mb-4">💡 Gestiona tus Favoritos</h3>
+          <h3 className="text-xl font-black text-black uppercase mb-4">💡 {t('tips.title')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <h4 className="font-black text-black uppercase mb-2">Organización:</h4>
+              <h4 className="font-black text-black uppercase mb-2">{t('tips.organization.title')}:</h4>
               <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• Usa filtros para encontrar favoritos específicos</li>
-                <li className="font-medium">• Ordena por fecha para ver los más recientes</li>
-                <li className="font-medium">• El modo lista muestra más información</li>
-                <li className="font-medium">• Agrupa por categoría o dificultad</li>
+                <li className="font-medium">• {t('tips.organization.use_filters')}</li>
+                <li className="font-medium">• {t('tips.organization.sort_by_date')}</li>
+                <li className="font-medium">• {t('tips.organization.list_mode')}</li>
+                <li className="font-medium">• {t('tips.organization.group_by_category')}</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-black text-black uppercase mb-2">Acciones Rápidas:</h4>
+              <h4 className="font-black text-black uppercase mb-2">{t('tips.quick_actions.title')}:</h4>
               <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• Agregar al carrito desde favoritos</li>
-                <li className="font-medium">• Quitar productos que ya no te interesan</li>
-                <li className="font-medium">• Explorar recomendaciones similares</li>
-                <li className="font-medium">• Comprar cuando haya ofertas especiales</li>
+                <li className="font-medium">• {t('tips.quick_actions.add_to_cart')}</li>
+                <li className="font-medium">• {t('tips.quick_actions.remove_uninteresting')}</li>
+                <li className="font-medium">• {t('tips.quick_actions.explore_similar')}</li>
+                <li className="font-medium">• {t('tips.quick_actions.buy_on_offers')}</li>
               </ul>
             </div>
           </div>

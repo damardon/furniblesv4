@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/stores/auth-store'
 
-// Tipos para Reviews (simplificados para evitar errores)
+// Tipos para Reviews
 enum ReviewStatus {
   PENDING_MODERATION = 'PENDING_MODERATION',
   PUBLISHED = 'PUBLISHED',
@@ -73,7 +73,7 @@ interface PendingReview {
   }
 }
 
-// Mock data simplificado
+// Mock data
 const mockReviews: Review[] = [
   {
     id: 'review_001',
@@ -160,6 +160,8 @@ const getPendingReviews = (userId: string): PendingReview[] => {
 
 export default function ReviewsPage() {
   const t = useTranslations('reviews')
+  const tCommon = useTranslations('common')
+  const tBreadcrumb = useTranslations('breadcrumb')
   const router = useRouter()
   
   // Stores
@@ -273,22 +275,22 @@ export default function ReviewsPage() {
       [ReviewStatus.PENDING_MODERATION]: {
         color: 'bg-yellow-400 text-black border-black',
         icon: ClockIcon,
-        text: 'Pendiente'
+        text: t('status.pending')
       },
       [ReviewStatus.PUBLISHED]: {
         color: 'bg-green-500 text-white border-black',
         icon: CheckCircleIcon,
-        text: 'Publicada'
+        text: t('status.published')
       },
       [ReviewStatus.FLAGGED]: {
         color: 'bg-orange-400 text-black border-black',
         icon: AlertCircleIcon,
-        text: 'Reportada'
+        text: t('status.flagged')
       },
       [ReviewStatus.REMOVED]: {
         color: 'bg-red-400 text-black border-black',
         icon: TrashIcon,
-        text: 'Removida'
+        text: t('status.removed')
       }
     }
 
@@ -320,7 +322,6 @@ export default function ReviewsPage() {
   }
 
   const handleReviewSubmitted = () => {
-    // Reload data after review submission
     if (user?.id) {
       const userReviews = getReviewsByUserId(user.id)
       const userStats = getReviewStats(user.id)
@@ -340,7 +341,7 @@ export default function ReviewsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">Acceso restringido</p>
+          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
         </div>
       </div>
     )
@@ -353,10 +354,10 @@ export default function ReviewsPage() {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              Inicio
+              {tBreadcrumb('home')}
             </Link>
             <span>/</span>
-            <span className="text-orange-500">Mis Reviews</span>
+            <span className="text-orange-500">{t('page_title')}</span>
           </div>
         </div>
       </div>
@@ -371,16 +372,16 @@ export default function ReviewsPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ArrowLeftIcon className="w-4 h-4" />
-              Volver
+              {tCommon('actions.back')}
             </Link>
             
             <div>
               <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
                 <MessageSquareIcon className="w-8 h-8" />
-                Mis Reviews
+                {t('page_title')}
               </h1>
               <p className="text-gray-600 font-bold mt-2">
-                Gestiona las reviews que has escrito sobre productos
+                {t('page_description')}
               </p>
             </div>
           </div>
@@ -393,7 +394,7 @@ export default function ReviewsPage() {
             >
               <MessageSquareIcon className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <div className="text-xl font-black text-black mb-1">{stats.totalReviews}</div>
-              <div className="text-xs font-black text-black uppercase">Total Reviews</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.total_reviews')}</div>
             </div>
             
             <div 
@@ -402,7 +403,7 @@ export default function ReviewsPage() {
             >
               <StarIcon className="w-6 h-6 mx-auto mb-2 text-yellow-600" />
               <div className="text-xl font-black text-black mb-1">{stats.averageRating}</div>
-              <div className="text-xs font-black text-black uppercase">Rating Promedio</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.average_rating')}</div>
             </div>
             
             <div 
@@ -411,7 +412,7 @@ export default function ReviewsPage() {
             >
               <ThumbsUpIcon className="w-6 h-6 mx-auto mb-2 text-green-600" />
               <div className="text-xl font-black text-black mb-1">{stats.helpfulVotes}</div>
-              <div className="text-xs font-black text-black uppercase">Votos Útiles</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.helpful_votes')}</div>
             </div>
             
             <div 
@@ -420,7 +421,7 @@ export default function ReviewsPage() {
             >
               <ImageIcon className="w-6 h-6 mx-auto mb-2 text-purple-600" />
               <div className="text-xl font-black text-black mb-1">{stats.withImages}</div>
-              <div className="text-xs font-black text-black uppercase">Con Fotos</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.with_images')}</div>
             </div>
             
             <div 
@@ -429,7 +430,7 @@ export default function ReviewsPage() {
             >
               <CheckCircleIcon className="w-6 h-6 mx-auto mb-2 text-orange-600" />
               <div className="text-xl font-black text-black mb-1">{stats.withSellerResponse}</div>
-              <div className="text-xs font-black text-black uppercase">Con Respuesta</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.with_response')}</div>
             </div>
             
             <div 
@@ -438,7 +439,7 @@ export default function ReviewsPage() {
             >
               <ClockIcon className="w-6 h-6 mx-auto mb-2 text-red-600" />
               <div className="text-xl font-black text-black mb-1">{stats.pendingCount}</div>
-              <div className="text-xs font-black text-black uppercase">Pendientes</div>
+              <div className="text-xs font-black text-black uppercase">{t('stats.pending')}</div>
             </div>
           </div>
 
@@ -450,7 +451,7 @@ export default function ReviewsPage() {
             >
               <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                 <BarChartIcon className="w-5 h-5" />
-                Distribución de Ratings
+                {t('rating_distribution.title')}
               </h3>
               <div className="space-y-2">
                 {[5, 4, 3, 2, 1].map(stars => {
@@ -486,11 +487,13 @@ export default function ReviewsPage() {
           >
             <h2 className="text-2xl font-black text-black uppercase mb-4 flex items-center gap-2">
               <PlusIcon className="w-6 h-6" />
-              Reviews Pendientes de Escribir
+              {t('pending_reviews.title')}
             </h2>
             <p className="text-gray-700 font-bold mb-4">
-              Tienes {pendingReviews.length} {pendingReviews.length === 1 ? 'producto' : 'productos'} sin review. 
-              ¡Ayuda a otros compradores compartiendo tu experiencia!
+              {t('pending_reviews.description', { 
+                count: pendingReviews.length,
+                productText: pendingReviews.length === 1 ? 'producto' : 'productos'
+              })}
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -520,7 +523,7 @@ export default function ReviewsPage() {
                         {pending.productTitle}
                       </h4>
                       <p className="text-xs text-gray-600 font-bold">
-                        Comprado: {formatDate(pending.purchaseDate)}
+                        {t('pending_reviews.purchased')}: {formatDate(pending.purchaseDate)}
                       </p>
                     </div>
                   </div>
@@ -530,7 +533,7 @@ export default function ReviewsPage() {
                     className="w-full bg-green-500 border-2 border-black font-black text-white text-xs uppercase py-2 hover:bg-yellow-400 hover:text-black transition-all"
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    Escribir Review
+                    {t('pending_reviews.write_review')}
                   </button>
                 </div>
               ))}
@@ -549,7 +552,7 @@ export default function ReviewsPage() {
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black" />
               <input
                 type="text"
-                placeholder="Buscar reviews..."
+                placeholder={t('filters.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
@@ -564,10 +567,10 @@ export default function ReviewsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">Todos los estados</option>
-              <option value={ReviewStatus.PUBLISHED}>Publicadas</option>
-              <option value={ReviewStatus.PENDING_MODERATION}>Pendientes</option>
-              <option value={ReviewStatus.FLAGGED}>Reportadas</option>
+              <option value="ALL">{t('filters.all_statuses')}</option>
+              <option value={ReviewStatus.PUBLISHED}>{t('status.published')}</option>
+              <option value={ReviewStatus.PENDING_MODERATION}>{t('status.pending')}</option>
+              <option value={ReviewStatus.FLAGGED}>{t('status.flagged')}</option>
             </select>
 
             {/* Rating Filter */}
@@ -577,12 +580,12 @@ export default function ReviewsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">Todas las calificaciones</option>
-              <option value={5}>5 estrellas</option>
-              <option value={4}>4 estrellas</option>
-              <option value={3}>3 estrellas</option>
-              <option value={2}>2 estrellas</option>
-              <option value={1}>1 estrella</option>
+              <option value="ALL">{t('filters.all_ratings')}</option>
+              <option value={5}>{t('filters.stars', { count: 5 })}</option>
+              <option value={4}>{t('filters.stars', { count: 4 })}</option>
+              <option value={3}>{t('filters.stars', { count: 3 })}</option>
+              <option value={2}>{t('filters.stars', { count: 2 })}</option>
+              <option value={1}>{t('filters.stars', { count: 1 })}</option>
             </select>
 
             {/* Sort By */}
@@ -592,9 +595,9 @@ export default function ReviewsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="date">Ordenar por fecha</option>
-              <option value="rating">Ordenar por rating</option>
-              <option value="helpful">Ordenar por utilidad</option>
+              <option value="date">{t('filters.sort_by_date')}</option>
+              <option value="rating">{t('filters.sort_by_rating')}</option>
+              <option value="helpful">{t('filters.sort_by_helpful')}</option>
             </select>
 
             {/* Sort Order */}
@@ -604,8 +607,8 @@ export default function ReviewsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="desc">Más reciente</option>
-              <option value="asc">Más antiguo</option>
+              <option value="desc">{t('filters.newest')}</option>
+              <option value="asc">{t('filters.oldest')}</option>
             </select>
           </div>
         </div>
@@ -618,12 +621,12 @@ export default function ReviewsPage() {
           >
             <div className="text-6xl mb-4">⭐</div>
             <h2 className="text-2xl font-black text-black uppercase mb-4">
-              {reviews.length === 0 ? 'No has escrito reviews aún' : 'No se encontraron resultados'}
+              {reviews.length === 0 ? t('empty_state.no_reviews') : t('empty_state.no_results')}
             </h2>
             <p className="text-gray-600 font-bold mb-6">
               {reviews.length === 0 
-                ? 'Compra productos y comparte tu experiencia con otros usuarios'
-                : 'Intenta ajustar los filtros de búsqueda'
+                ? t('empty_state.no_reviews_description')
+                : t('empty_state.no_results_description')
               }
             </p>
             <Link 
@@ -632,7 +635,7 @@ export default function ReviewsPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <EyeIcon className="w-4 h-4" />
-              Explorar Productos
+              {t('empty_state.explore_products')}
             </Link>
           </div>
         ) : (
@@ -680,7 +683,7 @@ export default function ReviewsPage() {
                       <div className="flex items-center gap-2">
                         {getStatusBadge(review.status)}
                         <span className="bg-blue-200 text-black text-xs font-black px-2 py-1 border border-black uppercase">
-                          ✓ Compra Verificada
+                          ✓ {t('verified_purchase')}
                         </span>
                       </div>
                     </div>
@@ -691,7 +694,7 @@ export default function ReviewsPage() {
                       href={`/productos/${review.productSlug}`}
                       className="p-2 bg-blue-400 border-2 border-black hover:bg-yellow-400 transition-all"
                       style={{ boxShadow: '2px 2px 0 #000000' }}
-                      title="Ver producto"
+                      title={t('actions.view_product')}
                     >
                       <ExternalLinkIcon className="w-4 h-4 text-black" />
                     </Link>
@@ -700,7 +703,7 @@ export default function ReviewsPage() {
                       <button
                         className="p-2 bg-gray-300 border-2 border-black hover:bg-yellow-400 transition-all"
                         style={{ boxShadow: '2px 2px 0 #000000' }}
-                        title="Editar review"
+                        title={t('actions.edit_review')}
                       >
                         <EditIcon className="w-4 h-4 text-black" />
                       </button>
@@ -741,7 +744,9 @@ export default function ReviewsPage() {
                         className="bg-green-100 border-2 border-green-500 p-3"
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
-                        <h4 className="font-black text-green-800 text-sm uppercase mb-2">👍 Aspectos Positivos</h4>
+                        <h4 className="font-black text-green-800 text-sm uppercase mb-2">
+                          👍 {t('pros_cons.positive_aspects')}
+                        </h4>
                         <p className="text-green-700 text-sm font-medium">{review.pros}</p>
                       </div>
                     )}
@@ -751,7 +756,9 @@ export default function ReviewsPage() {
                         className="bg-red-100 border-2 border-red-500 p-3"
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
-                        <h4 className="font-black text-red-800 text-sm uppercase mb-2">👎 Aspectos a Mejorar</h4>
+                        <h4 className="font-black text-red-800 text-sm uppercase mb-2">
+                          👎 {t('pros_cons.areas_to_improve')}
+                        </h4>
                         <p className="text-red-700 text-sm font-medium">{review.cons}</p>
                       </div>
                     )}
@@ -763,7 +770,7 @@ export default function ReviewsPage() {
                   <div className="mb-4">
                     <h4 className="font-black text-black text-sm uppercase mb-3 flex items-center gap-2">
                       <ImageIcon className="w-4 h-4" />
-                      Fotos del Resultado ({review.imageUrls.length})
+                      {t('images.title', { count: review.imageUrls.length })}
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {review.imageUrls.map((imageUrl, index) => (
@@ -773,7 +780,7 @@ export default function ReviewsPage() {
                         >
                           <Image
                             src={imageUrl}
-                            alt={`Resultado ${index + 1}`}
+                            alt={t('images.result_alt', { index: index + 1 })}
                             fill
                             className="object-cover"
                           />
@@ -797,7 +804,7 @@ export default function ReviewsPage() {
                       </div>
                       <div>
                         <h4 className="font-black text-black text-sm uppercase">
-                          Respuesta de {review.sellerResponse.sellerName}
+                          {t('seller_response.title', { sellerName: review.sellerResponse.sellerName })}
                         </h4>
                         <p className="text-xs text-gray-600 font-bold">
                           {formatDate(review.sellerResponse.createdAt)}
@@ -816,21 +823,21 @@ export default function ReviewsPage() {
                     <div className="flex items-center gap-1">
                       <ThumbsUpIcon className="w-4 h-4 text-green-600" />
                       <span className="font-bold text-black">{review.helpfulCount}</span>
-                      <span className="text-gray-600 font-medium">útil</span>
+                      <span className="text-gray-600 font-medium">{t('helpful_votes.helpful')}</span>
                     </div>
                     
                     {review.notHelpfulCount > 0 && (
                       <div className="flex items-center gap-1">
                         <ThumbsDownIcon className="w-4 h-4 text-red-600" />
                         <span className="font-bold text-black">{review.notHelpfulCount}</span>
-                        <span className="text-gray-600 font-medium">no útil</span>
+                        <span className="text-gray-600 font-medium">{t('helpful_votes.not_helpful')}</span>
                       </div>
                     )}
                     
                     <div className="flex items-center gap-1">
                       <CalendarIcon className="w-4 h-4 text-gray-600" />
                       <span className="text-gray-600 font-bold">
-                        Pedido: {review.orderNumber}
+                        {t('order_info', { orderNumber: review.orderNumber })}
                       </span>
                     </div>
                   </div>
@@ -842,7 +849,7 @@ export default function ReviewsPage() {
                         className="text-sm bg-green-400 border-2 border-black px-3 py-1 font-black text-black uppercase hover:bg-yellow-400 transition-all"
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
-                        Ver Público
+                        {t('actions.view_public')}
                       </Link>
                     )}
                     
@@ -851,7 +858,7 @@ export default function ReviewsPage() {
                       className="text-sm bg-blue-400 border-2 border-black px-3 py-1 font-black text-black uppercase hover:bg-yellow-400 transition-all"
                       style={{ boxShadow: '2px 2px 0 #000000' }}
                     >
-                      Ver Pedido
+                      {t('actions.view_order')}
                     </Link>
                   </div>
                 </div>
@@ -864,7 +871,10 @@ export default function ReviewsPage() {
         {filteredReviews.length > 0 && (
           <div className="mt-8 text-center">
             <p className="text-gray-600 font-bold">
-              Mostrando {filteredReviews.length} de {reviews.length} reviews
+              {t('results_counter', { 
+                showing: filteredReviews.length, 
+                total: reviews.length 
+              })}
             </p>
           </div>
         )}
@@ -876,32 +886,32 @@ export default function ReviewsPage() {
         >
           <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
             <TrendingUpIcon className="w-5 h-5" />
-            💡 Consejos para Reviews Efectivas
+            💡 {t('tips.title')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <h4 className="font-black text-black uppercase mb-2">Aumenta tu Impacto:</h4>
+              <h4 className="font-black text-black uppercase mb-2">{t('tips.increase_impact.title')}</h4>
               <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• Incluye fotos del producto terminado</li>
-                <li className="font-medium">• Sé específico sobre dificultades encontradas</li>
-                <li className="font-medium">• Menciona herramientas adicionales necesarias</li>
-                <li className="font-medium">• Describe la calidad del resultado final</li>
+                <li className="font-medium">• {t('tips.increase_impact.include_photos')}</li>
+                <li className="font-medium">• {t('tips.increase_impact.be_specific')}</li>
+                <li className="font-medium">• {t('tips.increase_impact.mention_tools')}</li>
+                <li className="font-medium">• {t('tips.increase_impact.describe_quality')}</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-black text-black uppercase mb-2">Comunidad:</h4>
+              <h4 className="font-black text-black uppercase mb-2">{t('tips.community.title')}</h4>
               <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• Tus reviews ayudan a otros compradores</li>
-                <li className="font-medium">• Los sellers pueden mejorar sus productos</li>
-                <li className="font-medium">• Las fotos inspiran a la comunidad</li>
-                <li className="font-medium">• Reviews honestas construyen confianza</li>
+                <li className="font-medium">• {t('tips.community.help_buyers')}</li>
+                <li className="font-medium">• {t('tips.community.improve_products')}</li>
+                <li className="font-medium">• {t('tips.community.inspire_community')}</li>
+                <li className="font-medium">• {t('tips.community.build_trust')}</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Review Modal - Placeholder */}
+      {/* Review Modal */}
       {showReviewModal && selectedPendingReview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div 
@@ -909,13 +919,13 @@ export default function ReviewsPage() {
             style={{ boxShadow: '6px 6px 0 #000000' }}
           >
             <h3 className="text-xl font-black text-black uppercase mb-4">
-              Escribir Review
+              {t('modal.write_review_title')}
             </h3>
             <p className="text-gray-600 font-bold mb-4">
-              Producto: {selectedPendingReview.productTitle}
+              {t('modal.product_label')}: {selectedPendingReview.productTitle}
             </p>
             <p className="text-sm text-gray-600 mb-6">
-              Modal de review pendiente de implementar en próxima fase
+              {t('modal.implementation_note')}
             </p>
             <div className="flex gap-2">
               <button
@@ -926,14 +936,14 @@ export default function ReviewsPage() {
                 className="flex-1 bg-gray-400 border-2 border-black font-black text-black uppercase py-2 hover:bg-yellow-400 transition-all"
                 style={{ boxShadow: '2px 2px 0 #000000' }}
               >
-                Cancelar
+                {tCommon('actions.cancel')}
               </button>
               <button
                 onClick={handleReviewSubmitted}
                 className="flex-1 bg-green-500 border-2 border-black font-black text-white uppercase py-2 hover:bg-yellow-400 hover:text-black transition-all"
                 style={{ boxShadow: '2px 2px 0 #000000' }}
               >
-                Simular Review
+                {t('modal.simulate_review')}
               </button>
             </div>
           </div>

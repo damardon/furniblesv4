@@ -1,3 +1,4 @@
+// frontend/src/components/ui/tabs.tsx
 import React, { createContext, useContext } from 'react'
 
 interface TabsContextType {
@@ -11,16 +12,18 @@ interface TabsProps {
   value: string
   onValueChange: (value: string) => void
   children: React.ReactNode
+  className?: string  // ← AGREGAR ESTA LÍNEA
 }
 
-export function Tabs({ value, onValueChange, children }: TabsProps) {
+export function Tabs({ value, onValueChange, children, className }: TabsProps) {
   return (
     <TabsContext.Provider value={{ value, onValueChange }}>
-      <div>{children}</div>
+      <div className={className}>{children}</div>  {/* ← USAR className AQUÍ */}
     </TabsContext.Provider>
   )
 }
 
+// Resto del código igual...
 export function TabsList({ className, children }: { className?: string, children: React.ReactNode }) {
   return <div className={`flex ${className}`}>{children}</div>
 }

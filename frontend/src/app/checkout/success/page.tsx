@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { 
   CheckCircleIcon, 
@@ -20,6 +21,9 @@ export default function CheckoutSuccessPage() {
   const orderNumber = searchParams.get('order')
   
   const [showConfetti, setShowConfetti] = useState(true)
+
+  const t = useTranslations('checkout.success')
+  const tCommon = useTranslations('common')
 
   useEffect(() => {
     if (!orderNumber) {
@@ -40,10 +44,27 @@ export default function CheckoutSuccessPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <p className="text-black font-black text-xl uppercase">Orden no encontrada</p>
+          <p className="text-black font-black text-xl uppercase">{t('order_not_found')}</p>
         </div>
       </div>
     )
+  }
+
+  const shareOnTwitter = () => {
+    const text = t('social.twitter_text', { orderNumber })
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${window.location.origin}`
+    window.open(url, '_blank')
+  }
+
+  const shareOnWhatsApp = () => {
+    const text = t('social.whatsapp_text')
+    const url = `https://wa.me/?text=${encodeURIComponent(text)} ${window.location.origin}`
+    window.open(url, '_blank')
+  }
+
+  const shareOnFacebook = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${window.location.origin}`
+    window.open(url, '_blank')
   }
 
   return (
@@ -73,10 +94,10 @@ export default function CheckoutSuccessPage() {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-white transition-colors">
-              Inicio
+              {tCommon('home')}
             </Link>
             <span>/</span>
-            <span className="text-white">Compra Exitosa</span>
+            <span className="text-white">{t('breadcrumb')}</span>
           </div>
         </div>
       </div>
@@ -90,15 +111,15 @@ export default function CheckoutSuccessPage() {
           >
             <CheckCircleIcon className="w-20 h-20 text-white mx-auto mb-4" />
             <h1 className="text-4xl font-black text-white uppercase mb-2">
-              ¡Compra Exitosa!
+              {t('success_message.title')}
             </h1>
             <p className="text-white font-bold text-lg">
-              Tu pedido #{orderNumber} ha sido procesado
+              {t('success_message.order_processed', { orderNumber })}
             </p>
           </div>
           
           <p className="text-gray-600 font-bold text-lg max-w-2xl mx-auto">
-            Gracias por tu compra. Hemos enviado los detalles de tu pedido y los enlaces de descarga a tu email.
+            {t('success_message.description')}
           </p>
         </div>
 
@@ -111,17 +132,17 @@ export default function CheckoutSuccessPage() {
           >
             <DownloadIcon className="w-12 h-12 text-blue-600 mx-auto mb-4" />
             <h3 className="text-lg font-black text-black uppercase mb-2">
-              Descargas
+              {t('action_cards.downloads.title')}
             </h3>
             <p className="text-sm text-gray-600 font-medium mb-4">
-              Accede a tus archivos inmediatamente
+              {t('action_cards.downloads.description')}
             </p>
             <Link
               href="/descargas"
               className="inline-block bg-blue-500 border-3 border-black px-4 py-2 font-black text-white text-sm uppercase hover:bg-yellow-400 hover:text-black transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              Ver Descargas
+              {t('action_cards.downloads.button')}
             </Link>
           </div>
 
@@ -132,13 +153,13 @@ export default function CheckoutSuccessPage() {
           >
             <MailIcon className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
             <h3 className="text-lg font-black text-black uppercase mb-2">
-              Email Enviado
+              {t('action_cards.email.title')}
             </h3>
             <p className="text-sm text-gray-600 font-medium mb-4">
-              Revisa tu bandeja de entrada
+              {t('action_cards.email.description')}
             </p>
             <div className="bg-white border-2 border-black px-3 py-1 text-xs font-black text-black uppercase">
-              ✓ Confirmación
+              ✓ {t('action_cards.email.confirmation')}
             </div>
           </div>
 
@@ -149,17 +170,17 @@ export default function CheckoutSuccessPage() {
           >
             <FileTextIcon className="w-12 h-12 text-purple-600 mx-auto mb-4" />
             <h3 className="text-lg font-black text-black uppercase mb-2">
-              Mi Pedido
+              {t('action_cards.order.title')}
             </h3>
             <p className="text-sm text-gray-600 font-medium mb-4">
-              Ver detalles y factura
+              {t('action_cards.order.description')}
             </p>
             <Link
               href={`/pedidos/${orderNumber}`}
               className="inline-block bg-purple-500 border-3 border-black px-4 py-2 font-black text-white text-sm uppercase hover:bg-yellow-400 hover:text-black transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              Ver Detalles
+              {t('action_cards.order.button')}
             </Link>
           </div>
 
@@ -170,17 +191,17 @@ export default function CheckoutSuccessPage() {
           >
             <StarIcon className="w-12 h-12 text-orange-600 mx-auto mb-4" />
             <h3 className="text-lg font-black text-black uppercase mb-2">
-              Califica
+              {t('action_cards.review.title')}
             </h3>
             <p className="text-sm text-gray-600 font-medium mb-4">
-              Comparte tu experiencia
+              {t('action_cards.review.description')}
             </p>
             <Link
               href="/reviews"
               className="inline-block bg-orange-500 border-3 border-black px-4 py-2 font-black text-white text-sm uppercase hover:bg-yellow-400 hover:text-black transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              Escribir Review
+              {t('action_cards.review.button')}
             </Link>
           </div>
         </div>
@@ -192,19 +213,21 @@ export default function CheckoutSuccessPage() {
         >
           <h2 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-3">
             <GiftIcon className="w-6 h-6" />
-            Tu Compra
+            {t('order_summary.title')}
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-lg font-black text-black uppercase mb-4">Detalles del Pedido</h3>
+              <h3 className="text-lg font-black text-black uppercase mb-4">
+                {t('order_summary.order_details')}
+              </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-black">Número de Pedido:</span>
+                  <span className="font-bold text-black">{t('order_summary.order_number')}:</span>
                   <span className="font-black text-orange-500">{orderNumber}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-black">Fecha:</span>
+                  <span className="font-bold text-black">{t('order_summary.date')}:</span>
                   <span className="font-bold text-black">
                     {new Date().toLocaleDateString('es-ES', {
                       year: 'numeric',
@@ -214,24 +237,26 @@ export default function CheckoutSuccessPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-black">Estado:</span>
+                  <span className="font-bold text-black">{t('order_summary.status')}:</span>
                   <span className="bg-green-500 text-white px-2 py-1 text-xs font-black uppercase border border-black">
-                    PAGADO
+                    {t('order_summary.paid_status')}
                   </span>
                 </div>
               </div>
             </div>
             
             <div>
-              <h3 className="text-lg font-black text-black uppercase mb-4">Próximos Pasos</h3>
+              <h3 className="text-lg font-black text-black uppercase mb-4">
+                {t('next_steps.title')}
+              </h3>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-green-500 border-2 border-black flex items-center justify-center text-white text-xs font-black">
                     1
                   </div>
                   <div>
-                    <p className="font-bold text-black text-sm">Revisa tu email</p>
-                    <p className="text-xs text-gray-600 font-medium">Confirmación y enlaces de descarga</p>
+                    <p className="font-bold text-black text-sm">{t('next_steps.step1.title')}</p>
+                    <p className="text-xs text-gray-600 font-medium">{t('next_steps.step1.description')}</p>
                   </div>
                 </div>
                 
@@ -240,8 +265,8 @@ export default function CheckoutSuccessPage() {
                     2
                   </div>
                   <div>
-                    <p className="font-bold text-black text-sm">Descarga tus archivos</p>
-                    <p className="text-xs text-gray-600 font-medium">Disponibles por 30 días</p>
+                    <p className="font-bold text-black text-sm">{t('next_steps.step2.title')}</p>
+                    <p className="text-xs text-gray-600 font-medium">{t('next_steps.step2.description')}</p>
                   </div>
                 </div>
                 
@@ -250,8 +275,8 @@ export default function CheckoutSuccessPage() {
                     3
                   </div>
                   <div>
-                    <p className="font-bold text-black text-sm">¡Construye tu proyecto!</p>
-                    <p className="text-xs text-gray-600 font-medium">Sigue las instrucciones del PDF</p>
+                    <p className="font-bold text-black text-sm">{t('next_steps.step3.title')}</p>
+                    <p className="text-xs text-gray-600 font-medium">{t('next_steps.step3.description')}</p>
                   </div>
                 </div>
                 
@@ -260,8 +285,8 @@ export default function CheckoutSuccessPage() {
                     4
                   </div>
                   <div>
-                    <p className="font-bold text-black text-sm">Comparte tu resultado</p>
-                    <p className="text-xs text-gray-600 font-medium">Escribe una review con fotos</p>
+                    <p className="font-bold text-black text-sm">{t('next_steps.step4.title')}</p>
+                    <p className="text-xs text-gray-600 font-medium">{t('next_steps.step4.description')}</p>
                   </div>
                 </div>
               </div>
@@ -275,7 +300,7 @@ export default function CheckoutSuccessPage() {
           style={{ boxShadow: '6px 6px 0 #000000' }}
         >
           <h2 className="text-2xl font-black text-black uppercase mb-6 text-center">
-            ¿Necesitas Ayuda?
+            {t('support.title')}
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
@@ -283,15 +308,17 @@ export default function CheckoutSuccessPage() {
               <div className="bg-white border-3 border-black p-4 mb-4"
                    style={{ boxShadow: '3px 3px 0 #000000' }}>
                 <MailIcon className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <h3 className="font-black text-black text-sm uppercase mb-2">Soporte por Email</h3>
+                <h3 className="font-black text-black text-sm uppercase mb-2">
+                  {t('support.email.title')}
+                </h3>
                 <p className="text-xs text-gray-600 font-medium mb-3">
-                  Respuesta en menos de 24 horas
+                  {t('support.email.response_time')}
                 </p>
                 <a 
                   href="mailto:soporte@furnibles.com"
                   className="text-blue-600 text-xs font-bold hover:text-blue-800 transition-colors"
                 >
-                  soporte@furnibles.com
+                  {t('support.email.address')}
                 </a>
               </div>
             </div>
@@ -300,15 +327,17 @@ export default function CheckoutSuccessPage() {
               <div className="bg-white border-3 border-black p-4 mb-4"
                    style={{ boxShadow: '3px 3px 0 #000000' }}>
                 <FileTextIcon className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-black text-black text-sm uppercase mb-2">Centro de Ayuda</h3>
+                <h3 className="font-black text-black text-sm uppercase mb-2">
+                  {t('support.help_center.title')}
+                </h3>
                 <p className="text-xs text-gray-600 font-medium mb-3">
-                  Preguntas frecuentes y tutoriales
+                  {t('support.help_center.description')}
                 </p>
                 <Link 
                   href="/ayuda"
                   className="text-green-600 text-xs font-bold hover:text-green-800 transition-colors"
                 >
-                  Ver Ayuda →
+                  {t('support.help_center.link')}
                 </Link>
               </div>
             </div>
@@ -317,15 +346,17 @@ export default function CheckoutSuccessPage() {
               <div className="bg-white border-3 border-black p-4 mb-4"
                    style={{ boxShadow: '3px 3px 0 #000000' }}>
                 <StarIcon className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <h3 className="font-black text-black text-sm uppercase mb-2">Comunidad</h3>
+                <h3 className="font-black text-black text-sm uppercase mb-2">
+                  {t('support.community.title')}
+                </h3>
                 <p className="text-xs text-gray-600 font-medium mb-3">
-                  Conecta con otros makers
+                  {t('support.community.description')}
                 </p>
                 <Link 
                   href="/comunidad"
                   className="text-purple-600 text-xs font-bold hover:text-purple-800 transition-colors"
                 >
-                  Unirse →
+                  {t('support.community.link')}
                 </Link>
               </div>
             </div>
@@ -339,10 +370,10 @@ export default function CheckoutSuccessPage() {
             style={{ boxShadow: '6px 6px 0 #000000' }}
           >
             <h2 className="text-2xl font-black text-black uppercase mb-4">
-              ¡Sigue Construyendo!
+              {t('cta.title')}
             </h2>
             <p className="text-gray-600 font-bold mb-6">
-              Descubre más proyectos increíbles en nuestro catálogo
+              {t('cta.description')}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -352,7 +383,7 @@ export default function CheckoutSuccessPage() {
                 style={{ boxShadow: '4px 4px 0 #000000' }}
               >
                 <ShoppingBagIcon className="w-5 h-5" />
-                Explorar Más Productos
+                {t('cta.explore_products')}
               </Link>
               
               <Link
@@ -361,7 +392,7 @@ export default function CheckoutSuccessPage() {
                 style={{ boxShadow: '4px 4px 0 #000000' }}
               >
                 <HomeIcon className="w-5 h-5" />
-                Volver al Inicio
+                {t('cta.back_home')}
               </Link>
             </div>
           </div>
@@ -373,35 +404,35 @@ export default function CheckoutSuccessPage() {
           style={{ boxShadow: '6px 6px 0 #000000' }}
         >
           <h3 className="text-lg font-black text-black uppercase mb-4">
-            Comparte tu Experiencia
+            {t('social.title')}
           </h3>
           <p className="text-gray-600 font-bold mb-4">
-            ¡Cuéntales a tus amigos sobre Furnibles!
+            {t('social.description')}
           </p>
           
           <div className="flex justify-center gap-4">
             <button 
               className="bg-blue-600 border-3 border-black px-4 py-2 font-black text-white text-sm uppercase hover:bg-yellow-400 hover:text-black transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              onClick={() => window.open(`https://twitter.com/intent/tweet?text=¡Acabo de comprar un increíble proyecto de muebles en @Furnibles! Orden ${orderNumber} 🪵✨&url=${window.location.origin}`, '_blank')}
+              onClick={shareOnTwitter}
             >
-              Twitter
+              {t('social.twitter')}
             </button>
             
             <button 
               className="bg-green-600 border-3 border-black px-4 py-2 font-black text-white text-sm uppercase hover:bg-yellow-400 hover:text-black transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              onClick={() => window.open(`https://wa.me/?text=¡Acabo de comprar un increíble proyecto de muebles en Furnibles! ${window.location.origin}`, '_blank')}
+              onClick={shareOnWhatsApp}
             >
-              WhatsApp
+              {t('social.whatsapp')}
             </button>
             
             <button 
               className="bg-blue-800 border-3 border-black px-4 py-2 font-black text-white text-sm uppercase hover:bg-yellow-400 hover:text-black transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${window.location.origin}`, '_blank')}
+              onClick={shareOnFacebook}
             >
-              Facebook
+              {t('social.facebook')}
             </button>
           </div>
         </div>
@@ -409,7 +440,7 @@ export default function CheckoutSuccessPage() {
         {/* Footer Message */}
         <div className="text-center mt-12">
           <p className="text-gray-500 font-bold text-sm">
-            Gracias por confiar en Furnibles. ¡Esperamos ver tu proyecto terminado! 🪵
+            {t('footer_message')}
           </p>
         </div>
       </div>

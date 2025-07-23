@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Search,
   Filter,
@@ -22,16 +23,16 @@ import {
 import { useSellerStore } from '@/lib/stores/seller-store'
 import { OrderStatus } from '@/types'
 
-// Funciones de formato
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-ES', {
+// Funciones de formato - mantener internacionalización
+const formatCurrency = (amount: number, locale: string = 'es-ES') => {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD'
   }).format(amount)
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('es-ES', {
+const formatDate = (dateString: string, locale: string = 'es-ES') => {
+  return new Date(dateString).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -44,6 +45,11 @@ export default function SellerSalesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month')
+
+  // Traducciones
+  const t = useTranslations('seller.sales')
+  const tCommon = useTranslations('common')
+  const tOrders = useTranslations('orders')
 
   const {
     sales,
@@ -95,7 +101,7 @@ export default function SellerSalesPage() {
         return 'bg-yellow-500 text-black'
       case OrderStatus.PENDING:
         return 'bg-orange-500 text-black'
-      case OrderStatus.FAILED:
+      case OrderStatus.CANCELLED:
       case OrderStatus.REFUNDED:
         return 'bg-red-500 text-white'
       default:
@@ -113,12 +119,22 @@ export default function SellerSalesPage() {
         return <Clock className="h-4 w-4" />
       case OrderStatus.PENDING:
         return <Package className="h-4 w-4" />
-      case OrderStatus.FAILED:
+      case OrderStatus.CANCELLED:
       case OrderStatus.REFUNDED:
         return <XCircle className="h-4 w-4" />
       default:
         return <Package className="h-4 w-4" />
     }
+  }
+
+  // Función para obtener texto del estado
+  const getStatusText = (status: OrderStatus) => {
+    return tOrders(`status.${status.toLowerCase()}`)
+  }
+
+  // Función para obtener texto del período
+  const getPeriodText = (period: string) => {
+    return t(`periods.${period}`)
   }
 
   // Calcular totales del periodo actual
@@ -135,9 +151,9 @@ export default function SellerSalesPage() {
       <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black uppercase text-black">Mis Ventas</h1>
+            <h1 className="text-2xl font-black uppercase text-black">{t('title')}</h1>
             <p className="text-gray-600 font-bold">
-              Gestiona y analiza tus ventas
+              {t('subtitle')}
             </p>
           </div>
 
@@ -146,10 +162,10 @@ export default function SellerSalesPage() {
             <Calendar className="h-5 w-5 text-gray-600" />
             <div className="flex border-2 border-black bg-white">
               {[
-                { key: 'week', label: 'Semana' },
-                { key: 'month', label: 'Mes' },
-                { key: 'quarter', label: 'Trimestre' },
-                { key: 'year', label: 'Año' }
+                { key: 'week', label: t('periods.week') },
+                { key: 'month', label: t('periods.month') },
+                { key: 'quarter', label: t('periods.quarter') },
+                { key: 'year', label: t('periods.year') }
               ].map((period) => (
                 <button
                   key={period.key}
@@ -174,12 +190,12 @@ export default function SellerSalesPage() {
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 uppercase">Ventas</p>
+              <p className="text-sm font-bold text-gray-600 uppercase">{t('metrics.sales')}</p>
               <p className="text-2xl font-black text-black">
                 {currentPeriodStats.totalSales}
               </p>
               <p className="text-xs font-bold text-blue-600 mt-1">
-                Este {selectedPeriod}
+                {t('periods.this_period', { period: getPeriodText(selectedPeriod) })}
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-500 border-2 border-black flex items-center justify-center">
@@ -192,12 +208,12 @@ export default function SellerSalesPage() {
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 uppercase">Ingresos Brutos</p>
+              <p className="text-sm font-bold text-gray-600 uppercase">{t('metrics.gross_revenue')}</p>
               <p className="text-2xl font-black text-black">
                 {formatCurrency(currentPeriodStats.totalRevenue)}
               </p>
               <p className="text-xs font-bold text-green-600 mt-1">
-                Antes de comisiones
+                {t('metrics.before_fees')}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 border-2 border-black flex items-center justify-center">
@@ -210,12 +226,12 @@ export default function SellerSalesPage() {
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 uppercase">Ingresos Netos</p>
+              <p className="text-sm font-bold text-gray-600 uppercase">{t('metrics.net_revenue')}</p>
               <p className="text-2xl font-black text-black">
                 {formatCurrency(currentPeriodStats.totalNet)}
               </p>
               <p className="text-xs font-bold text-purple-600 mt-1">
-                Después de comisiones
+                {t('metrics.after_fees')}
               </p>
             </div>
             <div className="w-12 h-12 bg-purple-500 border-2 border-black flex items-center justify-center">
@@ -228,12 +244,12 @@ export default function SellerSalesPage() {
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 uppercase">Comisiones</p>
+              <p className="text-sm font-bold text-gray-600 uppercase">{t('metrics.fees')}</p>
               <p className="text-2xl font-black text-black">
                 {formatCurrency(currentPeriodStats.totalFees)}
               </p>
               <p className="text-xs font-bold text-orange-600 mt-1">
-                10% plataforma
+                {t('metrics.platform_fee')}
               </p>
             </div>
             <div className="w-12 h-12 bg-orange-500 border-2 border-black flex items-center justify-center">
@@ -253,7 +269,7 @@ export default function SellerSalesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
               <input
                 type="text"
-                placeholder="Buscar por comprador o producto..."
+                placeholder={t('search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border-2 border-black font-bold focus:outline-none focus:bg-yellow-400"
@@ -271,7 +287,7 @@ export default function SellerSalesPage() {
             style={{ boxShadow: '3px 3px 0 #000000' }}
           >
             <Filter className="h-4 w-4" />
-            FILTROS
+            {t('filters.title')}
           </button>
         </div>
 
@@ -281,26 +297,26 @@ export default function SellerSalesPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Estado */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">ESTADO</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.status')}</label>
                 <select
                   value={salesFilters.status || ''}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                   className="w-full border-2 border-black font-bold p-2 focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  <option value="">Todos los estados</option>
-                  <option value={OrderStatus.PENDING}>Pendiente</option>
-                  <option value={OrderStatus.PROCESSING}>Procesando</option>
-                  <option value={OrderStatus.PAID}>Pagado</option>
-                  <option value={OrderStatus.COMPLETED}>Completado</option>
-                  <option value={OrderStatus.FAILED}>Fallido</option>
-                  <option value={OrderStatus.REFUNDED}>Reembolsado</option>
+                  <option value="">{t('filters.all_statuses')}</option>
+                  <option value={OrderStatus.PENDING}>{tOrders('status.pending')}</option>
+                  <option value={OrderStatus.PROCESSING}>{tOrders('status.processing')}</option>
+                  <option value={OrderStatus.PAID}>{tOrders('status.paid')}</option>
+                  <option value={OrderStatus.COMPLETED}>{tOrders('status.completed')}</option>
+                  <option value={OrderStatus.CANCELLED}>{tOrders('status.failed')}</option>
+                  <option value={OrderStatus.REFUNDED}>{tOrders('status.refunded')}</option>
                 </select>
               </div>
 
               {/* Fecha Desde */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">DESDE</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.date_from')}</label>
                 <input
                   type="date"
                   value={salesFilters.dateFrom}
@@ -312,7 +328,7 @@ export default function SellerSalesPage() {
 
               {/* Fecha Hasta */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">HASTA</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.date_to')}</label>
                 <input
                   type="date"
                   value={salesFilters.dateTo}
@@ -324,7 +340,7 @@ export default function SellerSalesPage() {
 
               {/* Ordenar */}
               <div>
-                <label className="block text-sm font-black text-black mb-2">ORDENAR POR</label>
+                <label className="block text-sm font-black text-black mb-2">{t('filters.sort_by')}</label>
                 <select
                   value={`${salesFilters.sortBy}-${salesFilters.sortOrder}`}
                   onChange={(e) => {
@@ -335,12 +351,12 @@ export default function SellerSalesPage() {
                   className="w-full border-2 border-black font-bold p-2 focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  <option value="createdAt-desc">Más recientes</option>
-                  <option value="createdAt-asc">Más antiguos</option>
-                  <option value="amount-desc">Mayor monto</option>
-                  <option value="amount-asc">Menor monto</option>
-                  <option value="buyerName-asc">Comprador A-Z</option>
-                  <option value="buyerName-desc">Comprador Z-A</option>
+                  <option value="createdAt-desc">{t('sort.newest')}</option>
+                  <option value="createdAt-asc">{t('sort.oldest')}</option>
+                  <option value="amount-desc">{t('sort.highest_amount')}</option>
+                  <option value="amount-asc">{t('sort.lowest_amount')}</option>
+                  <option value="buyerName-asc">{t('sort.buyer_a_z')}</option>
+                  <option value="buyerName-desc">{t('sort.buyer_z_a')}</option>
                 </select>
               </div>
             </div>
@@ -353,15 +369,15 @@ export default function SellerSalesPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-bold">Cargando ventas...</p>
+            <p className="text-gray-600 font-bold">{t('loading_sales')}</p>
           </div>
         </div>
       ) : sales.length === 0 ? (
         <div className="bg-white border-[3px] border-black p-12 text-center" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-black text-black mb-2">No tienes ventas aún</h3>
+          <h3 className="text-xl font-black text-black mb-2">{t('no_sales.title')}</h3>
           <p className="text-gray-600 font-bold mb-6">
-            Las ventas aparecerán aquí cuando los compradores compren tus productos.
+            {t('no_sales.description')}
           </p>
         </div>
       ) : (
@@ -371,12 +387,12 @@ export default function SellerSalesPage() {
             {/* Header de la tabla */}
             <div className="bg-gray-100 border-b-2 border-black p-4">
               <div className="grid grid-cols-12 gap-4 items-center font-black text-sm uppercase text-black">
-                <div className="col-span-3">Producto</div>
-                <div className="col-span-2">Comprador</div>
-                <div className="col-span-1">Estado</div>
-                <div className="col-span-2">Montos</div>
-                <div className="col-span-2">Fecha</div>
-                <div className="col-span-2">Orden</div>
+                <div className="col-span-3">{t('table.product')}</div>
+                <div className="col-span-2">{t('table.buyer')}</div>
+                <div className="col-span-1">{t('table.status')}</div>
+                <div className="col-span-2">{t('table.amounts')}</div>
+                <div className="col-span-2">{t('table.date')}</div>
+                <div className="col-span-2">{t('table.order')}</div>
               </div>
             </div>
 
@@ -412,7 +428,7 @@ export default function SellerSalesPage() {
                     <div className="col-span-1">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-black border border-black ${getStatusColor(sale.status)}`}>
                         {getStatusIcon(sale.status)}
-                        {sale.status}
+                        {getStatusText(sale.status)}
                       </span>
                     </div>
 
@@ -423,10 +439,10 @@ export default function SellerSalesPage() {
                           {formatCurrency(sale.saleAmount)}
                         </p>
                         <p className="text-xs text-gray-600 font-bold">
-                          Net: {formatCurrency(sale.netAmount)}
+                          {t('table.net')}: {formatCurrency(sale.netAmount)}
                         </p>
                         <p className="text-xs text-orange-600 font-bold">
-                          Fee: {formatCurrency(sale.platformFee)}
+                          {t('table.fee')}: {formatCurrency(sale.platformFee)}
                         </p>
                       </div>
                     </div>
@@ -439,7 +455,7 @@ export default function SellerSalesPage() {
                         </p>
                         {sale.paidAt && (
                           <p className="text-xs text-green-600 font-bold">
-                            Pagado: {formatDate(sale.paidAt)}
+                            {t('table.paid')}: {formatDate(sale.paidAt)}
                           </p>
                         )}
                       </div>
@@ -451,7 +467,10 @@ export default function SellerSalesPage() {
                         <p className="font-bold text-blue-600 text-sm">
                           #{sale.orderNumber}
                         </p>
-                        <button className="p-1 hover:bg-gray-200 transition-colors">
+                        <button
+                          className="p-1 hover:bg-gray-200 transition-colors"
+                          title={t('table.view_order')}
+                        >
                           <Eye className="h-4 w-4 text-gray-600" />
                         </button>
                       </div>
@@ -467,7 +486,11 @@ export default function SellerSalesPage() {
             <div className="bg-white border-[3px] border-black p-4" style={{ boxShadow: '6px 6px 0 #000000' }}>
               <div className="flex items-center justify-between">
                 <div className="text-sm font-bold text-gray-600">
-                  Mostrando {((salesPagination.page - 1) * salesPagination.limit) + 1} - {Math.min(salesPagination.page * salesPagination.limit, salesPagination.total)} de {salesPagination.total} ventas
+                  {t('pagination.showing', {
+                    start: ((salesPagination.page - 1) * salesPagination.limit) + 1,
+                    end: Math.min(salesPagination.page * salesPagination.limit, salesPagination.total),
+                    total: salesPagination.total
+                  })}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -478,7 +501,7 @@ export default function SellerSalesPage() {
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Anterior
+                    {tCommon('previous')}
                   </button>
 
                   <div className="flex items-center gap-1">
@@ -509,7 +532,7 @@ export default function SellerSalesPage() {
                     className="flex items-center gap-2 px-3 py-2 border-2 border-black font-bold text-black hover:bg-yellow-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    Siguiente
+                    {tCommon('next')}
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>

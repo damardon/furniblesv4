@@ -100,7 +100,7 @@ export class CheckoutService {
       const order = await this.prisma.order.findFirst({
         where: {
           metadata: {
-            path: ['stripeSessionId'],
+            path: 'stripeSessionId',
             equals: sessionId
           }
         }

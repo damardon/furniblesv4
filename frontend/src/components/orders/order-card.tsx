@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import Link from 'next/link'
 import { 
@@ -22,6 +23,8 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order }: OrderCardProps) {
+  const t = useTranslations('orders.card')
+  const tCommon = useTranslations('common')
   const [isExpanded, setIsExpanded] = useState(false)
 
   const formatPrice = (price: number) => {
@@ -43,42 +46,54 @@ export function OrderCard({ order }: OrderCardProps) {
   }
 
   const getStatusBadge = (status: OrderStatus) => {
-    const statusConfig = {
+    // Configuración tipada explícita para evitar error de tipo 'any'
+    const statusConfig: Record<OrderStatus, {
+      bg: string
+      text: string
+      icon: typeof ClockIcon
+      label: string
+    }> = {
       [OrderStatus.PENDING]: {
         bg: 'bg-yellow-400',
         text: 'text-black',
         icon: ClockIcon,
-        label: 'PENDIENTE'
+        label: t('status.pending')
       },
       [OrderStatus.PROCESSING]: {
         bg: 'bg-blue-400',
         text: 'text-black', 
         icon: AlertCircleIcon,
-        label: 'PROCESANDO'
+        label: t('status.processing')
       },
       [OrderStatus.PAID]: {
         bg: 'bg-green-400',
         text: 'text-black',
         icon: CheckCircleIcon,
-        label: 'PAGADO'
+        label: t('status.paid')
       },
       [OrderStatus.COMPLETED]: {
         bg: 'bg-green-600',
         text: 'text-white',
         icon: CheckCircleIcon,
-        label: 'COMPLETADO'
+        label: t('status.completed')
       },
-      [OrderStatus.FAILED]: {
+      [OrderStatus.CANCELLED]: {
         bg: 'bg-red-500',
         text: 'text-white',
         icon: XCircleIcon,
-        label: 'FALLIDO'
+        label: t('status.cancelled')
       },
       [OrderStatus.REFUNDED]: {
         bg: 'bg-gray-400',
         text: 'text-black',
         icon: XCircleIcon,
-        label: 'REEMBOLSADO'
+        label: t('status.refunded')
+      },
+      [OrderStatus.DISPUTED]: {
+        bg: 'bg-orange-500',
+        text: 'text-white',
+        icon: AlertCircleIcon,
+        label: t('status.disputed')
       }
     }
 
@@ -107,7 +122,7 @@ export function OrderCard({ order }: OrderCardProps) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <h3 className="font-black text-black text-lg uppercase">
-            Orden #{order.orderNumber}
+            {t('order_title', { orderNumber: order.orderNumber })}
           </h3>
           {getStatusBadge(order.status)}
         </div>
@@ -142,7 +157,10 @@ export function OrderCard({ order }: OrderCardProps) {
         <div className="flex items-center gap-2 text-sm">
           <CreditCardIcon className="w-4 h-4 text-gray-600" />
           <span className="font-bold text-black">
-            {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+            {t('product_count', { 
+              count: order.items.length,
+              text: order.items.length === 1 ? t('product_singular') : t('product_plural')
+            })}
           </span>
         </div>
 
@@ -150,7 +168,7 @@ export function OrderCard({ order }: OrderCardProps) {
           <div className="flex items-center gap-2 text-sm">
             <CheckCircleIcon className="w-4 h-4 text-green-600" />
             <span className="font-bold text-black">
-              Pagado: {formatDate(order.paidAt)}
+              {t('paid_at', { date: formatDate(order.paidAt) })}
             </span>
           </div>
         )}
@@ -201,7 +219,7 @@ export function OrderCard({ order }: OrderCardProps) {
           style={{ boxShadow: '3px 3px 0 #000000' }}
         >
           <EyeIcon className="w-4 h-4" />
-          Ver Detalles
+          {t('actions.view_details')}
         </Link>
 
         {canDownload && (
@@ -210,7 +228,7 @@ export function OrderCard({ order }: OrderCardProps) {
             style={{ boxShadow: '3px 3px 0 #000000' }}
           >
             <DownloadIcon className="w-4 h-4" />
-            Descargar
+            {t('actions.download')}
           </button>
         )}
 
@@ -220,7 +238,7 @@ export function OrderCard({ order }: OrderCardProps) {
             className="bg-yellow-400 border-3 border-black font-black text-black text-sm uppercase px-4 py-2 hover:bg-orange-500 transition-all"
             style={{ boxShadow: '3px 3px 0 #000000' }}
           >
-            Escribir Reseña
+            {t('actions.write_review')}
           </Link>
         )}
       </div>
@@ -232,7 +250,7 @@ export function OrderCard({ order }: OrderCardProps) {
             {/* Lista de productos */}
             <div>
               <h4 className="font-black text-black text-lg uppercase mb-3">
-                Productos
+                {t('expanded.products_title')}
               </h4>
               <div className="space-y-2">
                 {order.items.map((item) => (
@@ -254,7 +272,10 @@ export function OrderCard({ order }: OrderCardProps) {
                         {item.productTitle}
                       </p>
                       <p className="text-xs text-gray-600 font-bold">
-                        Qty: {item.quantity} • {formatPrice(item.price)}
+                        {t('expanded.quantity_price', { 
+                          quantity: item.quantity,
+                          price: formatPrice(item.price)
+                        })}
                       </p>
                     </div>
                   </div>
@@ -265,7 +286,7 @@ export function OrderCard({ order }: OrderCardProps) {
             {/* Resumen de costos */}
             <div>
               <h4 className="font-black text-black text-lg uppercase mb-3">
-                Resumen
+                {t('expanded.summary_title')}
               </h4>
               <div 
                 className="p-4 border-2 border-black bg-gray-50"
@@ -273,16 +294,16 @@ export function OrderCard({ order }: OrderCardProps) {
               >
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="font-bold text-black">Subtotal:</span>
+                    <span className="font-bold text-black">{t('expanded.subtotal')}:</span>
                     <span className="font-black text-black">{formatPrice(order.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-bold text-black">Fee plataforma:</span>
+                    <span className="font-bold text-black">{t('expanded.platform_fee')}:</span>
                     <span className="font-bold text-black">{formatPrice(order.platformFee)}</span>
                   </div>
                   <div className="h-[1px] bg-black my-2"></div>
                   <div className="flex justify-between">
-                    <span className="font-black text-black uppercase">Total:</span>
+                    <span className="font-black text-black uppercase">{t('expanded.total')}:</span>
                     <span className="font-black text-orange-500 text-lg">
                       {formatPrice(order.totalAmount)}
                     </span>

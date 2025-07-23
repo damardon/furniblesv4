@@ -2,10 +2,13 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('app', () => ({
   nodeEnv: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT, 10) || 3001,
+  port: (() => {
+  const port = parseInt(process.env.PORT, 10);
+  return isNaN(port) ? 3001 : port;
+  })(),
   apiPrefix: process.env.API_PREFIX || 'api',
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev',
+  corsOrigin: process.env.CORS_ORIGIN || 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev',
   
   // Rate limiting
   throttle: {

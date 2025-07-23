@@ -26,235 +26,21 @@
     "language": "Idioma",
     "search_placeholder": "Buscar productos...",
     "welcome": "Bienvenido",
-    "menu": "Menú"
-  },
-  "seller": {
-    "dashboard": {
-      "title": "Panel del Vendedor",
-      "welcome": "Bienvenido, {storeName}",
-      "overview": "Resumen",
-      "quick_stats": "Estadísticas Rápidas",
-      "revenue_overview": "Resumen de Ingresos",
-      "recent_sales": "Ventas Recientes",
-      "top_products": "Productos Destacados",
-      "recent_reviews": "Reseñas Recientes",
-      "total_revenue": "Ingresos Totales",
-      "total_sales": "Ventas Totales",
-      "total_products": "Productos Totales",
-      "average_rating": "Calificación Promedio",
-      "view_all": "Ver Todos",
-      "no_data": "No hay datos disponibles",
-      "this_month": "Este Mes",
-      "last_month": "Mes Pasado",
-      "growth": "Crecimiento",
-      "vs_last_month": "vs mes anterior"
-    },
-    "navigation": {
-      "dashboard": "Dashboard",
-      "products": "Productos",
-      "sales": "Ventas",
-      "analytics": "Analytics",
-      "reviews": "Reseñas",
-      "profile": "Perfil de Tienda",
-      "settings": "Configuración"
-    },
-    "products": {
-      "title": "Gestión de Productos",
-      "subtitle": "Administra tu catálogo de productos",
-      "create_new": "Crear Nuevo Producto",
-      "my_products": "Mis Productos",
-      "drafts": "Borradores",
-      "published": "Publicados",
-      "pending": "Pendientes",
-      "rejected": "Rechazados",
-      "product_title": "Título del Producto",
-      "category": "Categoría",
-      "status": "Estado",
-      "price": "Precio",
-      "sales": "Ventas",
-      "rating": "Calificación",
-      "actions": "Acciones",
-      "edit": "Editar",
-      "delete": "Eliminar",
-      "publish": "Publicar",
-      "duplicate": "Duplicar",
-      "view": "Ver",
-      "no_products": "No tienes productos aún",
-      "create_first": "Crea tu primer producto",
-      "search_products": "Buscar productos...",
-      "filter_by_status": "Filtrar por estado",
-      "filter_by_category": "Filtrar por categoría",
-      "sort_by_date": "Ordenar por fecha",
-      "sort_by_sales": "Ordenar por ventas",
-      "sort_by_rating": "Ordenar por calificación",
-      "bulk_actions": "Acciones en lote",
-      "select_all": "Seleccionar todos",
-      "delete_selected": "Eliminar seleccionados"
-    },
-    "product_form": {
-      "create_title": "Crear Nuevo Producto",
-      "edit_title": "Editar Producto",
-      "basic_info": "Información Básica",
-      "media": "Medios",
-      "details": "Detalles Técnicos",
-      "pricing": "Precio",
-      "seo": "SEO",
-      "product_title": "Título del Producto",
-      "product_description": "Descripción",
-      "category": "Categoría",
-      "difficulty": "Dificultad",
-      "price": "Precio (USD)",
-      "estimated_time": "Tiempo Estimado",
-      "dimensions": "Dimensiones",
-      "tools_required": "Herramientas Requeridas",
-      "materials": "Materiales",
-      "tags": "Etiquetas",
-      "main_pdf": "Archivo PDF Principal",
-      "preview_images": "Imágenes de Vista Previa",
-      "thumbnails": "Miniaturas",
-      "drag_drop": "Arrastra y suelta archivos aquí",
-      "or": "o",
-      "browse_files": "Explorar Archivos",
-      "max_file_size": "Tamaño máximo: {size}MB",
-      "allowed_formats": "Formatos permitidos: {formats}",
-      "save_draft": "Guardar Borrador",
-      "save_publish": "Guardar y Publicar",
-      "cancel": "Cancelar",
-      "validation": {
-        "title_required": "El título es requerido",
-        "description_required": "La descripción es requerida",
-        "price_required": "El precio es requerido",
-        "price_min": "El precio debe ser mayor a $0",
-        "category_required": "La categoría es requerida",
-        "pdf_required": "El archivo PDF es requerido",
-        "images_required": "Al menos una imagen es requerida"
-      }
-    },
-    "sales": {
-      "title": "Gestión de Ventas",
-      "subtitle": "Visualiza y gestiona tus ventas",
-      "total_sales": "Ventas Totales",
-      "total_revenue": "Ingresos Totales",
-      "average_order": "Pedido Promedio",
-      "conversion_rate": "Tasa de Conversión",
-      "recent_orders": "Pedidos Recientes",
-      "order_number": "Número de Pedido",
-      "buyer": "Comprador",
-      "products": "Productos",
-      "amount": "Monto",
-      "date": "Fecha",
-      "status": "Estado",
-      "view_order": "Ver Pedido",
-      "filter_by_status": "Filtrar por estado",
-      "filter_by_date": "Filtrar por fecha",
-      "export_data": "Exportar Datos",
-      "no_sales": "No tienes ventas aún",
-      "promote_products": "Promociona tus productos para obtener más ventas"
-    },
-    "analytics": {
-      "title": "Analytics",
-      "subtitle": "Insights detallados de tu negocio",
-      "revenue_chart": "Gráfico de Ingresos",
-      "sales_chart": "Gráfico de Ventas",
-      "top_products": "Productos Más Vendidos",
-      "traffic_sources": "Fuentes de Tráfico",
-      "customer_analytics": "Analytics de Clientes",
-      "performance_metrics": "Métricas de Rendimiento",
-      "revenue": "Ingresos",
-      "orders": "Pedidos",
-      "visitors": "Visitantes",
-      "conversion": "Conversión",
-      "last_7_days": "Últimos 7 días",
-      "last_30_days": "Últimos 30 días",
-      "last_90_days": "Últimos 90 días",
-      "custom_range": "Rango Personalizado",
-      "download_report": "Descargar Reporte",
-      "product_performance": "Rendimiento de Productos",
-      "views": "Vistas",
-      "downloads": "Descargas",
-      "revenue_per_product": "Ingresos por Producto"
-    },
-    "reviews": {
-      "title": "Gestión de Reseñas",
-      "subtitle": "Responde y gestiona las reseñas de tus productos",
-      "all_reviews": "Todas las Reseñas",
-      "pending_response": "Pendientes de Respuesta",
-      "responded": "Respondidas",
-      "average_rating": "Calificación Promedio",
-      "total_reviews": "Total de Reseñas",
-      "recent_reviews": "Reseñas Recientes",
-      "respond": "Responder",
-      "response": "Respuesta",
-      "submit_response": "Enviar Respuesta",
-      "edit_response": "Editar Respuesta",
-      "delete_response": "Eliminar Respuesta",
-      "review_for": "Reseña para",
-      "customer": "Cliente",
-      "rating": "Calificación",
-      "comment": "Comentario",
-      "response_placeholder": "Escribe tu respuesta profesional...",
-      "no_reviews": "No tienes reseñas aún",
-      "get_first_sale": "Obtén tu primera venta para recibir reseñas",
-      "helpful": "Útil",
-      "not_helpful": "No útil",
-      "report": "Reportar",
-      "filter_by_rating": "Filtrar por calificación",
-      "filter_by_product": "Filtrar por producto",
-      "sort_by_date": "Ordenar por fecha",
-      "sort_by_rating": "Ordenar por calificación"
-    },
-    "profile": {
-      "title": "Perfil de Tienda",
-      "subtitle": "Gestiona la información de tu tienda",
-      "store_info": "Información de la Tienda",
-      "store_name": "Nombre de la Tienda",
-      "store_description": "Descripción",
-      "store_website": "Sitio Web",
-      "store_phone": "Teléfono",
-      "store_avatar": "Avatar de la Tienda",
-      "store_banner": "Banner de la Tienda",
-      "verification": "Verificación",
-      "verification_status": "Estado de Verificación",
-      "verified": "Verificado",
-      "not_verified": "No Verificado",
-      "request_verification": "Solicitar Verificación",
-      "store_settings": "Configuración de la Tienda",
-      "public_profile": "Perfil Público",
-      "view_public_profile": "Ver Perfil Público",
-      "store_url": "URL de la Tienda",
-      "seo_settings": "Configuración SEO",
-      "meta_description": "Meta Descripción",
-      "save_changes": "Guardar Cambios",
-      "upload_avatar": "Subir Avatar",
-      "upload_banner": "Subir Banner",
-      "remove_image": "Eliminar Imagen"
-    },
-    "settings": {
-      "title": "Configuración",
-      "subtitle": "Configuración de tu cuenta de vendedor",
-      "account_settings": "Configuración de Cuenta",
-      "notification_settings": "Configuración de Notificaciones",
-      "payment_settings": "Configuración de Pagos",
-      "privacy_settings": "Configuración de Privacidad",
-      "email_notifications": "Notificaciones por Email",
-      "new_order": "Nuevos Pedidos",
-      "new_review": "Nuevas Reseñas",
-      "payment_received": "Pagos Recibidos",
-      "marketing_emails": "Emails de Marketing",
-      "stripe_account": "Cuenta de Stripe",
-      "connect_stripe": "Conectar con Stripe",
-      "stripe_connected": "Conectado con Stripe",
-      "update_stripe": "Actualizar Cuenta",
-      "payout_schedule": "Programación de Pagos",
-      "automatic": "Automático",
-      "manual": "Manual",
-      "minimum_payout": "Pago Mínimo",
-      "tax_information": "Información Fiscal",
-      "privacy_mode": "Modo Privacidad",
-      "public_statistics": "Estadísticas Públicas",
-      "show_sales_count": "Mostrar Número de Ventas",
-      "show_rating": "Mostrar Calificación"
-    }
+    "menu": "Menú",
+    "home": "Inicio",
+    "products": "Productos",
+    "sellers": "Vendedores",
+    "help": "Ayuda",
+    "favorites": "Favoritos",
+    "upload_product": "SUBIR PRODUCTO",
+    "admin_moderation_pending": "MODERACIÓN PENDIENTE",
+    "admin_products": "PRODUCTOS",
+    "admin_reviews": "REVIEWS",
+    "admin_reports": "REPORTES",
+    "admin_dashboard": "DASHBOARD ADMIN",
+    "admin_users": "USUARIOS",
+    "admin_analytics": "ANALYTICS",
+    "admin_pending": "PENDIENTES"
   },
   "home": {
     "hero_title": "Planos simples para muebles modernos,",
@@ -269,7 +55,7 @@
     "always_save_desc": "Construye tus propios muebles a una fracción del costo de comprar uno terminado.",
     "quality": "CALIDAD",
     "exclusive_design": "DISEÑO EXCLUSIVO",
-    "savings": "AHORROS", 
+    "savings": "AHORROS",
     "categories": "CATEGORÍAS",
     "living_dining": "SALA Y COMEDOR",
     "kitchen": "COCINA",
@@ -284,13 +70,24 @@
     "community_desc": "Esta comunidad crece gracias a ti. Cada mes hacemos reuniones virtuales para conocer los diseños.",
     "models": "Modelos",
     "members": "Miembros",
-    "countries": "Países", 
+    "countries": "Países",
+    "furniture": "Muebles",
+    "storage": "Almacenamiento",
+    "chairs": "Sillas",
+    "tables": "Mesas",
+    "office": "Oficina",
+    "lighting": "Iluminación",
     "join_now": "¡ÚNETE AHORA!"
   },
   "products": {
-    "title": "Catálogo de Productos",
-    "subtitle": "Descubre nuestra colección de planos de muebles únicos",
-    "search_placeholder": "Buscar productos...",
+    "header": {
+      "badge": "¡PLANOS PREMIUM!",
+      "title": "Catálogo de Productos", 
+      "subtitle": "Descubre nuestra colección de planos de muebles únicos"
+    },
+    "search": {
+      "placeholder": "Buscar productos..."
+    },
     "filter_all": "Todos",
     "filter_chairs": "Sillas",
     "filter_tables": "Mesas",
@@ -328,11 +125,1249 @@
     "product_details": "Detalles del Producto",
     "description": "Descripción",
     "reviews": "Reseñas",
-    "write_review": "Escribir Reseña"
+    "write_review": "Escribir Reseña",
+    "categories": {
+      "all": "Todos",
+      "tables": "Mesas",
+      "chairs": "Sillas",
+      "beds": "Camas", 
+      "shelves": "Estanterías",
+      "storage": "Almacenamiento",
+      "desks": "Escritorios",
+      "outdoor": "Exterior",
+      "decorative": "Decorativo"
+    },
+    "difficulties": {
+      "all": "Todas",
+      "beginner": "Fácil",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado"
+    },
+    "sort": {
+      "newest": "Más recientes", 
+      "popular": "Más populares",
+      "rating": "Mejor valorados",
+      "price_low": "Precio: menor a mayor",
+      "price_high": "Precio: mayor a menor"
+    },
+    "results": {
+      "count": "{count} PRODUCTOS",
+      "search_label": "BÚSQUEDA",
+      "category_label": "CATEGORÍA", 
+      "difficulty_label": "DIFICULTAD"
+    },
+    "empty": {
+      "title": "NO HAY PRODUCTOS",
+      "subtitle": "Prueba con otros filtros o términos de búsqueda",
+      "clear_filters": "LIMPIAR FILTROS"
+    }
+  },
+  "product_detail": {
+    "loading": "Cargando producto...",
+    "navigation": {
+    "back_to_catalog": "Volver al Catálogo"
+  },
+  "gallery": {
+    "no_image": "Sin Imagen",
+    "image_alt": "{title} - imagen {number}"
+  },
+  "badges": {
+    "featured": "Destacado",
+    "new": "Nuevo"
+  },
+  "info": {
+    "reviews": "reviews",
+    "views": "vistas",
+    "downloads": "descargas",
+    "published_on": "Publicado el {date}"
+  },
+  "sections": {
+    "description": "Descripción",
+    "seller": "Vendedor"
+  },
+  "seller": {
+    "sales": "ventas",
+    "visit_store": "Visitar tienda"
+  },
+  "actions": {
+    "add_to_cart": "Agregar al Carrito",
+    "adding": "Agregando..."
+  },
+  "technical": {
+    "tools": "Herramientas",
+    "materials": "Materiales",
+    "dimensions": "Dimensiones",
+    "tags": "Tags"
+  },
+  "related": {
+    "title": "Productos Relacionados"
+  }
+  },
+  "seller": {
+    "title": "Nuestros Vendedores",
+    "subtitle": "Descubre a los mejores artesanos y creadores de muebles de nuestra plataforma",
+    "banner_alt": "Banner de {storeName}",
+    "verified": "VERIFICADO",
+    "by_seller": "Por {firstName} {lastName}",
+    "default_description": "Tienda de {firstName} {lastName}",
+    "results_count": "{count} vendedores encontrados",
+    "loading_sellers": "Cargando vendedores...",
+    "stats": {
+      "reviews_count": "{count} reviews",
+      "sales": "ventas",
+      "products": "productos"
+    },
+    "contact": {
+      "website": "Sitio web",
+      "phone": "Teléfono"
+    },
+    "actions": {
+      "view_store": "VER TIENDA"
+    },
+    "search": {
+      "placeholder": "Buscar tiendas..."
+    },
+    "sort": {
+      "best_rated": "Mejor valorados",
+      "most_sales": "Más ventas",
+      "newest": "Más recientes"
+    },
+    "view": {
+      "grid": "Vista en cuadrícula",
+      "list": "Vista en lista"
+    },
+    "no_sellers": {
+      "title": "No se encontraron vendedores",
+      "description": "Intenta con otros términos de búsqueda"
+    },
+    "dashboard": {
+      "title": "Panel del Vendedor",
+      "welcome": "Bienvenido, {storeName}",
+      "overview": "Resumen",
+      "quick_stats": "Estadísticas Rápidas",
+      "revenue_overview": "Resumen de Ingresos",
+      "recent_sales": "Ventas Recientes",
+      "top_products": "Productos Destacados",
+      "recent_reviews": "Reseñas Recientes",
+      "total_revenue": "Ingresos Totales",
+      "total_sales": "Ventas Totales",
+      "total_products": "Productos Totales",
+      "average_rating": "Calificación Promedio",
+      "view_all": "Ver Todos",
+      "no_data": "No hay datos disponibles",
+      "this_month": "Este Mes",
+      "last_month": "Mes Pasado",
+      "growth": "Crecimiento",
+      "vs_last_month": "vs mes anterior"
+    },
+    "navigation": {
+      "dashboard": "Dashboard",
+      "dashboard_description": "Resumen y estadísticas",
+      "products": "Productos",
+      "products_description": "Gestión de productos",
+      "sales": "Ventas",
+      "sales_description": "Ventas y pedidos",
+      "analytics": "Analytics",
+      "analytics_description": "Analytics detallados",
+      "reviews": "Reviews",
+      "reviews_description": "Gestión de reseñas",
+      "profile": "Perfil",
+      "profile_description": "Perfil de tienda",
+      "settings": "Configuración",
+      "settings_description": "Configuración"
+    },
+    "layout": {
+      "title": "Panel Vendedor",
+      "verifying_permissions": "Verificando permisos...",
+      "sales_count": "{count} ventas",
+      "breadcrumb": {
+        "new_product": "Nuevo Producto",
+        "edit_product": "Editar Producto"
+      },
+      "status": {
+        "verified": "Verificado",
+        "pending_verification": "Pendiente verificación"
+      },
+      "quick_actions": {
+        "title": "Acciones Rápidas",
+        "upload_product": "SUBIR PRODUCTO",
+        "view_analytics": "VER ANALYTICS"
+      },
+      "quick_stats": {
+        "title": "Stats Rápidas",
+        "total_sales": "Ventas Totales",
+        "rating": "Rating",
+        "verified": "Verificado"
+      }
+    },
+    "products": {
+      "title": "Gestión de Productos",
+      "subtitle": "Administra tu catálogo de productos",
+      "create_new": "Crear Nuevo Producto",
+      "my_products": "Mis Productos",
+      "drafts": "Borradores",
+      "published": "Publicados",
+      "pending": "Pendientes",
+      "rejected": "Rechazados",
+      "product_title": "Título del Producto",
+      "category": "Categoría",
+      "price": "Precio",
+      "sales": "Ventas",
+      "rating": "Calificación",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "publish": "Publicar",
+      "duplicate": "Duplicar",
+      "view": "Ver",
+      "no_products": "No tienes productos aún",
+      "create_first": "Crea tu primer producto",
+      "search_products": "Buscar productos...",
+      "filter_by_status": "Filtrar por estado",
+      "filter_by_category": "Filtrar por categoría",
+      "sort_by_date": "Ordenar por fecha",
+      "sort_by_sales": "Ordenar por ventas",
+      "sort_by_rating": "Ordenar por calificación",
+      "bulk_actions": "Acciones en lote",
+      "select_all": "Seleccionar todos",
+      "delete_selected": "Eliminar seleccionados",
+      "featured": "DESTACADO",
+      "loading": "Cargando productos...",
+      "stats": {
+        "my_products": "Mis Productos",
+        "drafts": "Borradores",
+        "published": "Publicados",
+        "pending": "Pendientes"
+      },
+      "status": {
+        "draft": "BORRADOR",
+        "pending": "PENDIENTE",
+        "approved": "APROBADO",
+        "rejected": "RECHAZADO",
+        "suspended": "SUSPENDIDO"
+      },
+      "actions": {
+        "edit": "Editar",
+        "view": "Ver",
+        "publish": "Publicar",
+        "unpublish": "Despublicar",
+        "duplicate": "Duplicar",
+        "delete": "Eliminar",
+        "clear": "Limpiar"
+      },
+      "filters": {
+        "title": "FILTROS Y BÚSQUEDA",
+        "search_label": "Buscar productos",
+        "search_placeholder": "Título, descripción...",
+        "status_label": "Estado",
+        "category_label": "Categoría",
+        "view_label": "Vista",
+        "all_statuses": "Todos los estados",
+        "all_categories": "Todas las categorías",
+        "grid_view": "Grid",
+        "list_view": "Lista"
+      },
+      "table": {
+        "headers": {
+          "product": "PRODUCTO",
+          "status": "ESTADO",
+          "category": "CATEGORÍA",
+          "stats": "ESTADÍSTICAS",
+          "actions": "ACCIONES"
+        }
+      },
+      "categories": {
+        "beds": "Beds",
+        "outdoor": "Outdoor",
+        "decorative": "Decorative"
+      },
+      "bulk": {
+        "selected_count": "{count} producto(s) seleccionado(s)",
+        "selected_products": "{count} producto(s) seleccionado(s)",
+        "action_description": "Esta acción se aplicará a todos los productos seleccionados.",
+        "modal_title": "{action} Productos en Lote",
+        "confirm_action": "{action} {count} Producto(s)",
+        "publish": "Publicar",
+        "unpublish": "Despublicar",
+        "delete": "Eliminar"
+      },
+      "modals": {
+        "view_details": "Detalles del Producto",
+        "publish_product": "Publicar Producto",
+        "duplicate_product": "Duplicar Producto",
+        "delete_product": "Eliminar Producto",
+        "product_action": "Acción de Producto"
+      },
+      "details": {
+        "product_id": "ID Producto",
+        "created": "Creado",
+        "difficulty": "Dificultad",
+        "rating": "Rating",
+        "statistics": "Estadísticas",
+        "views": "Vistas",
+        "downloads": "Descargas",
+        "reviews": "Reviews"
+      },
+      "delete_warning": {
+        "title": "¡Atención! Eliminación Permanente",
+        "description": "Esta acción no se puede deshacer. El producto será eliminado permanentemente."
+      },
+      "pagination": {
+        "showing": "Mostrando {start} a {end} de {total} productos"
+      },
+      "create": {
+        "title": "Subir Nuevo Producto",
+        "subtitle": "Completa la información de tu producto",
+        "image_preview": "Preview {number}",
+        "sections": {
+          "basic_info": "Información Básica",
+          "files": "Archivos",
+          "technical_details": "Detalles Técnicos"
+        },
+        "fields": {
+          "title": "TÍTULO DEL PRODUCTO",
+          "description": "DESCRIPCIÓN",
+          "price": "PRECIO (USD)",
+          "category": "CATEGORÍA",
+          "difficulty": "DIFICULTAD",
+          "estimated_time": "TIEMPO ESTIMADO",
+          "dimensions": "DIMENSIONES",
+          "pdf_file": "ARCHIVO PDF (PLANOS)",
+          "product_images": "IMÁGENES DEL PRODUCTO",
+          "tags": "TAGS (PALABRAS CLAVE)",
+          "tools_required": "HERRAMIENTAS REQUERIDAS",
+          "materials_required": "MATERIALES REQUERIDOS"
+        },
+        "placeholders": {
+          "title": "Ej: Mesa de comedor moderna en roble",
+          "description": "Describe tu producto, sus características, qué incluye el plan, nivel de dificultad, etc.",
+          "estimated_time": "Ej: 2-3 días, 8 horas",
+          "dimensions": "Ej: 120cm x 80cm x 75cm",
+          "tags": "Ej: moderno, roble, comedor",
+          "tools": "Ej: Sierra circular, taladro, lijadora",
+          "materials": "Ej: Madera de roble, tornillos, cola"
+        },
+        "validation": {
+          "title_required": "El título es requerido",
+          "title_max_length": "El título no puede exceder 100 caracteres",
+          "description_required": "La descripción es requerida",
+          "description_max_length": "La descripción no puede exceder 2000 caracteres",
+          "price_min": "El precio debe ser mayor a $1",
+          "price_max": "El precio no puede exceder $1000",
+          "pdf_required": "El archivo PDF es requerido",
+          "pdf_type": "Solo se permiten archivos PDF",
+          "pdf_size": "El archivo PDF no puede exceder 10MB",
+          "images_required": "Al menos una imagen es requerida",
+          "images_max": "Máximo 6 imágenes permitidas",
+          "images_type": "Solo se permiten archivos de imagen",
+          "images_size": "Cada imagen no puede exceder 5MB",
+          "tags_required": "Al menos un tag es requerido",
+          "tools_required": "Al menos una herramienta es requerida",
+          "materials_required": "Al menos un material es requerido"
+        },
+        "file_actions": {
+          "upload_pdf": "Subir archivo PDF",
+          "upload_images": "Subir imágenes",
+          "click_to_change": "Click para cambiar"
+        },
+        "file_limits": {
+          "pdf_max_size": "Máximo 10MB",
+          "images_max_size": "Máximo 6 imágenes, 5MB c/u"
+        },
+        "actions": {
+          "save_draft": "GUARDAR BORRADOR",
+          "submit_for_review": "ENVIAR A REVISIÓN",
+          "submitting": "ENVIANDO..."
+        },
+        "error": {
+          "create_failed": "Error al crear el producto",
+          "connection": "Error de conexión"
+        }
+      }
+    },
+    "sales": {
+      "title": "Gestión de Ventas",
+      "subtitle": "Visualiza y gestiona tus ventas",
+      "total_sales": "Ventas Totales",
+      "total_revenue": "Ingresos Totales",
+      "average_order": "Pedido Promedio",
+      "conversion_rate": "Tasa de Conversión",
+      "recent_orders": "Pedidos Recientes",
+      "order_number": "Número de Pedido",
+      "buyer": "Comprador",
+      "products": "Productos",
+      "amount": "Monto",
+      "date": "Fecha",
+      "status": "Estado",
+      "view_order": "Ver Pedido",
+      "filter_by_status": "Filtrar por estado",
+      "filter_by_date": "Filtrar por fecha",
+      "export_data": "Exportar Datos",
+      "promote_products": "Promociona tus productos para obtener más ventas",
+      "periods": {
+        "week": "Semana",
+        "month": "Mes",
+        "quarter": "Trimestre",
+        "year": "Año",
+        "this_period": "Este {period}"
+      },
+      "metrics": {
+        "sales": "Ventas",
+        "gross_revenue": "Ingresos Brutos",
+        "net_revenue": "Ingresos Netos",
+        "fees": "Comisiones",
+        "before_fees": "Antes de comisiones",
+        "after_fees": "Después de comisiones",
+        "platform_fee": "10% plataforma"
+      },
+      "filters": {
+        "title": "FILTROS",
+        "status": "ESTADO",
+        "all_statuses": "Todos los estados",
+        "date_from": "DESDE",
+        "date_to": "HASTA",
+        "sort_by": "ORDENAR POR"
+      },
+      "sort": {
+        "newest": "Más recientes",
+        "oldest": "Más antiguos",
+        "highest_amount": "Mayor monto",
+        "lowest_amount": "Menor monto",
+        "buyer_a_z": "Comprador A-Z",
+        "buyer_z_a": "Comprador Z-A"
+      },
+      "table": {
+        "product": "Producto",
+        "buyer": "Comprador",
+        "status": "Estado",
+        "amounts": "Montos",
+        "date": "Fecha",
+        "order": "Orden",
+        "net": "Net",
+        "fee": "Fee",
+        "paid": "Pagado",
+        "view_order": "Ver orden"
+      },
+      "no_sales": {
+        "title": "No tienes ventas aún",
+        "description": "Las ventas aparecerán aquí cuando los compradores compren tus productos."
+      },
+      "pagination": {
+        "showing": "Mostrando {start} - {end} de {total} ventas"
+      },
+      "search_placeholder": "Buscar por comprador o producto...",
+      "loading_sales": "Cargando ventas..."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "subtitle": "Insights detallados de tu negocio",
+      "revenue_chart": "Gráfico de Ingresos",
+      "sales_chart": "Gráfico de Ventas",
+      "top_products": "Productos Más Vendidos",
+      "traffic_sources": "Fuentes de Tráfico",
+      "customer_analytics": "Analytics de Clientes",
+      "performance_metrics": "Métricas de Rendimiento",
+      "revenue": "Ingresos",
+      "orders": "Pedidos",
+      "visitors": "Visitantes",
+      "conversion": "Conversión",
+      "last_7_days": "Últimos 7 días",
+      "last_30_days": "Últimos 30 días",
+      "last_90_days": "Últimos 90 días",
+      "custom_range": "Rango Personalizado",
+      "download_report": "Descargar Reporte",
+      "product_performance": "Rendimiento de Productos",
+      "views": "Vistas",
+      "downloads": "Descargas",
+      "revenue_per_product": "Ingresos por Producto",
+      "error_title": "Error al cargar gráfico",
+      "retry": "Reintentar", 
+      "total": "Total",
+      "average": "Promedio",
+      "previous_period": "período anterior",
+      "loading": "Cargando...",
+      "no_data": "Sin datos disponibles",
+      "export_csv": "Exportar CSV", 
+      "refresh": "Actualizar",
+      "chart_type_not_supported": "Tipo de gráfico no soportado",
+      "period": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "90d": "90 días", 
+        "1y": "1 año"
+      },
+      "periods": {
+        "week": "Semana",
+        "month": "Mes",
+        "quarter": "Trimestre",
+        "year": "Año"
+      },
+      "metrics": {
+        "revenue": "Ingresos",
+        "sales": "Ventas",
+        "customers": "Clientes",
+        "conversion": "Conversión"
+      },
+      "charts": {
+        "revenue_by_month": "Ingresos por Mes",
+        "top_products": "Top Productos",
+        "sales_by_category": "Ventas por Categoría",
+        "key_metrics": "Métricas Clave"
+      },
+      "months": {
+        "jan": "Ene",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Abr",
+        "may": "May",
+        "jun": "Jun"
+      },
+      "categories": {
+        "tables": "Mesas",
+        "chairs": "Sillas",
+        "storage": "Almacenamiento",
+        "decorative": "Decorativo",
+        "others": "Otros"
+      },
+      "key_metrics": {
+        "avg_order_value": "VALOR PROMEDIO PEDIDO",
+        "customer_retention": "RETENCIÓN CLIENTES",
+        "total_views": "VISTAS TOTALES",
+        "total_downloads": "DESCARGAS TOTALES",
+        "avg_rating": "RATING PROMEDIO"
+      },
+      "insights": {
+        "title": "Insights y Recomendaciones",
+        "growth": {
+          "title": "CRECIMIENTO",
+          "description": "Tus ventas han crecido {percentage}% este período. Continúa subiendo productos de calidad para mantener el crecimiento."
+        },
+        "quality": {
+          "title": "CALIDAD",
+          "description": "Tu rating promedio es excelente. Los productos bien valorados tienen 40% más probabilidad de ser comprados."
+        },
+        "opportunity": {
+          "title": "OPORTUNIDAD",
+          "description": "Considera expandir tu catálogo en categorías con alta demanda como almacenamiento y muebles de oficina."
+        }
+      },
+      "product_stats": {
+        "sales": "{count} ventas",
+        "each": "c/u"
+      },
+      "vs_previous_period": "vs periodo anterior",
+      "loading_analytics": "Cargando analytics...",
+      "sales_count": "{count} ventas",
+      "category_sales": "{count} ventas"
+    },
+    "reviews": {
+      "title": "Gestión de Reseñas",
+      "subtitle": "Responde y gestiona las reseñas de tus productos",
+      "all_reviews": "Todas las Reseñas",
+      "pending_response": "Pendientes de Respuesta",
+      "responded": "Respondidas",
+      "average_rating": "Calificación Promedio",
+      "total_reviews": "Total de Reseñas",
+      "recent_reviews": "Reseñas Recientes",
+      "response": "Respuesta",
+      "submit_response": "Enviar Respuesta",
+      "delete_response": "Eliminar Respuesta",
+      "review_for": "Reseña para",
+      "customer": "Cliente",
+      "rating": "Calificación",
+      "comment": "Comentario",
+      "response_placeholder": "Escribe tu respuesta profesional...",
+      "get_first_sale": "Obtén tu primera venta para recibir reseñas",
+      "helpful": "Útil",
+      "not_helpful": "No útil",
+      "report": "Reportar",
+      "filter_by_rating": "Filtrar por calificación",
+      "filter_by_product": "Filtrar por producto",
+      "sort_by_date": "Ordenar por fecha",
+      "sort_by_rating": "Ordenar por calificación",
+      "stats": {
+        "total_reviews": "Total Reviews",
+        "with_response": "Con Respuesta",
+        "pending": "Pendientes",
+        "distribution": "Distribución",
+        "response_rate": "{percentage}% respondidas",
+        "without_response": "Sin responder"
+      },
+      "filters": {
+        "title": "FILTROS",
+        "rating": "RATING",
+        "status": "ESTADO",
+        "response": "RESPUESTA",
+        "sort_by": "ORDENAR POR",
+        "all_ratings": "Todos los ratings",
+        "all_statuses": "Todos los estados",
+        "all_responses": "Todas",
+        "with_response": "Con respuesta",
+        "without_response": "Sin respuesta",
+        "stars": "{count} estrellas"
+      },
+      "status": {
+        "published": "Publicadas",
+        "pending": {
+          "moderation": "Pendiente moderación"
+        },
+        "flagged": "Reportadas",
+        "removed": "Removidas"
+      },
+      "sort": {
+        "newest": "Más recientes",
+        "oldest": "Más antiguos",
+        "highest_rating": "Mayor rating",
+        "lowest_rating": "Menor rating",
+        "most_helpful": "Más útiles"
+      },
+      "no_reviews": {
+        "title": "No tienes reviews aún",
+        "description": "Las reviews aparecerán aquí cuando los compradores evalúen tus productos."
+      },
+      "pagination": {
+        "showing": "Mostrando {start} - {end} de {total} reviews"
+      },
+      "modal": {
+        "edit_response": "Editar Respuesta",
+        "respond_review": "Responder Review",
+        "your_response": "TU RESPUESTA",
+        "response_placeholder": "Escribe tu respuesta...",
+        "response_tip": "Sé profesional y útil en tu respuesta",
+        "sending": "ENVIANDO...",
+        "update_response": "ACTUALIZAR RESPUESTA",
+        "send_response": "ENVIAR RESPUESTA"
+      },
+      "search_placeholder": "Buscar por producto o comentario...",
+      "loading_reviews": "Cargando reviews...",
+      "helpful_count": "{count} útiles",
+      "pros": "PROS",
+      "cons": "CONTRAS",
+      "your_response": "TU RESPUESTA",
+      "edit_response": "Editar respuesta",
+      "respond": "RESPONDER"
+    },
+    "profile": {
+      "title": "Perfil de Tienda",
+      "subtitle": "Gestiona la información de tu tienda",
+      "store_info": "Información de la Tienda",
+      "store_name": "Nombre de la Tienda",
+      "store_description": "Descripción",
+      "store_website": "Sitio Web",
+      "store_phone": "Teléfono",
+      "store_avatar": "Avatar de la Tienda",
+      "store_banner": "Banner de la Tienda",
+      "verification": "Verificación",
+      "verification_status": "Estado de Verificación",
+      "verified": "Verificado",
+      "not_verified": "No Verificado",
+      "request_verification": "Solicitar Verificación",
+      "store_settings": "Configuración de la Tienda",
+      "public_profile": "Perfil Público",
+      "view_public_profile": "Ver Perfil Público",
+      "store_url": "URL de la Tienda",
+      "seo_settings": "Configuración SEO",
+      "meta_description": "Meta Descripción",
+      "save_changes": "Guardar Cambios",
+      "upload_avatar": "Subir Avatar",
+      "upload_banner": "Subir Banner",
+      "remove_image": "Eliminar Imagen",
+      "sections": {
+        "basic_info": "Información Básica",
+        "store_images": "Imágenes de la Tienda",
+        "status": "Estado",
+        "statistics": "Estadísticas",
+        "preview": "Vista Previa"
+      },
+      "fields": {
+        "store_name": "NOMBRE DE LA TIENDA",
+        "store_url": "URL DE LA TIENDA",
+        "description": "DESCRIPCIÓN DE LA TIENDA",
+        "website": "SITIO WEB",
+        "phone": "TELÉFONO DE CONTACTO",
+        "logo_avatar": "LOGO/AVATAR DE LA TIENDA",
+        "store_banner": "BANNER DE LA TIENDA"
+      },
+      "placeholders": {
+        "slug": "mi-tienda",
+        "description": "Describe tu tienda, especialidades, experiencia...",
+        "website": "https://mi-sitio-web.com",
+        "phone": "+1 (555) 123-4567"
+      },
+      "validation": {
+        "store_name_required": "El nombre de la tienda es requerido",
+        "store_name_min_length": "El nombre debe tener al menos 3 caracteres",
+        "store_name_max_length": "El nombre no puede exceder 50 caracteres",
+        "slug_required": "El slug es requerido",
+        "slug_min_length": "El slug debe tener al menos 3 caracteres",
+        "slug_format": "El slug solo puede contener letras minúsculas, números y guiones",
+        "description_max_length": "La descripción no puede exceder 500 caracteres",
+        "website_format": "La URL debe comenzar con http:// o https://",
+        "phone_format": "El teléfono debe ser válido",
+        "image_size_limit": "La imagen no puede exceder 5MB",
+        "image_type_only": "Solo se permiten archivos de imagen"
+      },
+      "actions": {
+        "edit_profile": "EDITAR PERFIL",
+        "saving": "GUARDANDO...",
+        "save_changes": "GUARDAR CAMBIOS",
+        "change_logo": "CAMBIAR LOGO",
+        "change_banner": "CAMBIAR BANNER",
+        "view_public_store": "VER TIENDA PÚBLICA"
+      },
+      "status": {
+        "verification": "Verificación",
+        "email": "Email",
+        "account": "Cuenta",
+        "verified": "VERIFICADO",
+        "pending": "PENDIENTE",
+        "not_verified": "NO VERIFICADO",
+        "active": "ACTIVA",
+        "inactive": "INACTIVA"
+      },
+      "stats": {
+        "rating": "Rating",
+        "sales": "Ventas",
+        "member_since": "Miembro desde"
+      },
+      "image_states": {
+        "no_logo": "Sin logo",
+        "no_banner": "Sin banner"
+      },
+      "errors": {
+        "update_failed": "Error al actualizar el perfil",
+        "connection_error": "Error de conexión"
+      },
+      "loading_profile": "Cargando perfil...",
+      "verification_tip": "Para verificar tu tienda, completa toda la información del perfil y sube al menos 3 productos de calidad.",
+      "preview_description": "Así verán tu tienda los compradores"
+    },
+    "settings": {
+      "title": "Configuración",
+      "subtitle": "Configuración de tu cuenta de vendedor",
+      "account_settings": "Configuración de Cuenta",
+      "notification_settings": "Configuración de Notificaciones",
+      "payment_settings": "Configuración de Pagos",
+      "privacy_settings": "Configuración de Privacidad",
+      "email_notifications": "Notificaciones por Email",
+      "new_order": "Nuevos Pedidos",
+      "new_review": "Nuevas Reseñas",
+      "payment_received": "Pagos Recibidos",
+      "marketing_emails": "Emails de Marketing",
+      "stripe_account": "Cuenta de Stripe",
+      "connect_stripe": "Conectar con Stripe",
+      "stripe_connected": "Conectado con Stripe",
+      "update_stripe": "Actualizar Cuenta",
+      "payout_schedule": "Programación de Pagos",
+      "automatic": "Automático",
+      "manual": "Manual",
+      "minimum_payout": "Pago Mínimo",
+      "tax_information": "Información Fiscal",
+      "privacy_mode": "Modo Privacidad",
+      "public_statistics": "Estadísticas Públicas",
+      "show_sales_count": "Mostrar Número de Ventas",
+      "show_rating": "Mostrar Calificación",
+      "tabs": {
+        "account": "Cuenta",
+        "notifications": "Notificaciones",
+        "privacy": "Privacidad",
+        "payments": "Pagos"
+      },
+      "account": {
+        "title": "Información de Cuenta",
+        "first_name": "NOMBRE",
+        "last_name": "APELLIDO",
+        "email": "EMAIL",
+        "email_change_note": "Para cambiar tu email, contacta al soporte",
+        "change_password": "Cambiar Contraseña",
+        "current_password": "CONTRASEÑA ACTUAL",
+        "new_password": "NUEVA CONTRASEÑA",
+        "confirm_new_password": "CONFIRMAR NUEVA CONTRASEÑA",
+        "save_changes": "GUARDAR CAMBIOS"
+      },
+      "notifications": {
+        "title": "Configuración de Notificaciones",
+        "email_notifications": "Notificaciones por Email",
+        "new_orders": "Nuevos pedidos",
+        "new_orders_desc": "Te avisamos cuando alguien compra tus productos",
+        "new_reviews": "Nuevas reseñas",
+        "new_reviews_desc": "Recibe notificaciones de nuevas reseñas",
+        "payments_completed": "Pagos completados",
+        "payments_completed_desc": "Confirmación de pagos recibidos",
+        "products_approved": "Productos aprobados",
+        "products_approved_desc": "Cuando tus productos son aprobados",
+        "products_rejected": "Productos rechazados",
+        "products_rejected_desc": "Cuando tus productos necesitan revisión",
+        "marketing_updates": "Actualizaciones de marketing",
+        "marketing_updates_desc": "Noticias y consejos para vendedores",
+        "additional_settings": "Configuración Adicional",
+        "web_notifications": "Notificaciones web",
+        "web_notifications_desc": "Recibe notificaciones en el navegador",
+        "digest_frequency": "Frecuencia de resumen",
+        "frequency": {
+          "disabled": "Deshabilitado",
+          "daily": "Diario",
+          "weekly": "Semanal",
+          "monthly": "Mensual"
+        },
+        "save_notifications": "GUARDAR NOTIFICACIONES"
+      },
+      "privacy": {
+        "title": "Configuración de Privacidad",
+        "show_profile_publicly": "Mostrar perfil públicamente",
+        "show_profile_publicly_desc": "Tu perfil de vendedor será visible para todos los usuarios",
+        "show_contact_info": "Mostrar información de contacto",
+        "show_contact_info_desc": "Los compradores podrán ver tu teléfono y website",
+        "allow_direct_messages": "Permitir mensajes directos",
+        "allow_direct_messages_desc": "Los usuarios pueden enviarte mensajes privados",
+        "show_sales_history": "Mostrar historial de ventas",
+        "show_sales_history_desc": "Mostrar cantidad de productos vendidos públicamente",
+        "info_title": "Información sobre Privacidad",
+        "info": {
+          "personal_data": "Tu información personal nunca se comparte con terceros",
+          "buyer_visibility": "Los compradores solo ven la información que permitas",
+          "change_anytime": "Puedes cambiar estas configuraciones en cualquier momento",
+          "required_info": "Cierta información es requerida para el funcionamiento del marketplace"
+        },
+        "save_privacy": "GUARDAR PRIVACIDAD"
+      },
+      "payments": {
+        "title": "Configuración de Pagos",
+        "stripe_connect": "Stripe Connect",
+        "account_connected": "Cuenta conectada",
+        "account_not_connected": "Cuenta no conectada",
+        "need_stripe_to_receive_payments": "Necesitas conectar Stripe para recibir pagos",
+        "onboarding": "Onboarding",
+        "payments_enabled": "Pagos Habilitados",
+        "completed": "Completado",
+        "pending": "Pendiente",
+        "complete_setup": "COMPLETAR CONFIGURACIÓN",
+        "connect_stripe": "CONECTAR STRIPE",
+        "fee_structure": "Estructura de Comisiones",
+        "platform_fee": "Comisión de plataforma",
+        "stripe_fee": "Comisión de Stripe",
+        "your_earnings": "Tu ganancia",
+        "fee_description": "Las comisiones se descuentan automáticamente. Recibes el pago neto directamente en tu cuenta.",
+        "payment_history": "Historial de Pagos",
+        "no_payments_yet": "No hay pagos aún",
+        "no_payments_description": "Una vez que vendas productos, aparecerán aquí"
+      },
+      "validation": {
+        "current_password_required": "Ingresa tu contraseña actual",
+        "new_password_min_length": "La nueva contraseña debe tener al menos 8 caracteres",
+        "passwords_dont_match": "Las contraseñas no coinciden"
+      },
+      "messages": {
+        "account_updated": "Información de cuenta actualizada",
+        "account_update_error": "Error al actualizar la información",
+        "notifications_updated": "Configuración de notificaciones actualizada",
+        "notifications_update_error": "Error al actualizar notificaciones",
+        "privacy_updated": "Configuración de privacidad actualizada",
+        "privacy_update_error": "Error al actualizar privacidad"
+      }
+    }
+  },
+  "admin": {
+    "login": {
+      "title": "Panel Admin",
+      "subtitle": "Acceso Exclusivo para Administradores",
+      "system_status": "Estado del Sistema",
+      "db_online": "DB Online",
+      "api_active": "API Activa",
+      "secure": "Seguro",
+      "admin_email": "Email de Administrador",
+      "password": "Contraseña",
+      "email_placeholder": "admin@furnibles.com",
+      "password_placeholder": "••••••••",
+      "verifying": "Verificando...",
+      "access_panel": "Acceder al Panel",
+      "not_admin": "¿No eres administrador?",
+      "back_to_site": "Volver al sitio",
+      "restricted_area": "⚠️ ÁREA RESTRINGIDA - Solo personal autorizado ⚠️",
+      "redirecting": "Redirigiendo al panel...",
+      "no_admin_permissions": "No tienes permisos de administrador",
+      "invalid_credentials": "Credenciales inválidas",
+      "connection_error": "Error de conexión. Inténtalo de nuevo."
+    },
+    "dashboard": {
+      "title": "Panel de Administración",
+      "subtitle": "Gestiona toda la plataforma desde aquí",
+      "error_loading_dashboard": "Error al cargar el dashboard. Inténtalo de nuevo.",
+      "periods": {
+        "today": "Hoy",
+        "week": "Esta Semana",
+        "month": "Este Mes",
+        "quarter": "Este Trimestre"
+      },
+      "metrics": {
+        "total_users": "Total Usuarios",
+        "total_products": "Total Productos",
+        "total_revenue": "Ingresos Totales",
+        "system_health": "Salud del Sistema",
+        "sellers_count": "{count} vendedores",
+        "pending_approval": "{count} pendientes de aprobación",
+        "platform_fees": "Comisiones: {amount}"
+      },
+      "tabs": {
+        "overview": "Resumen",
+        "users": "Usuarios",
+        "products": "Productos",
+        "orders": "Pedidos",
+        "reviews": "Reseñas"
+      },
+      "recent_activity": {
+        "title": "Actividad Reciente",
+        "description": "Últimas acciones en la plataforma",
+        "no_activity": "No hay actividad reciente"
+      },
+      "top_performers": {
+        "title": "Mejores Rendimientos",
+        "description": "Top vendedores y productos del período",
+        "no_data": "No hay datos de rendimiento"
+      },
+      "activity_types": {
+        "user_registration": "Registro Usuario",
+        "product_submitted": "Producto Enviado",
+        "order_completed": "Pedido Completado",
+        "review_reported": "Reseña Reportada",
+        "payout_processed": "Pago Procesado"
+      },
+      "performer_types": {
+        "seller": "Vendedor",
+        "product": "Producto"
+      },
+      "reviews": {
+        "moderation": {
+          "title": "Moderación de Reseñas",
+          "description": "Gestiona y modera las reseñas de usuarios",
+          "coming_soon": "Próximamente",
+          "coming_soon_description": "La moderación de reseñas estará disponible pronto",
+          "view_pending": "Ver Pendientes"
+        }
+      }
+    },
+    "users": {
+      "title": "Gestión de Usuarios",
+      "summary": "{total} usuarios • {selected} seleccionados",
+      "export": "EXPORTAR",
+      "stats": {
+        "total_users": "Total Usuarios",
+        "active_users": "Usuarios Activos",
+        "suspended_users": "Suspendidos",
+        "sellers": "Vendedores"
+      },
+      "filters": {
+        "title": "FILTROS Y BÚSQUEDA",
+        "search_label": "Buscar usuarios",
+        "search_placeholder": "Nombre, email, ID...",
+        "role_label": "Rol",
+        "status_label": "Estado",
+        "all_roles": "Todos los roles",
+        "all_statuses": "Todos los estados"
+      },
+      "roles": {
+        "multi": "MULTI",
+        "buyer": "COMPRADOR",
+        "seller": "VENDEDOR",
+        "admin": "ADMIN",
+        "buyers": "Compradores",
+        "sellers": "Vendedores",
+        "admins": "Administradores"
+      },
+      "status": {
+        "active": "ACTIVO",
+        "inactive": "INACTIVO",
+        "suspended": "SUSPENDIDO"
+      },
+      "actions": {
+        "activate": "Activar",
+        "suspend": "Suspender",
+        "promote": "Promover",
+        "demote": "Degradar",
+        "view_details": "Ver Detalles",
+        "clear": "Limpiar"
+      },
+      "bulk": {
+        "selected_count": "{count} usuario(s) seleccionado(s)",
+        "activate": "activar",
+        "suspend": "suspender",
+        "modal_title": "{action} Usuarios en Lote",
+        "selected_users": "{count} usuario(s) seleccionado(s)",
+        "action_description": "Esta acción se aplicará a todos los usuarios seleccionados.",
+        "reason_label": "Razón para {action} usuarios",
+        "reason_placeholder": "Especifica la razón para {action} estos usuarios",
+        "confirm_action": "{action} {count} Usuario(s)"
+      },
+      "table": {
+        "title": "LISTA DE USUARIOS",
+        "loading": "Cargando usuarios...",
+        "no_users": "No se encontraron usuarios",
+        "no_users_desc": "Ajusta los filtros para ver más resultados",
+        "headers": {
+          "user": "USUARIO",
+          "role": "ROL",
+          "status": "ESTADO",
+          "activity": "ACTIVIDAD",
+          "stats": "ESTADÍSTICAS",
+          "actions": "ACCIONES"
+        },
+        "user_id": "ID",
+        "email_verified": "Email verificado",
+        "last_login": "Último acceso",
+        "never": "Nunca",
+        "registered": "Registrado"
+      },
+      "pagination": {
+        "showing": "Mostrando {start} a {end} de {total} usuarios",
+        "previous": "Anterior",
+        "next": "Siguiente"
+      },
+      "modals": {
+        "user_details": "Detalles del Usuario",
+        "promote_user": "Promover Usuario",
+        "demote_user": "Degradar Usuario",
+        "activate_user": "Activar Usuario",
+        "suspend_user": "Suspender Usuario",
+        "reset_password": "Reset Password",
+        "user_action": "Acción de Usuario"
+      },
+      "details": {
+        "user_id": "ID Usuario",
+        "registration": "Registro",
+        "last_login": "Último Acceso",
+        "email_verified": "Email Verificado",
+        "verified": "Verificado",
+        "not_verified": "No verificado",
+        "statistics": "Estadísticas",
+        "orders": "Pedidos",
+        "products": "Productos",
+        "reviews": "Reviews",
+        "revenue": "Ingresos"
+      },
+      "forms": {
+        "reason_label": "Razón de la acción",
+        "promote_reason_placeholder": "Razón para promover al usuario (opcional)",
+        "demote_reason_placeholder": "Razón para degradar al usuario (opcional)",
+        "activate_reason_placeholder": "Razón para activar al usuario",
+        "suspend_reason_placeholder": "Razón para suspender al usuario",
+        "confirm_reset_password": "Confirmar Reset de Password",
+        "reset_password_description": "Se enviará un email al usuario con instrucciones para crear una nueva contraseña. Esta acción no se puede deshacer.",
+        "processing": "Procesando...",
+        "activate_user": "Activar Usuario",
+        "suspend_user": "Suspender Usuario",
+        "promote_to": "Promover a {role}",
+        "demote_to": "Degradar a {role}",
+        "reset_password": "Reset Password"
+      }
+    },
+    "products": {
+      "title": "Moderación de Productos",
+      "summary": "{total} productos • {selected} seleccionados",
+      "export": "EXPORTAR",
+      "loading": "Cargando productos...",
+      "no_products": "No se encontraron productos",
+      "no_products_desc": "Ajusta los filtros para ver más resultados",
+      "seller": "Vendedor",
+      "featured": "DESTACADO",
+      "detail": {
+        "title": "Moderación de Producto",
+        "product_id": "ID",
+        "back": "VOLVER",
+        "view_on_site": "VER EN SITIO",
+        "loading": "Cargando producto...",
+        "not_found": "Producto no encontrado",
+        "not_found_desc": "El producto solicitado no existe o no tienes permisos para verlo.",
+        "moderation_status": "Estado de Moderación",
+        "created_days_ago": "Creado hace {days} días",
+        "featured": "DESTACADO",
+        "approve_product": "APROBAR PRODUCTO",
+        "reject_product": "RECHAZAR PRODUCTO",
+        "suspend": "SUSPENDER",
+        "rejection_reason": "Razón de rechazo",
+        "product_info": "INFORMACIÓN DEL PRODUCTO",
+        "price": "Precio",
+        "category": "Categoría",
+        "difficulty": "Dificultad",
+        "time": "Tiempo",
+        "dimensions": "Dimensiones",
+        "tags": "Tags",
+        "required_tools": "HERRAMIENTAS REQUERIDAS",
+        "required_materials": "MATERIALES REQUERIDOS",
+        "additional_specs": "ESPECIFICACIONES ADICIONALES",
+        "statistics": "ESTADÍSTICAS",
+        "views": "Vistas",
+        "downloads": "Descargas",
+        "rating": "Rating",
+        "created": "Creado",
+        "seller": "VENDEDOR",
+        "view_full_profile": "Ver perfil completo",
+        "files": "ARCHIVOS",
+        "main_pdf": "PDF Principal",
+        "images": "Imágenes",
+        "view": "Ver",
+        "actions": "ACCIONES",
+        "remove_featured": "⭐ Quitar destaque",
+        "make_featured": "⭐ Destacar producto",
+        "suspend_product": "Suspender producto",
+        "modals": {
+          "approve_title": "✅ Aprobar Producto",
+          "reject_title": "❌ Rechazar Producto",
+          "suspend_title": "⚠️ Suspender Producto",
+          "moderation_title": "Moderación de Producto",
+          "approval_comment": "Comentario de aprobación (opcional)",
+          "approval_placeholder": "Notas internas sobre la aprobación...",
+          "internal_note": "Este comentario es solo para uso interno del equipo de moderación.",
+          "reason_label": "Razón de la acción",
+          "reject_placeholder": "Explica detalladamente por qué rechazas este producto. Esta información será visible para el vendedor.",
+          "suspend_placeholder": "Explica detalladamente por qué suspendes este producto. Esta información será visible para el vendedor.",
+          "required_field": "* Campo obligatorio. Esta razón será enviada al vendedor.",
+          "processing": "Procesando...",
+          "approve_button": "APROBAR",
+          "reject_button": "RECHAZAR",
+          "suspend_button": "SUSPENDER"
+        }
+      },
+      "stats": {
+        "total_products": "Total Productos",
+        "pending": "Pendientes",
+        "approved": "Aprobados",
+        "rejected": "Rechazados"
+      },
+      "status": {
+        "approved": "APROBADO",
+        "pending": "PENDIENTE",
+        "rejected": "RECHAZADO",
+        "suspended": "SUSPENDIDO",
+        "draft": "BORRADOR"
+      },
+      "categories": {
+        "tables": "Mesas",
+        "chairs": "Sillas",
+        "beds": "Camas",
+        "storage": "Almacenamiento",
+        "outdoor": "Exterior",
+        "decorative": "Decorativo"
+      },
+      "actions": {
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "suspend": "Suspender",
+        "feature": "Destacar",
+        "unfeature": "Quitar Destacado",
+        "view": "Ver",
+        "view_details": "Ver Detalles",
+        "clear": "Limpiar"
+      },
+      "filters": {
+        "title": "FILTROS Y BÚSQUEDA",
+        "search_label": "Buscar productos",
+        "search_placeholder": "Título, descripción, ID...",
+        "status_label": "Estado",
+        "all_statuses": "Todos los estados",
+        "category_label": "Categoría",
+        "all_categories": "Todas las categorías",
+        "view_label": "Vista",
+        "grid_view": "Grid",
+        "list_view": "Lista"
+      },
+      "bulk": {
+        "selected_count": "{count} producto(s) seleccionado(s)",
+        "approve": "aprobar",
+        "reject": "rechazar",
+        "suspend": "suspender",
+        "modal_title": "{action} Productos en Lote",
+        "selected_products": "{count} producto(s) seleccionado(s)",
+        "action_description": "Esta acción se aplicará a todos los productos seleccionados.",
+        "reason_label": "Razón para {action} productos",
+        "reason_placeholder": "Especifica la razón para {action} estos productos",
+        "confirm_action": "{action} {count} Producto(s)"
+      },
+      "table": {
+        "headers": {
+          "product": "PRODUCTO",
+          "seller": "VENDEDOR",
+          "status": "ESTADO",
+          "category": "CATEGORÍA",
+          "stats": "ESTADÍSTICAS",
+          "actions": "ACCIONES"
+        }
+      },
+      "pagination": {
+        "showing": "Mostrando {start} a {end} de {total} productos",
+        "previous": "Anterior",
+        "next": "Siguiente"
+      },
+      "modals": {
+        "view_details": "Detalles del Producto",
+        "approve_product": "Aprobar Producto",
+        "reject_product": "Rechazar Producto",
+        "suspend_product": "Suspender Producto",
+        "feature_product": "Destacar Producto",
+        "product_action": "Acción de Producto",
+        "feature_action": "Destacar Producto",
+        "unfeature_action": "Quitar de Destacados",
+        "feature_description": "Este producto aparecerá en la sección de destacados del marketplace.",
+        "unfeature_description": "Este producto dejará de aparecer en la sección de destacados."
+      },
+      "details": {
+        "product_id": "ID Producto",
+        "seller_id": "Vendedor ID",
+        "created": "Creado",
+        "difficulty": "Dificultad",
+        "statistics": "Estadísticas",
+        "views": "Vistas",
+        "downloads": "Descargas",
+        "rating": "Rating",
+        "reviews": "Reviews",
+        "technical_details": "Detalles Técnicos",
+        "tools": "Herramientas",
+        "materials": "Materiales"
+      },
+      "forms": {
+        "reason_label": "Razón de la acción",
+        "approve_reason_placeholder": "Razón para aprobar el producto",
+        "reject_reason_placeholder": "Razón para rechazar el producto",
+        "suspend_reason_placeholder": "Razón para suspender el producto",
+        "processing": "Procesando...",
+        "approve_product": "Aprobar Producto",
+        "reject_product": "Rechazar Producto",
+        "suspend_product": "Suspender Producto",
+        "feature_product": "Destacar Producto",
+        "unfeature_product": "Quitar Destacado"
+      }
+    },
+    "orders": {
+      "management": {
+        "title": "Gestión de Pedidos",
+        "description": "Supervisa todas las transacciones de la plataforma",
+        "coming_soon": "Próximamente",
+        "coming_soon_description": "La gestión de pedidos estará disponible pronto",
+        "view_all": "Ver Todos los Pedidos"
+      }
+    },
+    "navigation": {
+      "home": "Inicio",
+      "admin": "Admin",
+      "dashboard": "Dashboard",
+      "dashboard_desc": "Vista general",
+      "users": "Usuarios",
+      "users_desc": "Gestión de usuarios",
+      "products": "Productos",
+      "products_desc": "Moderación de productos",
+      "reviews": "Reviews",
+      "reviews_desc": "Moderación de reviews",
+      "reports": "Reportes",
+      "reports_desc": "Contenido reportado",
+      "analytics": "Analytics",
+      "analytics_desc": "Métricas de plataforma",
+      "settings": "Configuración",
+      "settings_desc": "Configuración del sistema"
+    }
   },
   "orders": {
     "title": "Mis Pedidos",
     "subtitle": "Historial completo de tus compras",
+    "breadcrumb": "Mis Pedidos",
+    "access_restricted": "Acceso restringido",
     "order_number": "Número de Pedido",
     "order_date": "Fecha del Pedido",
     "order_status": "Estado",
@@ -348,22 +1383,8 @@
     "subtotal": "Subtotal",
     "platform_fee": "Comisión de Plataforma",
     "total": "Total",
-    "status": {
-      "pending": "Pendiente",
-      "processing": "Procesando",
-      "paid": "Pagado",
-      "completed": "Completado",
-      "failed": "Fallido",
-      "refunded": "Reembolsado"
-    },
-    "status_descriptions": {
-      "pending": "El pedido está pendiente de procesamiento",
-      "processing": "El pedido está siendo procesado",
-      "paid": "El pago ha sido confirmado",
-      "completed": "El pedido ha sido completado exitosamente",
-      "failed": "El procesamiento del pedido ha fallado",
-      "refunded": "El pedido ha sido reembolsado"
-    },
+    "quantity_label": "Qty",
+    "results_showing": "Mostrando {showing} de {total} pedidos",
     "no_orders": "No tienes pedidos aún",
     "no_orders_desc": "Comienza explorando nuestro catálogo de productos",
     "no_orders_found": "No se encontraron pedidos",
@@ -393,7 +1414,88 @@
     "share": "Compartir",
     "print": "Imprimir",
     "back": "Volver",
-    "showing_results": "Mostrando {count} de {total} pedidos"
+    "showing_results": "Mostrando {count} de {total} pedidos",
+    "items_count": "{count} {item}",
+    "status": {
+      "pending": "Pendiente",
+      "processing": "Procesando",
+      "paid": "Pagado",
+      "completed": "Completado",
+      "failed": "Fallido",
+      "refunded": "Reembolsado"
+    },
+    "status_descriptions": {
+      "pending": "El pedido está pendiente de procesamiento",
+      "processing": "El pedido está siendo procesado",
+      "paid": "El pago ha sido confirmado",
+      "completed": "El pedido ha sido completado exitosamente",
+      "failed": "El procesamiento del pedido ha fallado",
+      "refunded": "El pedido ha sido reembolsado"
+    },
+    "stats": {
+      "total_orders": "Total Pedidos",
+      "completed": "Completados",
+      "pending": "Pendientes",
+      "total_spent": "Total Gastado"
+    },
+    "search": {
+      "placeholder": "Buscar por número o producto..."
+    },
+    "filters": {
+      "all_statuses": "Todos los estados"
+    },
+    "sort": {
+      "by_date": "Ordenar por fecha",
+      "by_amount": "Ordenar por monto",
+      "by_status": "Ordenar por estado",
+      "newest": "Más reciente",
+      "oldest": "Más antiguo"
+    },
+    "empty": {
+      "no_orders": "No tienes pedidos aún",
+      "no_results": "No se encontraron pedidos",
+      "start_shopping": "Comienza explorando nuestro catálogo de productos",
+      "adjust_filters": "Intenta ajustar los filtros de búsqueda"
+    },
+    "actions": {
+      "view": "Ver",
+      "view_products": "Ver Productos",
+      "download": "Descargar",
+      "view_detail": "Ver Detalle"
+    },
+    "item": {
+      "singular": "producto",
+      "plural": "productos"
+    },
+     "card": {
+      "order_title": "Orden #{orderNumber}",
+      "status": {
+        "pending": "PENDIENTE",
+        "processing": "PROCESANDO", 
+        "paid": "PAGADO",
+        "completed": "COMPLETADO",
+        "cancelled": "CANCELADO",
+        "refunded": "REEMBOLSADO",
+        "disputed": "DISPUTADO"
+      },
+      "product_count": "{count} {text}",
+      "product_singular": "producto",
+      "product_plural": "productos",
+      "paid_at": "Pagado: {date}",
+      "actions": {
+        "view_details": "Ver Detalles",
+        "download": "Descargar",
+        "write_review": "Escribir Reseña"
+      },
+      "expanded": {
+        "products_title": "Productos",
+        "quantity_price": "Qty: {quantity} • {price}",
+        "summary_title": "Resumen",
+        "subtotal": "Subtotal",
+        "platform_fee": "Fee plataforma",
+        "total": "Total"
+      }
+    }
   },
   "checkout": {
     "title": "Finalizar Compra",
@@ -443,7 +1545,206 @@
     "restricted_access": "Acceso restringido",
     "must_login": "Debes iniciar sesión",
     "empty_cart": "Carrito vacío",
-    "go_to_products": "Ir a Productos"
+    "go_to_products": "Ir a Productos",
+    "summary": {
+      "title": "Resumen del Pedido",
+      "quantity_label": "Qty",
+      "subtotal": "Subtotal",
+      "platform_fee": "Fee plataforma (10%)",
+      "total": "Total"
+    },
+    "success": {
+      "breadcrumb": "Compra Exitosa",
+      "order_not_found": "Orden no encontrada",
+      "not_authenticated": "Debes iniciar sesión",
+      "empty_cart": "Carrito vacío",
+      "go_to_products": "Ir a Productos",
+      "secure_payment": "Pago Seguro",
+      "title": "Finalizar Compra",
+      "items_in_cart": "{count} {item} en tu carrito",
+      "item": {
+        "singular": "producto",
+        "plural": "productos"
+      },
+      "progress": {
+        "cart": "Carrito",
+        "checkout": "Checkout",
+        "confirmation": "Confirmación"
+      },
+      "validation": {
+        "incomplete_form": "Formulario incompleto",
+        "complete_fields": "Por favor completa todos los campos requeridos para continuar"
+      },
+      "security": {
+        "title": "Compra Segura",
+        "description": "Tu información está protegida con encriptación SSL de 256 bits"
+      },
+      "success_modal": {
+        "title": "¡Compra Exitosa!",
+        "order_processed": "Tu pedido #{orderNumber} ha sido procesado",
+        "email_sent": "Recibirás un email con los enlaces de descarga en unos minutos",
+        "continue_shopping": "Seguir Comprando"
+      },
+      "success_message": {
+        "title": "¡Compra Exitosa!",
+        "order_processed": "Tu pedido #{orderNumber} ha sido procesado",
+        "description": "Gracias por tu compra. Hemos enviado los detalles de tu pedido y los enlaces de descarga a tu email."
+      },
+      "action_cards": {
+        "downloads": {
+          "title": "Descargas",
+          "description": "Accede a tus archivos inmediatamente",
+          "button": "Ver Descargas"
+        },
+        "email": {
+          "title": "Email Enviado",
+          "description": "Revisa tu bandeja de entrada",
+          "confirmation": "Confirmación"
+        },
+        "order": {
+          "title": "Mi Pedido",
+          "description": "Ver detalles y factura",
+          "button": "Ver Detalles"
+        },
+        "review": {
+          "title": "Califica",
+          "description": "Comparte tu experiencia",
+          "button": "Escribir Review"
+        }
+      },
+      "order_summary": {
+        "title": "Tu Compra",
+        "order_details": "Detalles del Pedido",
+        "order_number": "Número de Pedido",
+        "date": "Fecha",
+        "status": "Estado",
+        "paid_status": "PAGADO"
+      },
+      "next_steps": {
+        "title": "Próximos Pasos",
+        "step1": {
+          "title": "Revisa tu email",
+          "description": "Confirmación y enlaces de descarga"
+        },
+        "step2": {
+          "title": "Descarga tus archivos",
+          "description": "Disponibles por 30 días"
+        },
+        "step3": {
+          "title": "¡Construye tu proyecto!",
+          "description": "Sigue las instrucciones del PDF"
+        },
+        "step4": {
+          "title": "Comparte tu resultado",
+          "description": "Escribe una review con fotos"
+        }
+      },
+      "support": {
+        "title": "¿Necesitas Ayuda?",
+        "email": {
+          "title": "Soporte por Email",
+          "response_time": "Respuesta en menos de 24 horas",
+          "address": "soporte@furnibles.com"
+        },
+        "help_center": {
+          "title": "Centro de Ayuda",
+          "description": "Preguntas frecuentes y tutoriales",
+          "link": "Ver Ayuda →"
+        },
+        "community": {
+          "title": "Comunidad",
+          "description": "Conecta con otros makers",
+          "link": "Unirse →"
+        }
+      },
+      "cta": {
+        "title": "¡Sigue Construyendo!",
+        "description": "Descubre más proyectos increíbles en nuestro catálogo",
+        "explore_products": "Explorar Más Productos",
+        "back_home": "Volver al Inicio"
+      },
+      "social": {
+        "title": "Comparte tu Experiencia",
+        "description": "¡Cuéntales a tus amigos sobre Furnibles!",
+        "twitter": "Twitter",
+        "whatsapp": "WhatsApp",
+        "facebook": "Facebook",
+        "twitter_text": "¡Acabo de comprar un increíble proyecto de muebles en @Furnibles! Orden {orderNumber} 🪵✨",
+        "whatsapp_text": "¡Acabo de comprar un increíble proyecto de muebles en Furnibles!"
+      },
+      "footer_message": "Gracias por confiar en Furnibles. ¡Esperamos ver tu proyecto terminado! 🪵"
+    },
+    "form": {
+      "title": "Datos de Facturación",
+      "fields": {
+        "first_name": "Nombre",
+        "last_name": "Apellido",
+        "email": "Email",
+        "phone": "Teléfono",
+        "country": "País",
+        "city": "Ciudad",
+        "address": "Dirección",
+        "zip_code": "Código Postal"
+      },
+      "placeholders": {
+        "first_name": "Tu nombre",
+        "last_name": "Tu apellido",
+        "email": "tu@email.com",
+        "phone": "+56 9 1234 5678",
+        "city": "Tu ciudad",
+        "address": "Calle 123, Depto 456",
+        "zip_code": "12345"
+      },
+      "countries": {
+        "chile": "Chile",
+        "argentina": "Argentina",
+        "colombia": "Colombia",
+        "mexico": "México",
+        "peru": "Perú",
+        "spain": "España",
+        "usa": "Estados Unidos"
+      }
+    },
+    "payment": {
+      "title": "Método de Pago",
+      "secure_payments": "Pagos Seguros con Stripe",
+      "ssl_protection": "Tus datos están protegidos con encriptación SSL",
+      "card_section_title": "Tarjeta de Crédito/Débito",
+      "cardholder_name": "Nombre del Titular",
+      "cardholder_placeholder": "Nombre como aparece en la tarjeta",
+      "card_number": "Número de Tarjeta",
+      "card_number_placeholder": "1234 5678 9012 3456",
+      "expiry_date": "Vencimiento",
+      "expiry_placeholder": "MM/AA",
+      "cvv_placeholder": "123",
+      "save_card": "Guardar tarjeta para futuras compras",
+      "guarantees": {
+        "title": "Garantías de Compra",
+        "unlimited_downloads": "Descargas ilimitadas durante 30 días",
+        "technical_support": "Soporte técnico incluido",
+        "full_refund": "Reembolso completo en caso de problemas",
+        "immediate_access": "Acceso inmediato después del pago"
+      },
+      "payment_summary": "Resumen de Pago",
+      "subtotal": "Subtotal",
+      "platform_commission": "Comisión de Plataforma (10%)",
+      "total": "Total",
+      "terms_acceptance": "Acepto los",
+      "terms_link": "términos y condiciones",
+      "and": "y la",
+      "privacy_link": "política de privacidad",
+      "purchase_info": {
+        "title": "Al completar tu compra recibirás:",
+        "confirmation_email": "Confirmación de compra por email",
+        "download_links": "Enlaces de descarga seguros",
+        "detailed_invoice": "Factura detallada",
+        "support_access": "Acceso a soporte técnico"
+      },
+      "processing_payment": "Procesando Pago...",
+      "pay_button": "Pagar {amount}",
+      "accepted_methods": "Métodos de pago aceptados",
+      "form_validation_error": "Por favor completa todos los campos requeridos"
+    }
   },
   "cart": {
     "title": "Carrito de Compras",
@@ -463,13 +1764,555 @@
     "remove_item": "Eliminar producto",
     "update_quantity": "Actualizar cantidad"
   },
-   "notifications": {
-    "title": "Notificaciones",
-    "empty": "No tienes notificaciones"
+  "notifications": {
+    "title": "Centro de Notificaciones",
+    "mark_all_read": "Marcar Todas Leídas",
+    "clear_all": "Limpiar Todas",
+    "no_notifications": "No hay notificaciones",
+    "loading": "Cargando notificaciones...",
+    "error_loading": "Error al cargar notificaciones",
+    "filters": {
+      "all": "Todas",
+      "unread": "No Leídas",
+      "read": "Leídas",
+      "orders": "Pedidos",
+      "reviews": "Reseñas",
+      "payments": "Pagos",
+      "system": "Sistema"
+    },
+    "types": {
+      "ORDER_CREATED": "Nuevo Pedido",
+      "ORDER_PAID": "Pedido Pagado",
+      "ORDER_COMPLETED": "Pedido Completado",
+      "REVIEW_RECEIVED": "Nueva Reseña",
+      "REVIEW_RESPONSE": "Respuesta a Reseña",
+      "PAYMENT_RECEIVED": "Pago Recibido",
+      "PRODUCT_APPROVED": "Producto Aprobado",
+      "PRODUCT_REJECTED": "Producto Rechazado"
+    },
+    "actions": {
+      "mark_read": "Marcar como leída",
+      "mark_unread": "Marcar como no leída",
+      "delete": "Eliminar",
+      "view_details": "Ver Detalles"
+    },
+    "time": {
+      "just_now": "Ahora mismo",
+      "minutes_ago": "hace {count} min",
+      "hours_ago": "hace {count}h",
+      "days_ago": "hace {count}d",
+      "weeks_ago": "hace {count}sem"
+    }
+  },
+  "data_export": {
+    "title": "Exportar Datos",
+    "description": "Exporta tus datos en diferentes formatos",
+    "select_data": "Seleccionar Datos",
+    "select_format": "Seleccionar Formato",
+    "date_range": "Rango de Fechas",
+    "from_date": "Desde",
+    "to_date": "Hasta",
+    "export_data": "Exportar Datos",
+    "exporting": "Exportando...",
+    "download_ready": "Descarga Lista",
+    "download_file": "Descargar Archivo",
+    
+    "data_types": {
+      "orders": "Pedidos",
+      "products": "Productos",
+      "reviews": "Reseñas",
+      "analytics": "Analíticas",
+      "transactions": "Transacciones",
+      "customers": "Clientes"
+    },
+    
+    "formats": {
+      "csv": "CSV (Excel)",
+      "xlsx": "Excel (XLSX)",
+      "json": "JSON",
+      "pdf": "PDF"
+    },
+    
+    "filters": {
+      "all_data": "Todos los datos",
+      "date_range": "Rango de fechas",
+      "status_filter": "Filtrar por estado",
+      "category_filter": "Filtrar por categoría"
+    },
+    
+    "errors": {
+      "export_failed": "Error al exportar datos",
+      "invalid_date_range": "Rango de fechas inválido",
+      "no_data": "No hay datos para exportar",
+      "server_error": "Error del servidor"
+    }
+  },
+  "downloads": {
+    "title": "Mis Descargas",
+    "subtitle": "Planos PDF que has comprado y puedes descargar",
+    "access_restricted": "Acceso restringido",
+    "navigation": {
+      "back_to_orders": "Volver a Pedidos"
+    },
+    "stats": {
+      "total_pdfs": "Total PDFs",
+      "active": "Activos",
+      "expired": "Expirados",
+      "downloads": "Descargas",
+      "this_month": "Este Mes",
+      "total_size": "Tamaño Total"
+    },
+    "status": {
+      "active": "Activo",
+      "expired": "Expirado",
+      "exhausted": "Agotado",
+      "inactive": "Inactivo"
+    },
+    "filters": {
+      "search_placeholder": "Buscar por producto o vendedor...",
+      "all_statuses": "Todos los estados",
+      "active": "Activos",
+      "expired": "Expirados",
+      "exhausted": "Agotados",
+      "sort_by_date": "Ordenar por fecha",
+      "sort_by_name": "Ordenar por nombre",
+      "sort_by_downloads": "Ordenar por descargas",
+      "sort_by_expiry": "Ordenar por expiración",
+      "most_recent": "Más reciente",
+      "oldest": "Más antiguo"
+    },
+    "empty": {
+      "no_downloads_title": "No tienes descargas disponibles",
+      "no_downloads_subtitle": "Compra planos PDF para poder descargarlos aquí",
+      "no_results_title": "No se encontraron resultados",
+      "no_results_subtitle": "Intenta ajustar los filtros de búsqueda",
+      "explore_products": "Explorar Productos"
+    },
+    "card": {
+      "by": "Por",
+      "downloads": "Descargas",
+      "expires_in": "Expira en {days} {unit}",
+      "day": "día",
+      "days": "días",
+      "purchased": "Comprado",
+      "expires": "Expira",
+      "last_download": "Última descarga",
+      "from_ip": "Desde IP"
+    },
+    "actions": {
+      "view_product": "Ver Producto",
+      "view_order": "Ver Pedido",
+      "download_pdf": "Descargar PDF",
+      "downloading": "Descargando...",
+      "not_available": "No Disponible",
+      "download_started": "Descarga iniciada",
+      "download_error": "Error en descarga"
+    },
+    "results": {
+      "showing": "Mostrando {current} de {total} productos"
+    },
+    "help": {
+      "title": "Información Importante",
+      "download_limits": {
+        "title": "Límites de Descarga",
+        "max_downloads": "Máximo 5 descargas por producto",
+        "token_expiry": "Los tokens expiran después de 30 días",
+        "buyer_only": "Las descargas son válidas solo para el comprador"
+      },
+      "download_issues": {
+        "title": "Problemas de Descarga",
+        "stable_connection": "Verifica que tu conexión sea estable",
+        "expired_token": "Si el token expiró, contacta soporte",
+        "pdf_optimized": "Los archivos son PDF optimizados para impresión"
+      }
+    }
+  },
+  "help": {
+    "hero": {
+      "title": "¿Necesitas Ayuda?",
+      "subtitle": "Encuentra respuestas rápidas a las preguntas más comunes sobre Furnibles. Estamos aquí para ayudarte en cada paso."
+    },
+    "search": {
+      "placeholder": "Buscar en la ayuda..."
+    },
+    "categories": {
+      "all": "Todo",
+      "orders": "Pedidos",
+      "downloads": "Descargas",
+      "payments": "Pagos",
+      "sellers": "Vendedores",
+      "technical": "Técnico"
+    },
+    "quick_access": {
+      "title": "Accesos Rápidos",
+      "my_orders": {
+        "title": "Mis Pedidos",
+        "description": "Consulta el estado de tus compras"
+      },
+      "my_downloads": {
+        "title": "Mis Descargas",
+        "description": "Accede a tus productos comprados"
+      },
+      "sell": {
+        "title": "Vender",
+        "description": "Información para vendedores"
+      },
+      "contact": {
+        "title": "Contacto",
+        "description": "Escríbenos directamente"
+      }
+    },
+    "faq": {
+      "title": "Preguntas Frecuentes"
+    },
+    "faqs": {
+      "download_after_purchase": {
+        "question": "¿Cómo puedo descargar mis productos después de comprar?",
+        "answer": "Después de completar tu compra, recibirás un email con los enlaces de descarga. También puedes acceder a tus descargas desde \"Mi Cuenta\" > \"Mis Descargas\". Los enlaces están disponibles por 30 días con un máximo de 10 descargas por producto."
+      },
+      "pdf_not_opening": {
+        "question": "¿Por qué no puedo abrir el archivo PDF que descargué?",
+        "answer": "Asegúrate de tener un lector de PDF actualizado como Adobe Reader. Si el problema persiste, verifica que la descarga se completó correctamente (el archivo no debe pesar menos de 1MB). Puedes volver a descargarlo desde tu cuenta."
+      },
+      "payment_methods": {
+        "question": "¿Qué métodos de pago aceptan?",
+        "answer": "Aceptamos todas las tarjetas de crédito y débito principales (Visa, Mastercard, American Express) a través de Stripe. También PayPal en algunas regiones. Todos los pagos son procesados de forma segura con encriptación SSL."
+      },
+      "how_to_sell": {
+        "question": "¿Cómo puedo vender mis diseños en Furnibles?",
+        "answer": "Regístrate como vendedor, completa tu perfil de tienda, y sube tus productos con planos detallados en PDF e imágenes de alta calidad. Todos los productos pasan por un proceso de moderación antes de ser publicados."
+      },
+      "tools_needed": {
+        "question": "¿Qué herramientas necesito para construir los muebles?",
+        "answer": "Cada plano incluye una lista detallada de herramientas y materiales necesarios. Generalmente necesitarás herramientas básicas de carpintería como sierra, taladro, lijadora y herramientas de medición."
+      },
+      "refunds": {
+        "question": "¿Puedo obtener un reembolso?",
+        "answer": "Ofrecemos reembolsos completos dentro de 7 días si hay problemas técnicos con los archivos. No ofrecemos reembolsos por cambio de opinión después de la descarga, ya que son productos digitales."
+      },
+      "measurements": {
+        "question": "¿Los planos incluyen medidas en centímetros y pulgadas?",
+        "answer": "Sí, todos nuestros planos incluyen medidas en ambos sistemas (métrico e imperial) para mayor conveniencia. También incluimos listas de corte optimizadas para minimizar el desperdicio de material."
+      },
+      "commission": {
+        "question": "¿Cuánto cobran de comisión?",
+        "answer": "Cobramos una comisión del 10% sobre cada venta. Esta comisión incluye procesamiento de pagos, hosting, soporte al cliente, y todas las funcionalidades de la plataforma."
+      }
+    },
+    "no_results": {
+      "title": "No se encontraron resultados",
+      "description": "Intenta con otros términos de búsqueda o contacta con soporte"
+    },
+    "additional_resources": {
+      "title": "Recursos Adicionales",
+      "guides": {
+        "title": "Guías",
+        "description": "Tutoriales paso a paso para usar la plataforma",
+        "link": "Ver guías"
+      },
+      "security": {
+        "title": "Seguridad",
+        "description": "Información sobre protección de datos y pagos seguros",
+        "link": "Más info"
+      },
+      "reviews": {
+        "title": "Valoraciones",
+        "description": "Cómo funcionan las reseñas y calificaciones",
+        "link": "Ver sistema"
+      }
+    },
+    "contact": {
+      "title": "¿Aún Necesitas Ayuda?",
+      "email": {
+        "title": "Email",
+        "response_time": "Respuesta en 24 horas",
+        "address": "soporte@furnibles.com"
+      },
+      "hours": {
+        "title": "Horarios",
+        "schedule": "Lunes a Viernes\n9:00 AM - 6:00 PM (GMT-3)"
+      },
+      "chat": {
+        "title": "Chat en Vivo",
+        "coming_soon": "Próximamente disponible",
+        "in_development": "En desarrollo"
+      }
+    },
+    "guarantee": {
+      "title": "Garantía de Satisfacción",
+      "description": "Si no puedes resolver tu problema, te devolvemos tu dinero sin preguntas."
+    }
+  },
+  "payment": {
+    "title": "Información de Pago",
+    "card_number": "Número de Tarjeta",
+    "cardholder_name": "Nombre del Titular",
+    "expiry_date": "Fecha de Vencimiento",
+    "cvv": "CVV",
+    "billing_address": "Dirección de Facturación",
+    "country": "País",
+    "city": "Ciudad",
+    "postal_code": "Código Postal",
+    "address_line": "Dirección",
+    
+    "order_summary": "Resumen del Pedido",
+    "subtotal": "Subtotal",
+    "platform_fee": "Comisión Plataforma",
+    "processing_fee": "Comisión Procesamiento",
+    "total": "Total",
+    
+    "process_payment": "Procesar Pago",
+    "processing": "Procesando...",
+    "payment_successful": "¡Pago Exitoso!",
+    "payment_failed": "Pago Fallido",
+    "try_again": "Intentar de Nuevo",
+    
+    "security_notice": "Tu información está protegida con SSL",
+    "secure_checkout": "Checkout Seguro",
+    
+    "errors": {
+      "card_number_invalid": "Número de tarjeta inválido",
+      "expiry_invalid": "Fecha de vencimiento inválida",
+      "cvv_invalid": "CVV inválido",
+      "cardholder_required": "Nombre del titular requerido",
+      "address_required": "Dirección de facturación requerida",
+      "payment_processing_error": "Error procesando el pago"
+    }
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "subtitle": "Gestiona tu información personal y configuraciones",
+    "access_restricted": "Acceso restringido",
+    "edit_profile": "Editar Perfil",
+    "save_changes": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "profile_updated": "Perfil actualizado exitosamente",
+    "error_updating": "Error al actualizar el perfil",
+    "basic_info": "Información Básica",
+    "first_name": "Nombre",
+    "last_name": "Apellido",
+    "email": "Correo Electrónico",
+    "phone": "Teléfono",
+    "date_of_birth": "Fecha de Nacimiento",
+    "avatar": "Foto de Perfil",
+    "change_avatar": "Cambiar Foto",
+    "quick_stats": {
+      "orders": "Pedidos",
+      "favorites": "Favoritos",
+      "reviews": "Reviews",
+      "downloads": "Descargas"
+    },
+    "tabs": {
+      "personal": "Datos Personales",
+      "notifications": "Notificaciones",
+      "security": "Seguridad",
+      "stats": "Estadísticas"
+    },
+    "personal": {
+      "title": "Información Personal",
+      "edit": "Editar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "first_name": "Nombre",
+      "last_name": "Apellido",
+      "phone": "Teléfono",
+      "country": "País",
+      "city": "Ciudad",
+      "city_placeholder": "Tu ciudad",
+      "address": "Dirección",
+      "address_placeholder": "Calle 123, Depto 456",
+      "zip_code": "Código Postal"
+    },
+    "notifications": {
+      "title": "Configuración de Notificaciones",
+      "save_changes": "Guardar Cambios",
+      "saving": "Guardando...",
+      "email_enabled": "Notificaciones por Email",
+      "email_enabled_desc": "Habilitar todas las notificaciones por correo electrónico",
+      "orders": "Pedidos",
+      "orders_desc": "Confirmaciones, actualizaciones de estado",
+      "payments": "Pagos",
+      "payments_desc": "Confirmaciones de pago, facturas",
+      "reviews": "Reviews",
+      "reviews_desc": "Respuestas de sellers, recordatorios",
+      "weekly_digest": "Resumen Semanal",
+      "weekly_digest_desc": "Resumen de actividad y productos nuevos",
+      "new_products": "Productos Nuevos",
+      "new_products_desc": "Alertas de productos en categorías favoritas",
+      "offers": "Ofertas",
+      "offers_desc": "Descuentos en productos favoritos",
+      "marketing_emails": "Emails de Marketing",
+      "marketing_emails_desc": "Promociones especiales, newsletters y ofertas exclusivas"
+    },
+    "security": {
+      "title": "Configuración de Seguridad",
+      "change_password": "Cambiar Contraseña",
+      "current_password": "Contraseña Actual",
+      "new_password": "Nueva Contraseña",
+      "confirm_password": "Confirmar Nueva Contraseña",
+      "two_factor": "Autenticación de Dos Factores",
+      "enable_2fa": "Habilitar 2FA",
+      "disable_2fa": "Deshabilitar 2FA",
+      "changing": "Cambiando...",
+      "danger_zone": "Zona Peligrosa",
+      "delete_warning": "Esta acción eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.",
+      "delete_account": "Eliminar Cuenta"
+    },
+    "stats": {
+      "title": "Estadísticas de Actividad",
+      "shopping_activity": "Actividad de Compras",
+      "total_orders": "Total Pedidos",
+      "completed": "Completados",
+      "total_spent": "Total Gastado",
+      "engagement": "Engagement",
+      "favorites": "Favoritos",
+      "reviews_written": "Reviews Escritas",
+      "helpful_votes": "Votos Útiles",
+      "download_activity": "Actividad de Descargas",
+      "products_purchased": "Productos Comprados",
+      "downloads_made": "Descargas Realizadas",
+      "this_month": "Este Mes",
+      "review_quality": "Calidad de Reviews",
+      "average_rating": "Rating Promedio",
+      "rated_helpful": "Calificadas como Útiles",
+      "total_reviews": "Total Reviews",
+      "member_since": "Miembro desde",
+      "last_login": "Último Acceso",
+      "favorite_products": "Productos Favoritos"
+    },
+    "delete_modal": {
+      "title": "¿Eliminar Cuenta?",
+      "warning": "Esta acción eliminará permanentemente tu cuenta, pedidos, reviews y toda tu información. Esta acción no se puede deshacer.",
+      "cancel": "Cancelar",
+      "delete": "Eliminar"
+    },
+    "preferences": {
+      "title": "Preferencias",
+      "language": "Idioma",
+      "currency": "Moneda",
+      "email_notifications": "Notificaciones por Email",
+      "marketing_emails": "Emails de Marketing",
+      "newsletter": "Newsletter"
+    }
+  },
+  "favorites": {
+    "title": "Mis Favoritos",
+    "subtitle": "Productos que has guardado para más tarde",
+    "access_restricted": "Acceso restringido",
+    "stats": {
+      "total_favorites": "Total Favoritos",
+      "categories": "Categorías",
+      "difficulties": "Dificultades",
+      "total_value": "Valor Total",
+      "this_week": "Esta Semana"
+    },
+    "category_distribution": {
+      "title": "Favoritos por Categoría"
+    },
+    "filters": {
+      "search_placeholder": "Buscar favoritos...",
+      "all_categories": "Todas las categorías",
+      "all_difficulties": "Todas las dificultades",
+      "all_prices": "Todos los precios",
+      "under_10": "Menos de $10",
+      "10_to_20": "$10 - $20",
+      "20_to_30": "$20 - $30",
+      "over_30": "Más de $30",
+      "sort_by_date": "Ordenar por fecha",
+      "sort_by_name": "Ordenar por nombre",
+      "sort_by_price": "Ordenar por precio",
+      "sort_by_rating": "Ordenar por rating",
+      "most_recent": "Más reciente",
+      "oldest": "Más antiguo"
+    },
+    "results": {
+      "showing": "{current} de {total} favoritos"
+    },
+    "empty": {
+      "no_favorites_title": "No tienes favoritos aún",
+      "no_favorites_subtitle": "Explora nuestro catálogo y guarda los productos que te gusten",
+      "no_results_title": "No se encontraron favoritos",
+      "no_results_subtitle": "Intenta ajustar los filtros de búsqueda",
+      "explore_products": "Explorar Productos"
+    },
+    "actions": {
+      "remove_favorite": "Quitar de favoritos",
+      "add_to_cart": "Agregar al carrito",
+      "view_product": "Ver Producto",
+      "adding": "Agregando...",
+      "remove": "Quitar",
+      "removing": "Quitando..."
+    },
+    "list": {
+      "added": "Agregado"
+    },
+    "recommendations": {
+      "title": "Te Podría Interesar",
+      "subtitle": "Basado en tus favoritos, estos productos podrían gustarte"
+    },
+    "tips": {
+      "title": "Gestiona tus Favoritos",
+      "organization": {
+        "title": "Organización",
+        "use_filters": "Usa filtros para encontrar favoritos específicos",
+        "sort_by_date": "Ordena por fecha para ver los más recientes",
+        "list_mode": "El modo lista muestra más información",
+        "group_by_category": "Agrupa por categoría o dificultad"
+      },
+      "quick_actions": {
+        "title": "Acciones Rápidas",
+        "add_to_cart": "Agregar al carrito desde favoritos",
+        "remove_uninteresting": "Quitar productos que ya no te interesan",
+        "explore_similar": "Explorar recomendaciones similares",
+        "buy_on_offers": "Comprar cuando haya ofertas especiales"
+      }
+    }
+  },
+  "file_upload": {
+    "title": "Subir Archivos",
+    "drop_files": "Arrastra archivos aquí o haz clic para seleccionar",
+    "drop_files_here": "Suelta los archivos aquí",
+    "select_files": "Seleccionar Archivos",
+    "upload_progress": "Progreso de Subida",
+    "upload_complete": "Subida Completa",
+    "upload_failed": "Subida Fallida",
+    "retry_upload": "Reintentar",
+    "remove_file": "Eliminar Archivo",
+    
+    "file_types": "Tipos de archivo permitidos",
+    "max_size": "Tamaño máximo",
+    "max_files": "Máximo de archivos",
+    
+    "errors": {
+      "file_too_large": "El archivo es demasiado grande",
+      "invalid_file_type": "Tipo de archivo no permitido",
+      "too_many_files": "Demasiados archivos seleccionados",
+      "upload_error": "Error subiendo el archivo",
+      "network_error": "Error de conexión"
+    },
+    
+    "status": {
+      "pending": "Pendiente",
+      "uploading": "Subiendo",
+      "processing": "Procesando",
+      "completed": "Completado",
+      "failed": "Fallido"
+    }
   },
   "common": {
     "loading": "Cargando...",
-    "error": "Error",
+    "errors": {
+      "unexpected_error_title": "Algo salió mal",
+      "unexpected_error_message": "Ha ocurrido un error inesperado. Por favor, intenta nuevamente.",
+      "error_details": "Mostrar detalles del error",
+      "try_again": "Intentar nuevamente", 
+      "go_home": "Ir al inicio",
+      "network_error_title": "Error de conexión",
+      "network_error_message": "No se pudo conectar al servidor. Verifica tu conexión.",
+      "loading_error_title": "Error de carga",
+      "loading_error_message": "Hubo un problema cargando esta sección."
+      },
     "success": "Éxito",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
@@ -490,6 +2333,190 @@
     "optional": "Opcional",
     "yes": "Sí",
     "no": "No",
-    "ok": "OK"
+    "ok": "OK",
+    "refresh": "Actualizar",
+    "settings": "Configuración"
+  },
+  "reviews": {
+    "page_title": "Mis Reviews",
+    "page_description": "Gestiona las reviews que has escrito sobre productos",
+    "access_restricted": "Acceso restringido",
+    
+    "status": {
+      "pending": "Pendiente",
+      "published": "Publicada", 
+      "flagged": "Reportada",
+      "removed": "Removida"
+    },
+    
+    "stats": {
+      "total_reviews": "Total Reviews",
+      "average_rating": "Rating Promedio",
+      "helpful_votes": "Votos Útiles",
+      "with_images": "Con Fotos",
+      "with_response": "Con Respuesta",
+      "pending": "Pendientes"
+    },
+    
+    "rating_distribution": {
+      "title": "Distribución de Ratings"
+    },
+    
+    "pending_reviews": {
+      "title": "Reviews Pendientes de Escribir",
+      "description": "Tienes {count} {productText} sin review. ¡Ayuda a otros compradores compartiendo tu experiencia!",
+      "purchased": "Comprado",
+      "write_review": "Escribir Review"
+    },
+    
+    "filters": {
+      "search_placeholder": "Buscar reviews...",
+      "all_statuses": "Todos los estados",
+      "all_ratings": "Todas las calificaciones",
+      "stars": "{count} estrellas",
+      "sort_by_date": "Ordenar por fecha",
+      "sort_by_rating": "Ordenar por rating",
+      "sort_by_helpful": "Ordenar por utilidad",
+      "newest": "Más reciente",
+      "oldest": "Más antiguo"
+    },
+    
+    "empty_state": {
+      "no_reviews": "No has escrito reviews aún",
+      "no_results": "No se encontraron resultados",
+      "no_reviews_description": "Compra productos y comparte tu experiencia con otros usuarios",
+      "no_results_description": "Intenta ajustar los filtros de búsqueda",
+      "explore_products": "Explorar Productos"
+    },
+    
+    "verified_purchase": "Compra Verificada",
+    
+    "actions": {
+      "view_product": "Ver producto",
+      "edit_review": "Editar review",
+      "view_public": "Ver Público",
+      "view_order": "Ver Pedido"
+    },
+    
+    "pros_cons": {
+      "positive_aspects": "Aspectos Positivos",
+      "areas_to_improve": "Aspectos a Mejorar"
+    },
+    
+    "images": {
+      "title": "Fotos del Resultado ({count})",
+      "result_alt": "Resultado {index}"
+    },
+    
+    "seller_response": {
+      "title": "Respuesta de {sellerName}"
+    },
+    
+    "helpful_votes": {
+      "helpful": "útil",
+      "not_helpful": "no útil"
+    },
+    
+    "order_info": "Pedido: {orderNumber}",
+    
+    "results_counter": "Mostrando {showing} de {total} reviews",
+    
+    "tips": {
+      "title": "Consejos para Reviews Efectivas",
+      "increase_impact": {
+        "title": "Aumenta tu Impacto:",
+        "include_photos": "Incluye fotos del producto terminado",
+        "be_specific": "Sé específico sobre dificultades encontradas",
+        "mention_tools": "Menciona herramientas adicionales necesarias",
+        "describe_quality": "Describe la calidad del resultado final"
+      },
+      "community": {
+        "title": "Comunidad:",
+        "help_buyers": "Tus reviews ayudan a otros compradores",
+        "improve_products": "Los sellers pueden mejorar sus productos",
+        "inspire_community": "Las fotos inspiran a la comunidad",
+        "build_trust": "Reviews honestas construyen confianza"
+      }
+    },
+    
+    "modal": {
+      "write_review_title": "Escribir Review",
+      "product_label": "Producto",
+      "implementation_note": "Modal de review pendiente de implementar en próxima fase",
+      "simulate_review": "Simular Review"
+    }
+  },
+  "footer": {
+    "title": "Furnibles - Muebles de Diseño",
+    "description": "Transformando espacios con diseños únicos y calidad excepcional.",
+    "copyright": "© 2025 Furnibles. Todos los derechos reservados.",
+    "follow_us": "Síguenos en",
+    "social": {
+      "facebook": "Facebook",
+      "instagram": "Instagram", 
+      "pinterest": "Pinterest"
+    }
+  },
+  "advanced_search": {
+    "title": "Búsqueda Avanzada",
+    "search_placeholder": "Buscar productos, vendedores, etiquetas...",
+    "searching": "Buscando...",
+    "search_now": "Buscar Ahora",
+    "results_found": "{count, plural, =0 {Sin resultados} =1 {1 resultado encontrado} other {# resultados encontrados}}",
+    "quick_searches": "Búsquedas Rápidas",
+    "quality_filters": "Filtros de Calidad",
+    "content_filters": "Filtros de Contenido",
+    "reset_filters": "Limpiar Filtros",
+    "saved_searches": "Búsquedas Guardadas",
+    "difficulty": {
+      "all": "Todas las dificultades",
+      "beginner": "Principiante",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado",
+      "expert": "Experto"
+    },
+    "sort": {
+      "relevance": "Relevancia",
+      "recent": "Más Recientes",
+      "popular": "Más Populares",
+      "rating": "Mejor Valorados",
+      "price_low": "Precio: Menor a Mayor",
+      "price_high": "Precio: Mayor a Menor"
+    },
+    "price": {
+      "all": "Todos los precios",
+      "under_25": "Menos de $25",
+      "over_100": "Más de $100"
+    },
+    "presets": {
+      "beginner_furniture": "Muebles para Principiantes",
+      "popular_chairs": "Sillas Populares",
+      "recent_tables": "Mesas Recientes",
+      "premium_designs": "Diseños Premium"
+    },
+    "min_rating": "Calificación Mínima",
+    "min_reviews": "Reseñas Mínimas",
+    "any_rating": "Cualquier calificación",
+    "any_reviews": "Cualquier cantidad",
+    "any_downloads": "Cualquier cantidad",
+    "reviews": "reseñas",
+    "downloads": "descargas",
+    "tags": "Etiquetas",
+    "has_images": "Con Imágenes",
+    "has_pdf": "Con PDF",
+    "verified_sellers": "Vendedores Verificados",
+    "featured_only": "Solo Destacados",
+    "save_search": {
+      "title": "Guardar Búsqueda",
+      "name_label": "Nombre de la búsqueda",
+      "name_placeholder": "Ej: Mesas modernas baratas",
+      "name_required": "El nombre es requerido",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "success": "Búsqueda Guardada",
+      "success_message": "La búsqueda '{name}' ha sido guardada exitosamente",
+      "error": "Error al Guardar",
+      "error_message": "No se pudo guardar la búsqueda. Intenta de nuevo."
+    }
   }
 }

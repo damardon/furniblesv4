@@ -7,7 +7,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'localhost',
+        hostname: 'probable-barnacle-65wp9jg5qwxc5w6-3001.app.github.dev',
         port: '',
         pathname: '/**',
       },

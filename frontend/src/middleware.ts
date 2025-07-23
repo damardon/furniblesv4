@@ -11,6 +11,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // ✅ PERMITIR acceso al login de admin (página pública)
+  if (pathname === '/admin') {
+  return NextResponse.next()
+  }
+
+
   // ✅ Rutas protegidas del seller (ACTUALIZADAS con nuevos nombres)
   const sellerRoutes = [
     '/vendedor-dashboard',
@@ -23,9 +29,10 @@ export async function middleware(request: NextRequest) {
     '/vendedor-dashboard/configuracion'
   ]
 
+
   // ✅ Rutas protegidas del admin
   const adminRoutes = [
-    '/admin'
+    '/admin/dashboard'
   ]
 
   // Verificar si es una ruta protegida del seller

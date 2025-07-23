@@ -38,7 +38,9 @@ interface OrderDetailPageProps {
 }
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
-  const t = useTranslations('orders')
+  const t = useTranslations('order_detail')
+  const tCommon = useTranslations('common')
+  const tOrders = useTranslations('orders')
   const router = useRouter()
   
   // Stores
@@ -80,7 +82,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">📦</div>
-          <p className="text-black font-black text-xl uppercase">Cargando pedido...</p>
+          <p className="text-black font-black text-xl uppercase">{t('loading')}</p>
         </div>
       </div>
     )
@@ -95,39 +97,45 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       [OrderStatus.PENDING]: {
         color: 'bg-yellow-400 text-black border-black',
         icon: ClockIcon,
-        text: 'Pendiente',
-        description: 'El pedido está pendiente de procesamiento'
+        text: t('status.pending'),
+        description: t('status_descriptions.pending')
       },
       [OrderStatus.PROCESSING]: {
         color: 'bg-blue-400 text-black border-black',
         icon: RefreshCwIcon,
-        text: 'Procesando',
-        description: 'El pedido está siendo procesado'
+        text: t('status.processing'),
+        description: t('status_descriptions.processing')
       },
       [OrderStatus.PAID]: {
         color: 'bg-green-400 text-black border-black',
         icon: CreditCardIcon,
-        text: 'Pagado',
-        description: 'El pago ha sido confirmado'
+        text: t('status.paid'),
+        description: t('status_descriptions.paid')
       },
       [OrderStatus.COMPLETED]: {
         color: 'bg-green-500 text-white border-black',
         icon: CheckCircleIcon,
-        text: 'Completado',
-        description: 'El pedido ha sido completado exitosamente'
+        text: t('status.completed'),
+        description: t('status_descriptions.completed')
       },
-      [OrderStatus.FAILED]: {
+      [OrderStatus.CANCELLED]: {
         color: 'bg-red-400 text-black border-black',
         icon: XCircleIcon,
-        text: 'Fallido',
-        description: 'El procesamiento del pedido ha fallado'
+        text: t('status.failed'),
+        description: t('status_descriptions.failed')
       },
       [OrderStatus.REFUNDED]: {
         color: 'bg-gray-400 text-black border-black',
         icon: AlertCircleIcon,
-        text: 'Reembolsado',
-        description: 'El pedido ha sido reembolsado'
-      }
+        text: t('status.refunded'),
+        description: t('status_descriptions.refunded')
+      },
+      [OrderStatus.DISPUTED]: {
+        color: 'bg-gray-400 text-black border-black',
+        icon: AlertCircleIcon,
+        text: t('status.refunded'),
+        description: t('status_descriptions.refunded')
+      },
     }
 
     return statusConfig[status]
@@ -154,8 +162,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `Pedido ${order.orderNumber}`,
-        text: `Mi pedido en Furnibles - ${order.orderNumber}`,
+        title: t('share.title', { orderNumber: order.orderNumber }),
+        text: t('share.text', { orderNumber: order.orderNumber }),
         url: window.location.href,
       })
     } else {
@@ -177,7 +185,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">Acceso restringido</p>
+          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
         </div>
       </div>
     )
@@ -190,11 +198,11 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              Inicio
+              {tCommon('navigation.home')}
             </Link>
             <span>/</span>
             <Link href="/pedidos" className="hover:text-orange-500 transition-colors">
-              Mis Pedidos
+              {tOrders('title')}
             </Link>
             <span>/</span>
             <span className="text-orange-500">{order.orderNumber}</span>
@@ -213,7 +221,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 style={{ boxShadow: '4px 4px 0 #000000' }}
               >
                 <ArrowLeftIcon className="w-4 h-4" />
-                Volver
+                {tCommon('actions.back')}
               </Link>
               
               <div>
@@ -222,7 +230,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                   {order.orderNumber}
                 </h1>
                 <p className="text-gray-600 font-bold mt-2">
-                  Pedido realizado el {formatDate(order.createdAt)}
+                  {t('ordered_on', { date: formatDate(order.createdAt) })}
                 </p>
               </div>
             </div>
@@ -233,7 +241,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 onClick={handleShare}
                 className="p-3 bg-white border-4 border-black hover:bg-yellow-400 transition-all"
                 style={{ boxShadow: '4px 4px 0 #000000' }}
-                title="Compartir"
+                title={t('actions.share')}
               >
                 <ShareIcon className="w-5 h-5 text-black" />
               </button>
@@ -242,7 +250,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 onClick={handlePrint}
                 className="p-3 bg-white border-4 border-black hover:bg-yellow-400 transition-all"
                 style={{ boxShadow: '4px 4px 0 #000000' }}
-                title="Imprimir"
+                title={t('actions.print')}
               >
                 <PrinterIcon className="w-5 h-5 text-black" />
               </button>
@@ -261,7 +269,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 </div>
                 <div>
                   <h2 className="text-2xl font-black uppercase mb-1">
-                    Estado: {statusInfo.text}
+                    {t('status_label')}: {statusInfo.text}
                   </h2>
                   <p className="font-bold text-sm">
                     {statusInfo.description}
@@ -274,7 +282,10 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                   {formatPrice(order.totalAmount)}
                 </div>
                 <div className="text-sm font-bold uppercase">
-                  {order.items.length} {order.items.length === 1 ? 'Producto' : 'Productos'}
+                  {t('products_count', { 
+                    count: order.items.length, 
+                    unit: order.items.length === 1 ? t('product_singular') : t('product_plural') 
+                  })}
                 </div>
               </div>
             </div>
@@ -291,7 +302,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             >
               <h3 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-2">
                 <ShoppingCartIcon className="w-6 h-6" />
-                Productos
+                {t('sections.products')}
               </h3>
               
               <div className="space-y-4">
@@ -347,11 +358,11 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                             className="bg-blue-200 text-black text-xs font-black px-2 py-1 border-2 border-black uppercase"
                             style={{ boxShadow: '2px 2px 0 #000000' }}
                           >
-                            Qty: {item.quantity}
+                            {t('product.quantity')}: {item.quantity}
                           </span>
                           
                           <span 
-                            className={`${item.product.difficulty === 'EASY' ? 'bg-green-400' : 
+                            className={`${item.product.difficulty === 'BEGINNER' ? 'bg-green-400' : 
                                        item.product.difficulty === 'INTERMEDIATE' ? 'bg-yellow-400' : 'bg-orange-400'} 
                                        text-black text-xs font-black px-2 py-1 border-2 border-black uppercase`}
                             style={{ boxShadow: '2px 2px 0 #000000' }}
@@ -368,7 +379,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                               style={{ boxShadow: '2px 2px 0 #000000' }}
                             >
                               <DownloadIcon className="w-3 h-3" />
-                              Descargar
+                              {t('product.download')}
                             </Link>
                           )}
                           
@@ -378,7 +389,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                             style={{ boxShadow: '2px 2px 0 #000000' }}
                           >
                             <ExternalLinkIcon className="w-3 h-3" />
-                            Ver
+                            {t('product.view')}
                           </Link>
                         </div>
                       </div>
@@ -395,7 +406,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             >
               <h3 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-2">
                 <CalendarIcon className="w-6 h-6" />
-                Historial del Pedido
+                {t('sections.timeline')}
               </h3>
               
               <div className="space-y-4">
@@ -404,7 +415,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                     <CheckCircleIcon className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-black text-black uppercase">Pedido Creado</p>
+                    <p className="font-black text-black uppercase">{t('timeline.order_created')}</p>
                     <p className="text-sm text-gray-600 font-bold">{formatDate(order.createdAt)}</p>
                   </div>
                 </div>
@@ -415,7 +426,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                       <CreditCardIcon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-black text-black uppercase">Pago Confirmado</p>
+                      <p className="font-black text-black uppercase">{t('timeline.payment_confirmed')}</p>
                       <p className="text-sm text-gray-600 font-bold">{formatDate(order.paidAt)}</p>
                     </div>
                   </div>
@@ -427,7 +438,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                       <PackageIcon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-black text-black uppercase">Pedido Completado</p>
+                      <p className="font-black text-black uppercase">{t('timeline.order_completed')}</p>
                       <p className="text-sm text-gray-600 font-bold">{formatDate(order.completedAt)}</p>
                     </div>
                   </div>
@@ -445,23 +456,23 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             >
               <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                 <FileTextIcon className="w-5 h-5" />
-                Resumen
+                {t('sections.summary')}
               </h3>
               
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-black font-bold">
-                  <span>Subtotal:</span>
+                  <span>{t('summary.subtotal')}:</span>
                   <span>{formatPrice(order.subtotal)}</span>
                 </div>
                 
                 <div className="flex justify-between items-center text-black font-bold">
-                  <span>Fee Plataforma (10%):</span>
+                  <span>{t('summary.platform_fee')}:</span>
                   <span>{formatPrice(order.platformFee)}</span>
                 </div>
                 
                 <div className="border-t-3 border-black pt-3">
                   <div className="flex justify-between items-center text-black font-black text-xl">
-                    <span className="uppercase">Total:</span>
+                    <span className="uppercase">{t('summary.total')}:</span>
                     <span className="text-orange-500">{formatPrice(order.totalAmount)}</span>
                   </div>
                 </div>
@@ -476,27 +487,27 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               >
                 <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                   <CreditCardIcon className="w-5 h-5" />
-                  Información de Pago
+                  {t('sections.payment_info')}
                 </h3>
                 
                 <div className="space-y-3 text-sm">
                   <div>
-                    <span className="font-black text-black uppercase block">ID de Pago:</span>
+                    <span className="font-black text-black uppercase block">{t('payment.payment_id')}:</span>
                     <span className="font-bold text-gray-600 break-all">
                       {order.paymentIntentId}
                     </span>
                   </div>
                   
                   <div>
-                    <span className="font-black text-black uppercase block">Estado de Pago:</span>
+                    <span className="font-black text-black uppercase block">{t('payment.payment_status')}:</span>
                     <span className="font-bold text-gray-600">
                       {order.paymentStatus}
                     </span>
                   </div>
                   
                   <div>
-                    <span className="font-black text-black uppercase block">Método:</span>
-                    <span className="font-bold text-gray-600">Tarjeta de Crédito/Débito</span>
+                    <span className="font-black text-black uppercase block">{t('payment.method')}:</span>
+                    <span className="font-bold text-gray-600">{t('payment.credit_debit_card')}</span>
                   </div>
                 </div>
               </div>
@@ -509,7 +520,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             >
               <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                 <UserIcon className="w-5 h-5" />
-                Datos de Facturación
+                {t('sections.billing_info')}
               </h3>
               
               <div className="space-y-3 text-sm">
@@ -554,7 +565,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                   style={{ boxShadow: '4px 4px 0 #000000' }}
                 >
                   <DownloadIcon className="w-5 h-5" />
-                  Ir a Descargas
+                  {t('actions.go_to_downloads')}
                 </Link>
               )}
               
@@ -564,7 +575,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 style={{ boxShadow: '4px 4px 0 #000000' }}
               >
                 <ShoppingCartIcon className="w-5 h-5" />
-                Seguir Comprando
+                {t('actions.continue_shopping')}
               </Link>
             </div>
           </div>

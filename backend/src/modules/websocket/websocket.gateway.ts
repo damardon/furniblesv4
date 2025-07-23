@@ -14,7 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 
 @WSGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev',
     credentials: true,
   },
   namespace: '/notifications'

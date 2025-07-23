@@ -11,10 +11,10 @@ export default function HomePage() {
 
   const categories = [
     { 
-      category: ProductCategory.BEDS, 
+      category: ProductCategory.FURNITURE, 
       icon: '🛏️', 
-      name: t('bedroom'),
-      href: '/productos?categoria=BEDS'
+      name: t('furniture'),
+      href: '/productos?categoria=FURNITURE'
     },
     { 
       category: ProductCategory.TABLES, 
@@ -23,10 +23,10 @@ export default function HomePage() {
       href: '/productos?categoria=TABLES'
     },
     { 
-      category: ProductCategory.DESKS, 
+      category: ProductCategory.STORAGE, 
       icon: '💼', 
-      name: t('kitchen'),
-      href: '/productos?categoria=DESKS'
+      name: t('storage'),
+      href: '/productos?categoria=STORAGE'
     },
     { 
       category: ProductCategory.OUTDOOR, 

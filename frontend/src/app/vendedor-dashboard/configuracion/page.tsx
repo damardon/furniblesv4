@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Settings,
   CreditCard,
@@ -23,6 +24,10 @@ import { useSellerStore } from '@/lib/stores/seller-store'
 export default function SellerConfigPage() {
   const { user, updateUser } = useAuthStore()
   const { sellerProfile } = useSellerStore()
+  
+  // Traducciones
+  const t = useTranslations('seller.settings')
+  const tCommon = useTranslations('common')
   
   // Estados de configuración
   const [accountData, setAccountData] = useState({
@@ -78,15 +83,15 @@ export default function SellerConfigPage() {
 
     if (accountData.newPassword) {
       if (!accountData.currentPassword) {
-        newErrors.currentPassword = 'Ingresa tu contraseña actual'
+        newErrors.currentPassword = t('validation.current_password_required')
       }
 
       if (accountData.newPassword.length < 8) {
-        newErrors.newPassword = 'La nueva contraseña debe tener al menos 8 caracteres'
+        newErrors.newPassword = t('validation.new_password_min_length')
       }
 
       if (accountData.newPassword !== accountData.confirmPassword) {
-        newErrors.confirmPassword = 'Las contraseñas no coinciden'
+        newErrors.confirmPassword = t('validation.passwords_dont_match')
       }
     }
 
@@ -126,7 +131,7 @@ export default function SellerConfigPage() {
         lastName: accountData.lastName,
       })
 
-      setSuccessMessage('Información de cuenta actualizada')
+      setSuccessMessage(t('messages.account_updated'))
       
       // Limpiar campos de contraseña
       setAccountData(prev => ({
@@ -137,7 +142,7 @@ export default function SellerConfigPage() {
       }))
       
     } catch (error) {
-      setErrors({ submit: 'Error al actualizar la información' })
+      setErrors({ submit: t('messages.account_update_error') })
     } finally {
       setIsSubmitting(false)
     }
@@ -151,9 +156,9 @@ export default function SellerConfigPage() {
     try {
       // Aquí iría la llamada al API para actualizar preferencias
       await new Promise(resolve => setTimeout(resolve, 1000))
-      setSuccessMessage('Configuración de notificaciones actualizada')
+      setSuccessMessage(t('messages.notifications_updated'))
     } catch (error) {
-      setErrors({ submit: 'Error al actualizar notificaciones' })
+      setErrors({ submit: t('messages.notifications_update_error') })
     } finally {
       setIsSubmitting(false)
     }
@@ -167,28 +172,28 @@ export default function SellerConfigPage() {
     try {
       // Aquí iría la llamada al API para actualizar privacidad
       await new Promise(resolve => setTimeout(resolve, 1000))
-      setSuccessMessage('Configuración de privacidad actualizada')
+      setSuccessMessage(t('messages.privacy_updated'))
     } catch (error) {
-      setErrors({ submit: 'Error al actualizar privacidad' })
+      setErrors({ submit: t('messages.privacy_update_error') })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const tabs = [
-    { id: 'account', label: 'Cuenta', icon: Settings },
-    { id: 'notifications', label: 'Notificaciones', icon: Bell },
-    { id: 'privacy', label: 'Privacidad', icon: Shield },
-    { id: 'payments', label: 'Pagos', icon: CreditCard },
+    { id: 'account', label: t('tabs.account'), icon: Settings },
+    { id: 'notifications', label: t('tabs.notifications'), icon: Bell },
+    { id: 'privacy', label: t('tabs.privacy'), icon: Shield },
+    { id: 'payments', label: t('tabs.payments'), icon: CreditCard },
   ]
 
   return (
     <div className="space-y-6">
       {/* HEADER */}
       <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
-        <h1 className="text-2xl font-black uppercase text-black mb-2">Configuración</h1>
+        <h1 className="text-2xl font-black uppercase text-black mb-2">{t('title')}</h1>
         <p className="text-gray-600 font-bold">
-          Gestiona tu cuenta, notificaciones y configuración de privacidad
+          {t('subtitle')}
         </p>
       </div>
 
@@ -250,14 +255,14 @@ export default function SellerConfigPage() {
             <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
               <h2 className="text-xl font-black uppercase text-black mb-6 flex items-center gap-2">
                 <Settings className="h-6 w-6" />
-                Información de Cuenta
+                {t('account.title')}
               </h2>
 
               <form onSubmit={handleAccountUpdate} className="space-y-6">
                 {/* Información personal */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-black text-black mb-2">NOMBRE</label>
+                    <label className="block text-sm font-black text-black mb-2">{t('account.first_name')}</label>
                     <input
                       type="text"
                       value={accountData.firstName}
@@ -268,7 +273,7 @@ export default function SellerConfigPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-black text-black mb-2">APELLIDO</label>
+                    <label className="block text-sm font-black text-black mb-2">{t('account.last_name')}</label>
                     <input
                       type="text"
                       value={accountData.lastName}
@@ -281,7 +286,7 @@ export default function SellerConfigPage() {
 
                 {/* Email (solo lectura) */}
                 <div>
-                  <label className="block text-sm font-black text-black mb-2">EMAIL</label>
+                  <label className="block text-sm font-black text-black mb-2">{t('account.email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
                     <input
@@ -293,7 +298,7 @@ export default function SellerConfigPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 font-bold mt-1">
-                    Para cambiar tu email, contacta al soporte
+                    {t('account.email_change_note')}
                   </p>
                 </div>
 
@@ -301,12 +306,12 @@ export default function SellerConfigPage() {
                 <div className="border-t-2 border-gray-200 pt-6">
                   <h3 className="text-lg font-black text-black mb-4 flex items-center gap-2">
                     <Lock className="h-5 w-5" />
-                    Cambiar Contraseña
+                    {t('account.change_password')}
                   </h3>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-black text-black mb-2">CONTRASEÑA ACTUAL</label>
+                      <label className="block text-sm font-black text-black mb-2">{t('account.current_password')}</label>
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
@@ -329,7 +334,7 @@ export default function SellerConfigPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-black text-black mb-2">NUEVA CONTRASEÑA</label>
+                      <label className="block text-sm font-black text-black mb-2">{t('account.new_password')}</label>
                       <div className="relative">
                         <input
                           type={showNewPassword ? 'text' : 'password'}
@@ -352,7 +357,7 @@ export default function SellerConfigPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-black text-black mb-2">CONFIRMAR NUEVA CONTRASEÑA</label>
+                      <label className="block text-sm font-black text-black mb-2">{t('account.confirm_new_password')}</label>
                       <input
                         type="password"
                         value={accountData.confirmPassword}
@@ -376,12 +381,12 @@ export default function SellerConfigPage() {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-                      GUARDANDO...
+                      {tCommon('saving')}
                     </>
                   ) : (
                     <>
                       <Save className="h-5 w-5" />
-                      GUARDAR CAMBIOS
+                      {t('account.save_changes')}
                     </>
                   )}
                 </button>
@@ -394,21 +399,21 @@ export default function SellerConfigPage() {
             <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
               <h2 className="text-xl font-black uppercase text-black mb-6 flex items-center gap-2">
                 <Bell className="h-6 w-6" />
-                Configuración de Notificaciones
+                {t('notifications.title')}
               </h2>
 
               <div className="space-y-6">
                 {/* Notificaciones por email */}
                 <div>
-                  <h3 className="text-lg font-black text-black mb-4">Notificaciones por Email</h3>
+                  <h3 className="text-lg font-black text-black mb-4">{t('notifications.email_notifications')}</h3>
                   <div className="space-y-3">
                     {[
-                      { key: 'emailNewOrder', label: 'Nuevos pedidos', description: 'Te avisamos cuando alguien compra tus productos' },
-                      { key: 'emailNewReview', label: 'Nuevas reseñas', description: 'Recibe notificaciones de nuevas reseñas' },
-                      { key: 'emailPayoutCompleted', label: 'Pagos completados', description: 'Confirmación de pagos recibidos' },
-                      { key: 'emailProductApproved', label: 'Productos aprobados', description: 'Cuando tus productos son aprobados' },
-                      { key: 'emailProductRejected', label: 'Productos rechazados', description: 'Cuando tus productos necesitan revisión' },
-                      { key: 'emailMarketingUpdates', label: 'Actualizaciones de marketing', description: 'Noticias y consejos para vendedores' },
+                      { key: 'emailNewOrder', label: t('notifications.new_orders'), description: t('notifications.new_orders_desc') },
+                      { key: 'emailNewReview', label: t('notifications.new_reviews'), description: t('notifications.new_reviews_desc') },
+                      { key: 'emailPayoutCompleted', label: t('notifications.payments_completed'), description: t('notifications.payments_completed_desc') },
+                      { key: 'emailProductApproved', label: t('notifications.products_approved'), description: t('notifications.products_approved_desc') },
+                      { key: 'emailProductRejected', label: t('notifications.products_rejected'), description: t('notifications.products_rejected_desc') },
+                      { key: 'emailMarketingUpdates', label: t('notifications.marketing_updates'), description: t('notifications.marketing_updates_desc') },
                     ].map((item) => (
                       <div key={item.key} className="flex items-center justify-between p-3 border-2 border-gray-200">
                         <div>
@@ -434,12 +439,12 @@ export default function SellerConfigPage() {
 
                 {/* Configuración adicional */}
                 <div>
-                  <h3 className="text-lg font-black text-black mb-4">Configuración Adicional</h3>
+                  <h3 className="text-lg font-black text-black mb-4">{t('notifications.additional_settings')}</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 border-2 border-gray-200">
                       <div>
-                        <h4 className="font-black text-black">Notificaciones web</h4>
-                        <p className="text-sm text-gray-600 font-bold">Recibe notificaciones en el navegador</p>
+                        <h4 className="font-black text-black">{t('notifications.web_notifications')}</h4>
+                        <p className="text-sm text-gray-600 font-bold">{t('notifications.web_notifications_desc')}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -456,7 +461,7 @@ export default function SellerConfigPage() {
                     </div>
 
                     <div className="p-3 border-2 border-gray-200">
-                      <h4 className="font-black text-black mb-2">Frecuencia de resumen</h4>
+                      <h4 className="font-black text-black mb-2">{t('notifications.digest_frequency')}</h4>
                       <select
                         value={notificationSettings.digestFrequency}
                         onChange={(e) => setNotificationSettings(prev => ({
@@ -466,10 +471,10 @@ export default function SellerConfigPage() {
                         className="w-full p-2 border-2 border-black font-bold focus:outline-none focus:bg-yellow-400"
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
-                        <option value="disabled">Deshabilitado</option>
-                        <option value="daily">Diario</option>
-                        <option value="weekly">Semanal</option>
-                        <option value="monthly">Mensual</option>
+                        <option value="disabled">{t('notifications.frequency.disabled')}</option>
+                        <option value="daily">{t('notifications.frequency.daily')}</option>
+                        <option value="weekly">{t('notifications.frequency.weekly')}</option>
+                        <option value="monthly">{t('notifications.frequency.monthly')}</option>
                       </select>
                     </div>
                   </div>
@@ -484,12 +489,12 @@ export default function SellerConfigPage() {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-                      GUARDANDO...
+                      {tCommon('saving')}
                     </>
                   ) : (
                     <>
                       <Save className="h-5 w-5" />
-                      GUARDAR NOTIFICACIONES
+                      {t('notifications.save_notifications')}
                     </>
                   )}
                 </button>
@@ -502,7 +507,7 @@ export default function SellerConfigPage() {
             <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
               <h2 className="text-xl font-black uppercase text-black mb-6 flex items-center gap-2">
                 <Shield className="h-6 w-6" />
-                Configuración de Privacidad
+                {t('privacy.title')}
               </h2>
 
               <div className="space-y-6">
@@ -510,23 +515,23 @@ export default function SellerConfigPage() {
                   {[
                     { 
                       key: 'showProfilePublicly', 
-                      label: 'Mostrar perfil públicamente', 
-                      description: 'Tu perfil de vendedor será visible para todos los usuarios' 
+                      label: t('privacy.show_profile_publicly'), 
+                      description: t('privacy.show_profile_publicly_desc')
                     },
                     { 
                       key: 'showContactInfo', 
-                      label: 'Mostrar información de contacto', 
-                      description: 'Los compradores podrán ver tu teléfono y website' 
+                      label: t('privacy.show_contact_info'), 
+                      description: t('privacy.show_contact_info_desc')
                     },
                     { 
                       key: 'allowDirectMessages', 
-                      label: 'Permitir mensajes directos', 
-                      description: 'Los usuarios pueden enviarte mensajes privados' 
+                      label: t('privacy.allow_direct_messages'), 
+                      description: t('privacy.allow_direct_messages_desc')
                     },
                     { 
                       key: 'showSalesHistory', 
-                      label: 'Mostrar historial de ventas', 
-                      description: 'Mostrar cantidad de productos vendidos públicamente' 
+                      label: t('privacy.show_sales_history'), 
+                      description: t('privacy.show_sales_history_desc')
                     },
                   ].map((item) => (
                     <div key={item.key} className="flex items-center justify-between p-4 border-2 border-gray-200">
@@ -553,13 +558,13 @@ export default function SellerConfigPage() {
                 <div className="bg-blue-100 border-[3px] border-blue-500 p-4">
                   <h4 className="font-black text-blue-800 mb-2 flex items-center gap-2">
                     <Shield className="h-5 w-5" />
-                    Información sobre Privacidad
+                    {t('privacy.info_title')}
                   </h4>
                   <ul className="text-sm text-blue-700 font-bold space-y-1">
-                    <li>• Tu información personal nunca se comparte con terceros</li>
-                    <li>• Los compradores solo ven la información que permitas</li>
-                    <li>• Puedes cambiar estas configuraciones en cualquier momento</li>
-                    <li>• Cierta información es requerida para el funcionamiento del marketplace</li>
+                    <li>• {t('privacy.info.personal_data')}</li>
+                    <li>• {t('privacy.info.buyer_visibility')}</li>
+                    <li>• {t('privacy.info.change_anytime')}</li>
+                    <li>• {t('privacy.info.required_info')}</li>
                   </ul>
                 </div>
 
@@ -572,12 +577,12 @@ export default function SellerConfigPage() {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-                      GUARDANDO...
+                      {tCommon('saving')}
                     </>
                   ) : (
                     <>
                       <Save className="h-5 w-5" />
-                      GUARDAR PRIVACIDAD
+                      {t('privacy.save_privacy')}
                     </>
                   )}
                 </button>
@@ -590,7 +595,7 @@ export default function SellerConfigPage() {
             <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
               <h2 className="text-xl font-black uppercase text-black mb-6 flex items-center gap-2">
                 <CreditCard className="h-6 w-6" />
-                Configuración de Pagos
+                {t('payments.title')}
               </h2>
 
               <div className="space-y-6">
@@ -598,7 +603,7 @@ export default function SellerConfigPage() {
                 <div className="border-2 border-gray-200 p-6">
                   <h3 className="text-lg font-black text-black mb-4 flex items-center gap-2">
                     <Key className="h-5 w-5" />
-                    Stripe Connect
+                    {t('payments.stripe_connect')}
                   </h3>
 
                   {user?.stripeConnectId ? (
@@ -606,7 +611,7 @@ export default function SellerConfigPage() {
                       <div className="flex items-center gap-3 p-3 bg-green-100 border-2 border-green-500">
                         <CheckCircle className="h-6 w-6 text-green-600" />
                         <div>
-                          <p className="font-black text-green-800">Cuenta conectada</p>
+                          <p className="font-black text-green-800">{t('payments.account_connected')}</p>
                           <p className="text-sm text-green-700 font-bold">
                             ID: {user.stripeConnectId}
                           </p>
@@ -615,16 +620,9 @@ export default function SellerConfigPage() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="p-3 border-2 border-gray-200">
-                          <h4 className="font-bold text-black">Onboarding</h4>
-                          <p className={`text-sm font-bold ${user.onboardingComplete ? 'text-green-600' : 'text-yellow-600'}`}>
-                            {user.onboardingComplete ? 'Completado' : 'Pendiente'}
-                          </p>
-                        </div>
-                        
-                        <div className="p-3 border-2 border-gray-200">
-                          <h4 className="font-bold text-black">Pagos Habilitados</h4>
+                          <h4 className="font-bold text-black">{t('payments.payments_enabled')}</h4>
                           <p className={`text-sm font-bold ${user.payoutsEnabled ? 'text-green-600' : 'text-red-600'}`}>
-                            {user.payoutsEnabled ? 'Sí' : 'No'}
+                            {user.payoutsEnabled ? tCommon('yes') : tCommon('no')}
                           </p>
                         </div>
                       </div>
@@ -632,7 +630,7 @@ export default function SellerConfigPage() {
                       {!user.onboardingComplete && (
                         <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 border-2 border-black font-bold text-black hover:bg-blue-400 transition-all">
                           <ExternalLink className="h-4 w-4" />
-                          COMPLETAR CONFIGURACIÓN
+                          {t('payments.complete_setup')}
                         </button>
                       )}
                     </div>
@@ -641,16 +639,16 @@ export default function SellerConfigPage() {
                       <div className="flex items-center gap-3 p-3 bg-yellow-100 border-2 border-yellow-500">
                         <AlertCircle className="h-6 w-6 text-yellow-600" />
                         <div>
-                          <p className="font-black text-yellow-800">Cuenta no conectada</p>
+                          <p className="font-black text-yellow-800">{t('payments.account_not_connected')}</p>
                           <p className="text-sm text-yellow-700 font-bold">
-                            Necesitas conectar Stripe para recibir pagos
+                            {t('payments.need_stripe_to_receive_payments')}
                           </p>
                         </div>
                       </div>
 
                       <button className="flex items-center gap-2 px-6 py-3 bg-green-500 border-2 border-black font-bold text-black hover:bg-green-400 transition-all">
                         <CreditCard className="h-5 w-5" />
-                        CONECTAR STRIPE
+                        {t('payments.connect_stripe')}
                       </button>
                     </div>
                   )}
@@ -658,39 +656,39 @@ export default function SellerConfigPage() {
 
                 {/* Información sobre comisiones */}
                 <div className="border-2 border-gray-200 p-6">
-                  <h3 className="text-lg font-black text-black mb-4">Estructura de Comisiones</h3>
+                  <h3 className="text-lg font-black text-black mb-4">{t('payments.fee_structure')}</h3>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between p-3 bg-gray-50 border border-gray-300">
-                      <span className="font-bold text-black">Comisión de plataforma</span>
+                      <span className="font-bold text-black">{t('payments.platform_fee')}</span>
                       <span className="font-black text-orange-600">10%</span>
                     </div>
                     
                     <div className="flex justify-between p-3 bg-gray-50 border border-gray-300">
-                      <span className="font-bold text-black">Comisión de Stripe</span>
+                      <span className="font-bold text-black">{t('payments.stripe_fee')}</span>
                       <span className="font-black text-blue-600">2.9% + $0.30</span>
                     </div>
                     
                     <div className="flex justify-between p-3 bg-green-50 border-2 border-green-300">
-                      <span className="font-bold text-black">Tu ganancia</span>
+                      <span className="font-bold text-black">{t('payments.your_earnings')}</span>
                       <span className="font-black text-green-600">~87%</span>
                     </div>
                   </div>
 
                   <p className="text-sm text-gray-600 font-bold mt-3">
-                    Las comisiones se descuentan automáticamente. Recibes el pago neto directamente en tu cuenta.
+                    {t('payments.fee_description')}
                   </p>
                 </div>
 
                 {/* Historial de pagos */}
                 <div className="border-2 border-gray-200 p-6">
-                  <h3 className="text-lg font-black text-black mb-4">Historial de Pagos</h3>
+                  <h3 className="text-lg font-black text-black mb-4">{t('payments.payment_history')}</h3>
                   
                   <div className="text-center py-8">
                     <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 font-bold">No hay pagos aún</p>
+                    <p className="text-gray-500 font-bold">{t('payments.no_payments_yet')}</p>
                     <p className="text-sm text-gray-400 font-bold">
-                      Una vez que vendas productos, aparecerán aquí
+                      {t('payments.no_payments_description')}
                     </p>
                   </div>
                 </div>

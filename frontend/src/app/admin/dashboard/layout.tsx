@@ -45,7 +45,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const t = useTranslations('admin')
+  
+  // Traducciones
+  const t = useTranslations('admin.layout')
+  const tNav = useTranslations('admin.navigation')
+  const tCommon = useTranslations('common')
 
   // Stores
   const { user, isAuthenticated } = useAuthStore()
@@ -90,7 +94,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-lg font-bold text-gray-600">Verificando permisos...</p>
+          <p className="text-lg font-bold text-gray-600">{t('verifying_permissions')}</p>
         </div>
       </div>
     )
@@ -107,53 +111,53 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Navegación del sidebar
   const sidebarNavigation = [
     {
-      label: 'Dashboard',
-      href: '/admin',
+      label: tNav('dashboard'),
+      href: '/admin/dashboard',
       icon: LayoutDashboard,
-      description: 'Vista general'
+      description: tNav('dashboard_desc')
     },
     {
-      label: 'Usuarios',
-      href: '/admin/usuarios',
+      label: tNav('users'),
+      href: '/admin/dashboard/usuarios',
       icon: Users,
-      description: 'Gestión de usuarios',
+      description: tNav('users_desc'),
       badge: dashboardStats?.totalUsers
     },
     {
-      label: 'Productos',
-      href: '/admin/productos',
+      label: tNav('products'),
+      href: '/admin/dashboard/productos',
       icon: FileCheck,
-      description: 'Moderación de productos',
+      description: tNav('products_desc'),
       badge: pendingProducts?.length || 0,
       badgeColor: 'orange'
     },
     {
-      label: 'Reviews',
-      href: '/admin/reviews',
+      label: tNav('reviews'),
+      href: '/admin/dashboard/reviews',
       icon: MessageSquare,
-      description: 'Moderación de reviews',
+      description: tNav('reviews_desc'),
       badge: pendingReviews?.length || 0,
       badgeColor: 'orange'
     },
     {
-      label: 'Reportes',
-      href: '/admin/reportes',
+      label: tNav('reports'),
+      href: '/admin/dashboard/reportes',
       icon: Flag,
-      description: 'Contenido reportado',
+      description: tNav('reports_desc'),
       badge: (flaggedContent?.reviews?.length || 0) + (flaggedContent?.users?.length || 0),
       badgeColor: 'red'
     },
     {
-      label: 'Analytics',
-      href: '/admin/analytics',
+      label: tNav('analytics'),
+      href: '/admin/dashboard/analytics',
       icon: Activity,
-      description: 'Métricas de plataforma'
+      description: tNav('analytics_desc')
     },
     {
-      label: 'Configuración',
-      href: '/admin/configuracion',
+      label: tNav('settings'),
+      href: '/admin/dashboard/configuracion',
       icon: Settings,
-      description: 'Configuración del sistema'
+      description: tNav('settings_desc')
     }
   ]
 
@@ -161,7 +165,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const getBreadcrumbs = () => {
     const segments = pathname.split('/').filter(Boolean)
     const breadcrumbs: Array<{ label: string; href: string; icon?: any }> = [
-      { label: 'Inicio', href: '/', icon: Home }
+      { label: tNav('home'), href: '/', icon: Home }
     ]
 
     segments.forEach((segment, index) => {
@@ -171,25 +175,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       // Traducir segmentos conocidos
       switch (segment) {
         case 'admin':
-          label = 'Admin'
+          label = tNav('admin')
+          break
+        case 'dashboard':
+          label = tNav('dashboard')
           break
         case 'usuarios':
-          label = 'Usuarios'
+          label = tNav('users')
           break
         case 'productos':
-          label = 'Productos'
+          label = tNav('products')
           break
         case 'reviews':
-          label = 'Reviews'
+          label = tNav('reviews')
           break
         case 'reportes':
-          label = 'Reportes'
+          label = tNav('reports')
           break
         case 'analytics':
-          label = 'Analytics'
+          label = tNav('analytics')
           break
         case 'configuracion':
-          label = 'Configuración'
+          label = tNav('settings')
           break
         default:
           label = segment.charAt(0).toUpperCase() + segment.slice(1)
@@ -228,7 +235,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               <div>
                 <h2 className="font-black text-lg uppercase text-black">
-                  Admin Panel
+                  {t('panel_title')}
                 </h2>
                 <p className="text-xs font-bold text-gray-600">
                   {user?.firstName} {user?.lastName}
@@ -240,6 +247,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <button
               className="lg:hidden p-1 hover:bg-gray-100"
               onClick={() => setIsSidebarOpen(false)}
+              aria-label={tCommon('close')}
             >
               <X className="h-5 w-5" />
             </button>
@@ -251,7 +259,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
                 <span className="text-xs font-black text-red-600 uppercase">
-                  {getPendingCount()} Pendientes
+                  {t('pending_items', { count: getPendingCount() })}
                 </span>
               </div>
             </div>
@@ -314,18 +322,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t-[3px] border-black bg-gray-100">
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-gray-600">Sistema:</span>
+              <span className="font-bold text-gray-600">{t('system_status')}:</span>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="font-bold text-green-600">ACTIVO</span>
+                <span className="font-bold text-green-600">{t('system_active')}</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-bold text-gray-600">Usuarios:</span>
+              <span className="font-bold text-gray-600">{t('total_users')}:</span>
               <span className="font-black text-black">{dashboardStats?.totalUsers || 0}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-bold text-gray-600">Productos:</span>
+              <span className="font-bold text-gray-600">{t('total_products')}:</span>
               <span className="font-black text-black">{dashboardStats?.totalProducts || 0}</span>
             </div>
           </div>
@@ -343,6 +351,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 className="lg:hidden p-2 bg-white border-2 border-black hover:bg-yellow-400"
                 style={{ boxShadow: '3px 3px 0 #000000' }}
                 onClick={() => setIsSidebarOpen(true)}
+                aria-label={t('open_menu')}
               >
                 <Menu className="h-5 w-5 text-black" />
               </button>
@@ -382,7 +391,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 {getPendingCount() > 0 && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-red-500 text-white border-2 border-black">
                     <AlertTriangle className="h-4 w-4" />
-                    <span className="font-black">{getPendingCount()} PENDIENTES</span>
+                    <span className="font-black">{t('pending_count', { count: getPendingCount() })}</span>
                   </div>
                 )}
                 
@@ -398,7 +407,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 className="px-4 py-2 bg-white border-2 border-black font-black text-black text-sm uppercase hover:bg-yellow-400 transition-all"
                 style={{ boxShadow: '3px 3px 0 #000000' }}
               >
-                ← SITIO
+                ← {t('back_to_site')}
               </Link>
             </div>
           </div>

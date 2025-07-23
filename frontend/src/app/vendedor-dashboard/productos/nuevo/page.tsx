@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
   Upload,
   X,
   Plus,
-  Minus,
   Save,
   Eye,
   ArrowLeft,
@@ -26,6 +26,10 @@ import type { ProductFormData } from '@/lib/stores/seller-store'
 export default function NewProductPage() {
   const router = useRouter()
   const { createProduct } = useSellerStore()
+  
+  const t = useTranslations('seller.products.create')
+  const tCommon = useTranslations('common')
+  const tProducts = useTranslations('products')
   
   // Estado del formulario
   const [formData, setFormData] = useState<ProductFormData>({
@@ -202,7 +206,7 @@ export default function NewProductPage() {
       const result = await createProduct(formData)
       
       if (result.success) {
-        router.push('/vendedor/productos')
+        router.push('/vendedor-dashboard/productos')
       } else {
         setErrors(prev => ({ ...prev, submit: result.error || 'Error al crear el producto' }))
       }
@@ -221,7 +225,7 @@ export default function NewProductPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
-              href="/vendedor/productos"
+              href="/vendedor-dashboard/productos"
               className="flex items-center gap-2 px-3 py-2 bg-gray-500 border-2 border-black font-bold text-white hover:bg-gray-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
@@ -686,16 +690,18 @@ export default function NewProductPage() {
                   </>
                 )}
               </button>
-                    </div>
-        
-                    <Link
-                      href="/vendedor/productos"
-                      className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-black font-bold text-black hover:bg-yellow-400 transition-all"
-                      style={{ boxShadow: '3px 3px 0 #000000' }}
-                    >
-                      CANCELAR
-                    </Link>
-                  </div>
-                </div>
-              </form>
-            </div>);}
+            </div>
+
+            <Link
+              href="/vendedor-dashboard/productos"
+              className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-black font-bold text-black hover:bg-yellow-400 transition-all"
+              style={{ boxShadow: '3px 3px 0 #000000' }}
+            >
+              CANCELAR
+            </Link>
+          </div>
+        </div>
+      </form>
+    </div>
+  )
+}

@@ -22,7 +22,7 @@ async function bootstrap() {
 
   // CORS configuration
   app.enableCors({
-    origin: configService.get('FRONTEND_URL', 'http://localhost:3000'),
+    origin: configService.get('CORS_ORIGIN', 'https://probable-barnacle-65pw9jg5qwxc5w6-3000.app.github.dev'),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -86,16 +86,16 @@ async function bootstrap() {
     });
 
     logger.log(
-      `Swagger documentation available at http://localhost:${configService.get('PORT', 3001)}/${apiPrefix}/docs`,
+      `Swagger documentation available at https://probable-barnacle-65wp9jg5qwxc5w6-3002.app.github.dev/${apiPrefix}/docs`,
     );
   }
 
   // Start server
-  const port = configService.get('PORT', 3001);
+  const port = configService.get('PORT', 3002);
   await app.listen(port);
 
   logger.log(`🚀 Furnibles API running on port ${port}`);
-  logger.log(`📚 API documentation: http://localhost:${port}/${apiPrefix}/docs`);
+  logger.log(`📚 API documentation: https://probable-barnacle-65pw9jg5qwxc5w6-3002.app.github.dev/${apiPrefix}/docs`);
   logger.log(`🌍 Environment: ${configService.get('NODE_ENV', 'development')}`);
 }
 

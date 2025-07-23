@@ -81,7 +81,7 @@ export class PayoutsService {
       const payout = await this.prisma.payout.create({
         data: {
           sellerId: userId,
-          amount: new Prisma.Decimal(payoutAmount),
+          amount: payoutAmount,
           currency: dto.currency || 'USD',
           status: 'PENDING',
           stripePayoutId: stripePayout.id,
@@ -140,17 +140,16 @@ export class PayoutsService {
       if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
         where.amount = {};
         if (filters.minAmount !== undefined) {
-          where.amount.gte = new Prisma.Decimal(filters.minAmount);
+          where.amount.gte = filters.minAmount;
         }
         if (filters.maxAmount !== undefined) {
-          where.amount.lte = new Prisma.Decimal(filters.maxAmount);
+          where.amount.lte = filters.maxAmount;
         }
       }
 
       if (filters.search) {
         where.description = {
           contains: filters.search,
-          mode: 'insensitive',
         };
       }
 
@@ -538,22 +537,22 @@ export class PayoutsService {
       if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
         where.amount = {};
         if (filters.minAmount !== undefined) {
-          where.amount.gte = new Prisma.Decimal(filters.minAmount);
+          where.amount.gte = filters.minAmount;
         }
         if (filters.maxAmount !== undefined) {
-          where.amount.lte = new Prisma.Decimal(filters.maxAmount);
+          where.amount.lte = filters.maxAmount;
         }
       }
 
       if (filters.search) {
         where.OR = [
-          { description: { contains: filters.search, mode: 'insensitive' } },
+          { description: { contains: filters.search } },
           {
             seller: {
               OR: [
-                { firstName: { contains: filters.search, mode: 'insensitive' } },
-                { lastName: { contains: filters.search, mode: 'insensitive' } },
-                { email: { contains: filters.search, mode: 'insensitive' } },
+                { firstName: { contains: filters.search } },
+                { lastName: { contains: filters.search } },
+                { email: { contains: filters.search } },
               ],
             },
           },

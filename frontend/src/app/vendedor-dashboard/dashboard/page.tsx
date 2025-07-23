@@ -118,6 +118,8 @@ const mockDashboardData = {
 
 export default function SellerDashboardPage() {
   const t = useTranslations('seller.dashboard')
+  const tCommon = useTranslations('common')
+  const tOrders = useTranslations('orders')
   const { user } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState(mockDashboardData)
@@ -169,15 +171,15 @@ export default function SellerDashboardPage() {
   const getStatusText = (status: OrderStatus) => {
     switch (status) {
       case OrderStatus.COMPLETED:
-        return 'Completado'
+        return tOrders('status.completed')
       case OrderStatus.PAID:
-        return 'Pagado'
+        return tOrders('status.paid')
       case OrderStatus.PROCESSING:
-        return 'Procesando'
+        return tOrders('status.processing')
       case OrderStatus.PENDING:
-        return 'Pendiente'
+        return tOrders('status.pending')
       default:
-        return 'Desconocido'
+        return tCommon('error')
     }
   }
 
@@ -186,9 +188,11 @@ export default function SellerDashboardPage() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-bold">Cargando dashboard...</p>
+          <p className="text-gray-600 font-bold">{tCommon('loading')}</p>
+        </div>
       </div>
     )
+  }
   
   return (
     <div className="space-y-6">
@@ -205,7 +209,7 @@ export default function SellerDashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm font-bold text-gray-600">Última actualización</p>
+              <p className="text-sm font-bold text-gray-600">{t('last_update')}</p>
               <p className="text-sm font-black text-black">
                 {new Date().toLocaleDateString('es-ES', {
                   day: '2-digit',
@@ -270,7 +274,7 @@ export default function SellerDashboardPage() {
               <Package className="h-6 w-6 text-black" />
             </div>
             <div className="flex items-center gap-1 text-sm font-bold text-gray-600">
-              <span>Sin cambios</span>
+              <span>{t('no_change')}</span>
             </div>
           </div>
           <div>
@@ -278,7 +282,7 @@ export default function SellerDashboardPage() {
               {dashboardData.stats.totalProducts}
             </h3>
             <p className="text-sm font-bold text-gray-600">{t('total_products')}</p>
-            <p className="text-xs text-gray-500 mt-1">Productos activos</p>
+            <p className="text-xs text-gray-500 mt-1">{t('active_products')}</p>
           </div>
         </div>
 
@@ -317,7 +321,7 @@ export default function SellerDashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-black uppercase">{t('recent_sales')}</h2>
             <Link 
-              href="/vendedor/ventas"
+              href="/vendedor-dashboard/ventas"
               className="flex items-center gap-1 text-sm font-bold text-orange-500 hover:text-orange-600 transition-colors"
             >
               {t('view_all')}
@@ -334,144 +338,32 @@ export default function SellerDashboardPage() {
                     <span className={`px-2 py-1 text-xs font-bold border border-black ${getStatusColor(sale.status)}`}>
                       {getStatusText(sale.status)}
                     </span>
+                  </div>
+                  <p className="text-sm text-gray-600 font-bold">{sale.buyerName}</p>
+                  <p className="text-xs text-gray-500">{sale.productTitle}</p>
+                  <p className="text-xs text-gray-400">{formatDate(sale.createdAt)}</p>
                 </div>
-                <p className="text-sm text-gray-600 font-bold">{sale.buyerName}</p>
-                <p className="text-xs text-gray-500">{sale.productTitle}</p>
-                <p className="text-xs text-gray-400">{formatDate(sale.createdAt)}</p>
+                <div className="text-right">
+                  <p className="font-black text-lg text-black">{formatCurrency(sale.amount)}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="font-black text-lg text-black">{formatCurrency(sale.amount)}</p>
-              </div>
-            </div>
-          ))}
+            ))}
           </div>
           
-                </div>
+          {dashboardData.recentSales.length === 0 && (
+            <div className="text-center py-8">
+              <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-bold">{t('no_data')}</p>
+            </div>
+          )}
+        </div>
 
-        {dashboardData.recentSales.length === 0 && (
-          <div className="text-center py-8">
-            <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 font-bold">{t('no_data')}</p>
-          </div>
-        )}
-      </div>
-
-      {/* ACCIONES RÁPIDAS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Subir Producto */}
+        {/* PRODUCTOS DESTACADOS */}
         <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-500 border-2 border-black mx-auto mb-4 flex items-center justify-center">
-              <Package className="h-8 w-8 text-black" />
-            </div>
-            <h3 className="font-black text-lg text-black mb-2 uppercase">Subir Producto</h3>
-            <p className="text-sm text-gray-600 font-bold mb-4">
-              Agrega un nuevo producto a tu catálogo
-            </p>
-            <Link
-              href="/vendedor/productos/nuevo"
-              className="inline-flex items-center gap-2 px-4 py-3 bg-green-500 border-2 border-black font-black text-black uppercase hover:bg-green-400 transition-all"
-              style={{ boxShadow: '4px 4px 0 #000000' }}
-            >
-              <Package className="h-4 w-4" />
-              CREAR PRODUCTO
-            </Link>
-          </div>
-        </div>
-
-        {/* Ver Analytics */}
-        <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-500 border-2 border-black mx-auto mb-4 flex items-center justify-center">
-              <TrendingUp className="h-8 w-8 text-black" />
-            </div>
-            <h3 className="font-black text-lg text-black mb-2 uppercase">Analytics</h3>
-            <p className="text-sm text-gray-600 font-bold mb-4">
-              Analiza el rendimiento de tus productos
-            </p>
-            <Link
-              href="/vendedor/analytics"
-              className="inline-flex items-center gap-2 px-4 py-3 bg-blue-500 border-2 border-black font-black text-black uppercase hover:bg-blue-400 transition-all"
-              style={{ boxShadow: '4px 4px 0 #000000' }}
-            >
-              <TrendingUp className="h-4 w-4" />
-              VER ANALYTICS
-            </Link>
-          </div>
-        </div>
-
-        {/* Gestionar Reviews */}
-        <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-yellow-500 border-2 border-black mx-auto mb-4 flex items-center justify-center">
-              <MessageSquare className="h-8 w-8 text-black" />
-            </div>
-            <h3 className="font-black text-lg text-black mb-2 uppercase">Reviews</h3>
-            <p className="text-sm text-gray-600 font-bold mb-4">
-              Responde a las reseñas de tus clientes
-            </p>
-            <Link
-              href="/vendedor/reviews"
-              className="inline-flex items-center gap-2 px-4 py-3 bg-yellow-500 border-2 border-black font-black text-black uppercase hover:bg-yellow-400 transition-all"
-              style={{ boxShadow: '4px 4px 0 #000000' }}
-            >
-              <MessageSquare className="h-4 w-4" />
-              GESTIONAR
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* TIPS Y CONSEJOS */}
-      <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-500 border-2 border-black">
-            <AlertCircle className="h-6 w-6 text-black" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-black text-lg text-black mb-2 uppercase">Consejos para Vendedores</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-bold text-black">Sube imágenes de alta calidad</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-bold text-black">Incluye instrucciones detalladas</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-bold text-black">Responde rápido a las reseñas</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-bold text-black">Usa etiquetas relevantes</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-bold text-black">Mantén precios competitivos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-bold text-black">Actualiza tu perfil regularmente</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-    </div>
-  </div>
-)
-
-{/* PRODUCTOS DESTACADOS */}
-<div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-black uppercase">{t('top_products')}</h2>
             <Link 
-              href="/vendedor/productos"
+              href="/vendedor-dashboard/productos"
               className="flex items-center gap-1 text-sm font-bold text-orange-500 hover:text-orange-600 transition-colors"
             >
               {t('view_all')}
@@ -488,8 +380,8 @@ export default function SellerDashboardPage() {
                 <div className="flex-1">
                   <h4 className="font-bold text-black text-sm mb-1">{product.title}</h4>
                   <div className="flex items-center gap-4 text-xs">
-                    <span className="text-gray-600 font-bold">{product.sales} ventas</span>
-                    <span className="text-gray-600 font-bold">{product.views} vistas</span>
+                    <span className="text-gray-600 font-bold">{product.sales} {t('sales')}</span>
+                    <span className="text-gray-600 font-bold">{product.views} {t('views')}</span>
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 text-yellow-500 fill-current" />
                       <span className="text-gray-600 font-bold">{product.rating}</span>
@@ -510,13 +402,80 @@ export default function SellerDashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ACCIONES RÁPIDAS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Subir Producto */}
+        <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-500 border-2 border-black mx-auto mb-4 flex items-center justify-center">
+              <Package className="h-8 w-8 text-black" />
+            </div>
+            <h3 className="font-black text-lg text-black mb-2 uppercase">{t('quick_actions.upload_product')}</h3>
+            <p className="text-sm text-gray-600 font-bold mb-4">
+              {t('quick_actions.upload_product_desc')}
+            </p>
+            <Link
+              href="/vendedor-dashboard/productos/nuevo"
+              className="inline-flex items-center gap-2 px-4 py-3 bg-green-500 border-2 border-black font-black text-black uppercase hover:bg-green-400 transition-all"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              <Package className="h-4 w-4" />
+              {t('quick_actions.create_product')}
+            </Link>
+          </div>
+        </div>
+
+        {/* Ver Analytics */}
+        <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-500 border-2 border-black mx-auto mb-4 flex items-center justify-center">
+              <TrendingUp className="h-8 w-8 text-black" />
+            </div>
+            <h3 className="font-black text-lg text-black mb-2 uppercase">{t('quick_actions.analytics')}</h3>
+            <p className="text-sm text-gray-600 font-bold mb-4">
+              {t('quick_actions.analytics_desc')}
+            </p>
+            <Link
+              href="/vendedor-dashboard/analytics"
+              className="inline-flex items-center gap-2 px-4 py-3 bg-blue-500 border-2 border-black font-black text-black uppercase hover:bg-blue-400 transition-all"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              <TrendingUp className="h-4 w-4" />
+              {t('quick_actions.view_analytics')}
+            </Link>
+          </div>
+        </div>
+
+        {/* Gestionar Reviews */}
+        <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
+          <div className="text-center">
+            <div className="w-16 h-16 bg-yellow-500 border-2 border-black mx-auto mb-4 flex items-center justify-center">
+              <MessageSquare className="h-8 w-8 text-black" />
+            </div>
+            <h3 className="font-black text-lg text-black mb-2 uppercase">{t('quick_actions.reviews')}</h3>
+            <p className="text-sm text-gray-600 font-bold mb-4">
+              {t('quick_actions.reviews_desc')}
+            </p>
+            <Link
+              href="/vendedor-dashboard/reviews"
+              className="inline-flex items-center gap-2 px-4 py-3 bg-yellow-500 border-2 border-black font-black text-black uppercase hover:bg-yellow-400 transition-all"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              <MessageSquare className="h-4 w-4" />
+              {t('quick_actions.manage')}
+            </Link>
+          </div>
+        </div>
+      </div>
 
       {/* RESEÑAS RECIENTES */}
       <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-black text-black uppercase">{t('recent_reviews')}</h2>
           <Link 
-            href="/vendedor/reviews"
+            href="/vendedor-dashboard/reviews"
             className="flex items-center gap-1 text-sm font-bold text-orange-500 hover:text-orange-600 transition-colors"
           >
             {t('view_all')}
@@ -525,7 +484,6 @@ export default function SellerDashboardPage() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
           {dashboardData.recentReviews.map((review) => (
             <div key={review.id} className="p-4 border-2 border-gray-200 hover:border-black transition-all">
               <div className="flex items-center justify-between mb-3">
@@ -549,18 +507,68 @@ export default function SellerDashboardPage() {
               {!review.responded && (
                 <div className="mt-3">
                   <Link
-                    href={`/vendedor/reviews?highlight=${review.id}`}
+                    href={`/vendedor-dashboard/reviews?highlight=${review.id}`}
                     className="inline-flex items-center gap-1 px-3 py-1 bg-orange-500 border-2 border-black font-bold text-black text-xs hover:bg-orange-400 transition-all"
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
                     <MessageSquare className="h-3 w-3" />
-                    RESPONDER
+                    {t('respond')}
                   </Link>
                 </div>
               )}
             </div>
           ))}
         </div>
+
+        {dashboardData.recentReviews.length === 0 && (
+          <div className="text-center py-8">
+            <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 font-bold">{t('no_data')}</p>
+          </div>
+        )}
+      </div>
+
+      {/* TIPS Y CONSEJOS */}
+      <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-blue-500 border-2 border-black">
+            <AlertCircle className="h-6 w-6 text-black" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-black text-lg text-black mb-2 uppercase">{t('tips.title')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-bold text-black">{t('tips.tip1')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-bold text-black">{t('tips.tip2')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-bold text-black">{t('tips.tip3')}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-bold text-black">{t('tips.tip4')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-bold text-black">{t('tips.tip5')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-bold text-black">{t('tips.tip6')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  )}}
+  )
+}

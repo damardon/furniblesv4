@@ -50,7 +50,7 @@ export class FilesService {
     this.uploadPath = this.config.get('UPLOAD_PATH', './uploads');
     this.maxFileSize = parseInt(this.config.get('MAX_FILE_SIZE', '10485760')); // 10MB
     this.allowedMimeTypes = this.config.get('ALLOWED_FILE_TYPES', 'pdf,jpg,jpeg,png,webp').split(',');
-    this.baseUrl = this.config.get('BASE_URL', 'http://localhost:3000');
+    this.baseUrl = this.config.get('BASE_URL', 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev');
     
     // Crear directorio de uploads si no existe
     this.ensureUploadDirectory();

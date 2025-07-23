@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import {
   User,
@@ -42,6 +43,10 @@ export default function SellerProfilePage() {
     loadSellerProfile, 
     updateSellerProfile 
   } = useSellerStore()
+
+  // Traducciones
+  const t = useTranslations('seller.profile')
+  const tCommon = useTranslations('common')
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -102,31 +107,31 @@ export default function SellerProfilePage() {
     const newErrors: Record<string, string> = {}
 
     if (!formData.storeName.trim()) {
-      newErrors.storeName = 'El nombre de la tienda es requerido'
+      newErrors.storeName = t('validation.store_name_required')
     } else if (formData.storeName.length < 3) {
-      newErrors.storeName = 'El nombre debe tener al menos 3 caracteres'
+      newErrors.storeName = t('validation.store_name_min_length')
     } else if (formData.storeName.length > 50) {
-      newErrors.storeName = 'El nombre no puede exceder 50 caracteres'
+      newErrors.storeName = t('validation.store_name_max_length')
     }
 
     if (!formData.slug.trim()) {
-      newErrors.slug = 'El slug es requerido'
+      newErrors.slug = t('validation.slug_required')
     } else if (formData.slug.length < 3) {
-      newErrors.slug = 'El slug debe tener al menos 3 caracteres'
+      newErrors.slug = t('validation.slug_min_length')
     } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      newErrors.slug = 'El slug solo puede contener letras minúsculas, números y guiones'
+      newErrors.slug = t('validation.slug_format')
     }
 
     if (formData.description && formData.description.length > 500) {
-      newErrors.description = 'La descripción no puede exceder 500 caracteres'
+      newErrors.description = t('validation.description_max_length')
     }
 
     if (formData.website && !formData.website.match(/^https?:\/\/.+/)) {
-      newErrors.website = 'La URL debe comenzar con http:// o https://'
+      newErrors.website = t('validation.website_format')
     }
 
     if (formData.phone && !formData.phone.match(/^[\+]?[0-9\s\-\(\)]{8,20}$/)) {
-      newErrors.phone = 'El teléfono debe ser válido'
+      newErrors.phone = t('validation.phone_format')
     }
 
     setErrors(newErrors)
@@ -157,7 +162,7 @@ export default function SellerProfilePage() {
       if (file.size > 5 * 1024 * 1024) {
         setErrors(prev => ({ 
           ...prev, 
-          [type]: 'La imagen no puede exceder 5MB' 
+          [type]: t('validation.image_size_limit')
         }))
         return
       }
@@ -166,7 +171,7 @@ export default function SellerProfilePage() {
       if (!file.type.startsWith('image/')) {
         setErrors(prev => ({ 
           ...prev, 
-          [type]: 'Solo se permiten archivos de imagen' 
+          [type]: t('validation.image_type_only')
         }))
         return
       }
@@ -213,14 +218,14 @@ export default function SellerProfilePage() {
       } else {
         setErrors(prev => ({ 
           ...prev, 
-          submit: result.error || 'Error al actualizar el perfil' 
+          submit: result.error || t('errors.update_failed')
         }))
       }
     } catch (error) {
       console.error('Error updating profile:', error)
       setErrors(prev => ({ 
         ...prev, 
-        submit: 'Error de conexión' 
+        submit: t('errors.connection_error')
       }))
     } finally {
       setIsSubmitting(false)
@@ -258,7 +263,7 @@ export default function SellerProfilePage() {
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-bold">Cargando perfil...</p>
+          <p className="text-gray-600 font-bold">{t('loading_profile')}</p>
         </div>
       </div>
     )
@@ -270,9 +275,9 @@ export default function SellerProfilePage() {
       <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black uppercase text-black">Perfil de Tienda</h1>
+            <h1 className="text-2xl font-black uppercase text-black">{t('title')}</h1>
             <p className="text-gray-600 font-bold">
-              Gestiona la información pública de tu tienda
+              {t('subtitle')}
             </p>
           </div>
 
@@ -283,7 +288,7 @@ export default function SellerProfilePage() {
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
               <Edit className="h-5 w-5" />
-              EDITAR PERFIL
+              {t('edit_profile')}
             </button>
           )}
         </div>
@@ -306,14 +311,14 @@ export default function SellerProfilePage() {
           <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
             <div className="flex items-center gap-3 mb-6">
               <Store className="h-6 w-6 text-orange-500" />
-              <h2 className="text-xl font-black uppercase text-black">Información Básica</h2>
+              <h2 className="text-xl font-black uppercase text-black">{t('sections.basic_info')}</h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Nombre de la tienda */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  NOMBRE DE LA TIENDA *
+                  {t('fields.store_name')} *
                 </label>
                 <input
                   type="text"
@@ -335,7 +340,7 @@ export default function SellerProfilePage() {
               {/* Slug */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  URL DE LA TIENDA *
+                  {t('fields.store_url')} *
                 </label>
                 <div className="flex items-center">
                   <span className="bg-gray-100 border-2 border-black border-r-0 px-3 py-3 font-bold text-sm text-gray-600">
@@ -350,7 +355,7 @@ export default function SellerProfilePage() {
                       !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
                     } ${errors.slug ? 'border-red-500 bg-red-50' : ''}`}
                     style={{ boxShadow: '3px 3px 0 #000000' }}
-                    placeholder="mi-tienda"
+                    placeholder={t('placeholders.slug')}
                   />
                 </div>
                 {errors.slug && <span className="text-sm text-red-600 font-bold">{errors.slug}</span>}
@@ -359,7 +364,7 @@ export default function SellerProfilePage() {
               {/* Descripción */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  DESCRIPCIÓN DE LA TIENDA
+                  {t('fields.description')}
                 </label>
                 <textarea
                   value={formData.description}
@@ -370,7 +375,7 @@ export default function SellerProfilePage() {
                     !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
                   } ${errors.description ? 'border-red-500 bg-red-50' : ''}`}
                   style={{ boxShadow: '3px 3px 0 #000000' }}
-                  placeholder="Describe tu tienda, especialidades, experiencia..."
+                  placeholder={t('placeholders.description')}
                   maxLength={500}
                 />
                 <div className="flex justify-between mt-1">
@@ -382,7 +387,7 @@ export default function SellerProfilePage() {
               {/* Website */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  SITIO WEB
+                  {t('fields.website')}
                 </label>
                 <input
                   type="url"
@@ -393,7 +398,7 @@ export default function SellerProfilePage() {
                     !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
                   } ${errors.website ? 'border-red-500 bg-red-50' : ''}`}
                   style={{ boxShadow: '3px 3px 0 #000000' }}
-                  placeholder="https://mi-sitio-web.com"
+                  placeholder={t('placeholders.website')}
                 />
                 {errors.website && <span className="text-sm text-red-600 font-bold">{errors.website}</span>}
               </div>
@@ -401,7 +406,7 @@ export default function SellerProfilePage() {
               {/* Teléfono */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  TELÉFONO DE CONTACTO
+                  {t('fields.phone')}
                 </label>
                 <input
                   type="tel"
@@ -412,7 +417,7 @@ export default function SellerProfilePage() {
                     !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
                   } ${errors.phone ? 'border-red-500 bg-red-50' : ''}`}
                   style={{ boxShadow: '3px 3px 0 #000000' }}
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={t('placeholders.phone')}
                 />
                 {errors.phone && <span className="text-sm text-red-600 font-bold">{errors.phone}</span>}
               </div>
@@ -429,12 +434,12 @@ export default function SellerProfilePage() {
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-                        GUARDANDO...
+                        {t('actions.saving')}
                       </>
                     ) : (
                       <>
                         <Save className="h-5 w-5" />
-                        GUARDAR CAMBIOS
+                        {t('actions.save_changes')}
                       </>
                     )}
                   </button>
@@ -446,7 +451,7 @@ export default function SellerProfilePage() {
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                   >
                     <X className="h-5 w-5" />
-                    CANCELAR
+                    {tCommon('cancel')}
                   </button>
                 </div>
               )}
@@ -457,14 +462,14 @@ export default function SellerProfilePage() {
           <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
             <div className="flex items-center gap-3 mb-6">
               <Camera className="h-6 w-6 text-orange-500" />
-              <h2 className="text-xl font-black uppercase text-black">Imágenes de la Tienda</h2>
+              <h2 className="text-xl font-black uppercase text-black">{t('sections.store_images')}</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Avatar */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  LOGO/AVATAR DE LA TIENDA
+                  {t('fields.logo_avatar')}
                 </label>
                 <div className="border-2 border-dashed border-black p-6 text-center hover:bg-gray-50 transition-colors">
                   {avatarPreview ? (
@@ -493,7 +498,7 @@ export default function SellerProfilePage() {
                   ) : (
                     <div>
                       <User className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="font-bold text-black">Sin logo</p>
+                      <p className="font-bold text-black">{t('image_states.no_logo')}</p>
                     </div>
                   )}
                   
@@ -512,7 +517,7 @@ export default function SellerProfilePage() {
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
                         <Camera className="h-4 w-4" />
-                        CAMBIAR LOGO
+                        {t('actions.change_logo')}
                       </label>
                     </div>
                   )}
@@ -523,7 +528,7 @@ export default function SellerProfilePage() {
               {/* Banner */}
               <div>
                 <label className="block text-sm font-black text-black mb-2">
-                  BANNER DE LA TIENDA
+                  {t('fields.store_banner')}
                 </label>
                 <div className="border-2 border-dashed border-black p-6 text-center hover:bg-gray-50 transition-colors">
                   {bannerPreview ? (
@@ -552,7 +557,7 @@ export default function SellerProfilePage() {
                   ) : (
                     <div>
                       <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="font-bold text-black">Sin banner</p>
+                      <p className="font-bold text-black">{t('image_states.no_banner')}</p>
                     </div>
                   )}
                   
@@ -571,7 +576,7 @@ export default function SellerProfilePage() {
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
                         <Camera className="h-4 w-4" />
-                        CAMBIAR BANNER
+                        {t('actions.change_banner')}
                       </label>
                     </div>
                   )}
@@ -592,40 +597,40 @@ export default function SellerProfilePage() {
               ) : (
                 <AlertCircle className="h-6 w-6 text-yellow-600" />
               )}
-              <h3 className="text-lg font-black uppercase text-black">Estado</h3>
+              <h3 className="text-lg font-black uppercase text-black">{t('sections.status')}</h3>
             </div>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-gray-600 text-sm">Verificación:</span>
+                <span className="font-bold text-gray-600 text-sm">{t('status.verification')}:</span>
                 <span className={`px-2 py-1 border-2 border-black text-xs font-black ${
                   sellerProfile?.isVerified 
                     ? 'bg-green-500 text-white' 
                     : 'bg-yellow-500 text-black'
                 }`}>
-                  {sellerProfile?.isVerified ? 'VERIFICADO' : 'PENDIENTE'}
+                  {sellerProfile?.isVerified ? t('status.verified') : t('status.pending')}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="font-bold text-gray-600 text-sm">Email:</span>
+                <span className="font-bold text-gray-600 text-sm">{t('status.email')}:</span>
                 <span className={`px-2 py-1 border-2 border-black text-xs font-black ${
                   user?.emailVerified 
                     ? 'bg-green-500 text-white' 
                     : 'bg-red-500 text-white'
                 }`}>
-                  {user?.emailVerified ? 'VERIFICADO' : 'NO VERIFICADO'}
+                  {user?.emailVerified ? t('status.verified') : t('status.not_verified')}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="font-bold text-gray-600 text-sm">Cuenta:</span>
+                <span className="font-bold text-gray-600 text-sm">{t('status.account')}:</span>
                 <span className={`px-2 py-1 border-2 border-black text-xs font-black ${
                   user?.isActive 
                     ? 'bg-green-500 text-white' 
                     : 'bg-red-500 text-white'
                 }`}>
-                  {user?.isActive ? 'ACTIVA' : 'INACTIVA'}
+                  {user?.isActive ? t('status.active') : t('status.inactive')}
                 </span>
               </div>
             </div>
@@ -633,8 +638,7 @@ export default function SellerProfilePage() {
             {!sellerProfile?.isVerified && (
               <div className="mt-4 p-3 bg-yellow-50 border-2 border-yellow-300">
                 <p className="text-yellow-800 font-bold text-xs">
-                  Para verificar tu tienda, completa toda la información del perfil 
-                  y sube al menos 3 productos de calidad.
+                  {t('verification_tip')}
                 </p>
               </div>
             )}
@@ -644,14 +648,14 @@ export default function SellerProfilePage() {
           <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="h-6 w-6 text-orange-500" />
-              <h3 className="text-lg font-black uppercase text-black">Estadísticas</h3>
+              <h3 className="text-lg font-black uppercase text-black">{t('sections.statistics')}</h3>
             </div>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 text-yellow-500" />
-                  <span className="font-bold text-gray-600 text-sm">Rating:</span>
+                  <span className="font-bold text-gray-600 text-sm">{t('stats.rating')}:</span>
                 </div>
                 <span className="font-black text-black">
                   {sellerProfile?.rating ? sellerProfile.rating.toFixed(1) : '0.0'}
@@ -661,7 +665,7 @@ export default function SellerProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-blue-500" />
-                  <span className="font-bold text-gray-600 text-sm">Ventas:</span>
+                  <span className="font-bold text-gray-600 text-sm">{t('stats.sales')}:</span>
                 </div>
                 <span className="font-black text-black">
                   {sellerProfile?.totalSales || 0}
@@ -671,7 +675,7 @@ export default function SellerProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-purple-500" />
-                  <span className="font-bold text-gray-600 text-sm">Miembro desde:</span>
+                  <span className="font-bold text-gray-600 text-sm">{t('stats.member_since')}:</span>
                 </div>
                 <span className="font-black text-black text-xs">
                   {user?.createdAt ? new Date(user.createdAt).getFullYear() : 'N/A'}
@@ -684,16 +688,16 @@ export default function SellerProfilePage() {
           <div className="bg-white border-[3px] border-black p-6" style={{ boxShadow: '6px 6px 0 #000000' }}>
             <div className="flex items-center gap-3 mb-4">
               <Eye className="h-6 w-6 text-orange-500" />
-              <h3 className="text-lg font-black uppercase text-black">Vista Previa</h3>
+              <h3 className="text-lg font-black uppercase text-black">{t('sections.preview')}</h3>
             </div>
             
             <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 border-2 border-black font-bold text-black hover:bg-blue-400 transition-all">
               <Globe className="h-5 w-5" />
-              VER TIENDA PÚBLICA
+              {t('actions.view_public_store')}
             </button>
             
             <p className="text-xs text-gray-600 font-bold mt-2 text-center">
-              Así verán tu tienda los compradores
+              {t('preview_description')}
             </p>
           </div>
         </div>

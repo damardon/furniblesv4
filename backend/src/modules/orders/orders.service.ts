@@ -208,24 +208,27 @@ async handleRefund(params: {
   }
 }
 
-  /**
-   * Crear orden desde carrito
-   */
-  async createOrder(userId: string, dto: CreateOrderDto): Promise<OrderResponseDto> {
-    // Obtener carrito del usuario
-    const cart = await this.cartService.getCart(userId);
+/**
+ * Crear orden desde carrito
+ */
+async createOrder(userId: string, dto: CreateOrderDto): Promise<OrderResponseDto> {
+  // Obtener carrito del usuario
+  const cart = await this.cartService.getCart(userId);
 
-    if (cart.items.length === 0) {
-      throw new BadRequestException('El carrito está vacío');
-    }
+  if (cart.items.length === 0) {
+    throw new BadRequestException('El carrito está vacío');
+  }
 
-    // Generar número de orden único
-    const orderNumber = await this.generateOrderNumber();
+  // Generar número de orden único
+  const orderNumber = await this.generateOrderNumber();
 
-    // Obtener IDs únicos de sellers
-    const sellerIds = [...new Set(cart.items.map(item => item.seller.id))];
+  // Obtener IDs únicos de sellers
+  const sellerIds = [...new Set(cart.items.map(item => item.seller.id))];
 
-    const order = await this.prisma.order.create({
+  // Generar feeBreakdown automáticamente
+  const feeBreakdown = this.generateFeeBreakdown(cart.summary, sellerIds);
+
+  const order = await this.prisma.order.create({
     data: {
       orderNumber,
       buyerId: userId,
@@ -238,7 +241,7 @@ async handleRefund(params: {
       buyerEmail: dto.buyerEmail,
       billingData: dto.billingData || null,
       metadata: dto.metadata || null,
-      feeBreakdown: cart.summary.feeBreakdown || null,
+      feeBreakdown: dto.feeBreakdown || feeBreakdown, // Usar el generado o el enviado
       status: 'PENDING',
       items: {
         create: cart.items.map(item => ({
@@ -289,12 +292,61 @@ async handleRefund(params: {
       }
     }
   });
-    // Enviar notificación de orden creada
-    await this.notificationService.sendOrderCreatedNotification(order);
 
-    return this.mapOrderToDto(order);
-  }
+  // Enviar notificación de orden creada
+  await this.notificationService.sendOrderCreatedNotification(order);
 
+  return this.mapOrderToDto(order);
+}
+
+/**
+ * Generar feeBreakdown automático basado en el resumen del carrito
+ */
+private generateFeeBreakdown(summary: any, sellerIds: string[]): any[] {
+  const breakdown = [];
+
+  // Cálculo de Stripe fee (2.9% + $0.30)
+  const stripeFeeAmount = (summary.totalAmount * 0.029) + 0.30;
+
+  // Seller amount (subtotal menos platform fee)
+  const sellerAmount = summary.subtotal - summary.platformFee;
+
+  // 1. Seller Amount
+  breakdown.push({
+    type: 'SELLER_AMOUNT',
+    description: `Amount for ${sellerIds.length} seller(s)`,
+    amount: parseFloat(sellerAmount.toFixed(2)),
+    percentage: parseFloat(((sellerAmount / summary.subtotal) * 100).toFixed(1)),
+    sellerId: sellerIds.length === 1 ? sellerIds[0] : null
+  });
+
+  // 2. Platform Fee
+  breakdown.push({
+    type: 'PLATFORM_FEE',
+    description: `Platform commission (${(summary.platformFeeRate * 100).toFixed(1)}%)`,
+    amount: parseFloat(summary.platformFee.toFixed(2)),
+    percentage: parseFloat((summary.platformFeeRate * 100).toFixed(1))
+  });
+
+  // 3. Stripe Processing Fee
+  breakdown.push({
+    type: 'STRIPE_FEE',
+    description: 'Payment processing fee (2.9% + $0.30)',
+    amount: parseFloat(stripeFeeAmount.toFixed(2)),
+    percentage: 2.9
+  });
+
+  // 4. Net amount after all fees
+  const netAmount = summary.totalAmount - stripeFeeAmount;
+  breakdown.push({
+    type: 'NET_AMOUNT',
+    description: 'Net amount after payment processing',
+    amount: parseFloat(netAmount.toFixed(2)),
+    percentage: parseFloat(((netAmount / summary.totalAmount) * 100).toFixed(1))
+  });
+
+  return breakdown;
+}
   /**
    * Obtener orden por ID
    */
@@ -345,8 +397,8 @@ async handleRefund(params: {
 
     if (filters.search) {
       where.OR = [
-        { orderNumber: { contains: filters.search, mode: 'insensitive' } },
-        { buyerEmail: { contains: filters.search, mode: 'insensitive' } }
+        { orderNumber: { contains: filters.search } },
+        { buyerEmail: { contains: filters.search } }
       ];
     }
 
@@ -662,8 +714,8 @@ async handleRefund(params: {
 
     if (filters.search) {
       where.OR = [
-        { orderNumber: { contains: filters.search, mode: 'insensitive' } },
-        { buyerEmail: { contains: filters.search, mode: 'insensitive' } }
+        { orderNumber: { contains: filters.search } },
+        { buyerEmail: { contains: filters.search } }
       ];
     }
 

@@ -62,6 +62,7 @@ interface NotificationSettings {
 
 export default function ProfilePage() {
   const t = useTranslations('profile')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   
   // Stores
@@ -236,7 +237,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">Acceso restringido</p>
+          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
         </div>
       </div>
     )
@@ -249,10 +250,10 @@ export default function ProfilePage() {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              Inicio
+              {tCommon('navigation.home')}
             </Link>
             <span>/</span>
-            <span className="text-orange-500">Mi Perfil</span>
+            <span className="text-orange-500">{t('title')}</span>
           </div>
         </div>
       </div>
@@ -266,16 +267,16 @@ export default function ProfilePage() {
             style={{ boxShadow: '4px 4px 0 #000000' }}
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            Volver
+            {tCommon('actions.back')}
           </Link>
           
           <div>
             <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
               <UserIcon className="w-8 h-8" />
-              Mi Perfil
+              {t('title')}
             </h1>
             <p className="text-gray-600 font-bold mt-2">
-              Gestiona tu información personal y configuraciones
+              {t('subtitle')}
             </p>
           </div>
         </div>
@@ -289,7 +290,7 @@ export default function ProfilePage() {
           >
             <ShoppingBagIcon className="w-6 h-6 mx-auto mb-2 text-blue-600" />
             <div className="text-xl font-black text-black mb-1">{stats.orders.totalOrders}</div>
-            <div className="text-xs font-black text-black uppercase">Pedidos</div>
+            <div className="text-xs font-black text-black uppercase">{t('quick_stats.orders')}</div>
           </Link>
           
           <Link
@@ -299,7 +300,7 @@ export default function ProfilePage() {
           >
             <HeartIcon className="w-6 h-6 mx-auto mb-2 text-red-600" />
             <div className="text-xl font-black text-black mb-1">{stats.favorites.totalFavorites}</div>
-            <div className="text-xs font-black text-black uppercase">Favoritos</div>
+            <div className="text-xs font-black text-black uppercase">{t('quick_stats.favorites')}</div>
           </Link>
           
           <Link
@@ -309,7 +310,7 @@ export default function ProfilePage() {
           >
             <MessageSquareIcon className="w-6 h-6 mx-auto mb-2 text-green-600" />
             <div className="text-xl font-black text-black mb-1">{stats.reviews.totalReviews}</div>
-            <div className="text-xs font-black text-black uppercase">Reviews</div>
+            <div className="text-xs font-black text-black uppercase">{t('quick_stats.reviews')}</div>
           </Link>
           
           <Link
@@ -319,7 +320,7 @@ export default function ProfilePage() {
           >
             <DownloadIcon className="w-6 h-6 mx-auto mb-2 text-purple-600" />
             <div className="text-xl font-black text-black mb-1">{stats.downloads.totalProducts}</div>
-            <div className="text-xs font-black text-black uppercase">Descargas</div>
+            <div className="text-xs font-black text-black uppercase">{t('quick_stats.downloads')}</div>
           </Link>
         </div>
 
@@ -330,10 +331,10 @@ export default function ProfilePage() {
         >
           <div className="flex border-b-4 border-black">
             {[
-              { id: 'personal', label: 'Datos Personales', icon: UserIcon },
-              { id: 'notifications', label: 'Notificaciones', icon: BellIcon },
-              { id: 'security', label: 'Seguridad', icon: KeyIcon },
-              { id: 'stats', label: 'Estadísticas', icon: BarChartIcon }
+              { id: 'personal', label: t('tabs.personal'), icon: UserIcon },
+              { id: 'notifications', label: t('tabs.notifications'), icon: BellIcon },
+              { id: 'security', label: t('tabs.security'), icon: KeyIcon },
+              { id: 'stats', label: t('tabs.stats'), icon: BarChartIcon }
             ].map((tab) => {
               const Icon = tab.icon
               return (
@@ -358,7 +359,7 @@ export default function ProfilePage() {
             {activeTab === 'personal' && (
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-black text-black uppercase">Información Personal</h2>
+                  <h2 className="text-2xl font-black text-black uppercase">{t('personal.title')}</h2>
                   {!isEditing ? (
                     <button
                       onClick={() => setIsEditing(true)}
@@ -366,7 +367,7 @@ export default function ProfilePage() {
                       style={{ boxShadow: '3px 3px 0 #000000' }}
                     >
                       <EditIcon className="w-4 h-4" />
-                      Editar
+                      {t('personal.edit')}
                     </button>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -377,7 +378,7 @@ export default function ProfilePage() {
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       >
                         <XIcon className="w-4 h-4" />
-                        Cancelar
+                        {t('personal.cancel')}
                       </button>
                       <button
                         onClick={handleSaveProfile}
@@ -388,12 +389,12 @@ export default function ProfilePage() {
                         {isSaving ? (
                           <>
                             <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                            Guardando...
+                            {t('personal.saving')}
                           </>
                         ) : (
                           <>
                             <SaveIcon className="w-4 h-4" />
-                            Guardar
+                            {t('personal.save')}
                           </>
                         )}
                       </button>
@@ -406,7 +407,7 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
-                        Nombre *
+                        {t('personal.first_name')} *
                       </label>
                       <input
                         type="text"
@@ -419,9 +420,23 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb">
+                      <label className="block text-black font-black text-sm uppercase mb-2">
+                        {t('personal.last_name')} *
+                      </label>
+                      <input
+                        type="text"
+                        value={profileData.lastName}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+                        disabled={!isEditing || isSaving}
+                        className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:bg-gray-100 disabled:opacity-70"
+                        style={{ boxShadow: '3px 3px 0 #000000' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
                         <PhoneIcon className="w-4 h-4" />
-                        Teléfono
+                        {t('personal.phone')}
                       </label>
                       <input
                         type="tel"
@@ -439,7 +454,7 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
-                        País
+                        {t('personal.country')}
                       </label>
                       <select
                         value={profileData.country}
@@ -459,14 +474,14 @@ export default function ProfilePage() {
 
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
-                        Ciudad
+                        {t('personal.city')}
                       </label>
                       <input
                         type="text"
                         value={profileData.city}
                         onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
                         disabled={!isEditing || isSaving}
-                        placeholder="Tu ciudad"
+                        placeholder={t('personal.city_placeholder')}
                         className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:bg-gray-100 disabled:opacity-70"
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       />
@@ -475,14 +490,14 @@ export default function ProfilePage() {
                     <div>
                       <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
                         <MapPinIcon className="w-4 h-4" />
-                        Dirección
+                        {t('personal.address')}
                       </label>
                       <input
                         type="text"
                         value={profileData.address}
                         onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
                         disabled={!isEditing || isSaving}
-                        placeholder="Calle 123, Depto 456"
+                        placeholder={t('personal.address_placeholder')}
                         className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:bg-gray-100 disabled:opacity-70"
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       />
@@ -490,7 +505,7 @@ export default function ProfilePage() {
 
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
-                        Código Postal
+                        {t('personal.zip_code')}
                       </label>
                       <input
                         type="text"
@@ -511,7 +526,7 @@ export default function ProfilePage() {
             {activeTab === 'notifications' && (
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-black text-black uppercase">Configuración de Notificaciones</h2>
+                  <h2 className="text-2xl font-black text-black uppercase">{t('notifications.title')}</h2>
                   <button
                     onClick={handleSaveNotifications}
                     disabled={isSaving}
@@ -519,7 +534,7 @@ export default function ProfilePage() {
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                   >
                     <SaveIcon className="w-4 h-4" />
-                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                    {isSaving ? t('notifications.saving') : t('notifications.save_changes')}
                   </button>
                 </div>
 
@@ -537,13 +552,13 @@ export default function ProfilePage() {
                         className="w-5 h-5 border-3 border-black focus:ring-0"
                       />
                       <div>
-                        <span className="text-black font-black text-lg uppercase">Notificaciones por Email</span>
-                        <p className="text-blue-800 text-sm font-medium">Habilitar todas las notificaciones por correo electrónico</p>
+                        <span className="text-black font-black text-lg uppercase">{t('notifications.email_enabled')}</span>
+                        <p className="text-blue-800 text-sm font-medium">{t('notifications.email_enabled_desc')}</p>
                       </div>
                     </label>
                   </div>
 
-                  {/* Order Notifications */}
+                  {/* Notification Options */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label className="flex items-center gap-3 p-4 bg-gray-100 border-2 border-black cursor-pointer hover:bg-yellow-100 transition-all">
                       <input
@@ -554,8 +569,8 @@ export default function ProfilePage() {
                         className="w-4 h-4 border-2 border-black"
                       />
                       <div>
-                        <span className="font-black text-black uppercase text-sm">Pedidos</span>
-                        <p className="text-xs text-gray-600 font-medium">Confirmaciones, actualizaciones de estado</p>
+                        <span className="font-black text-black uppercase text-sm">{t('notifications.orders')}</span>
+                        <p className="text-xs text-gray-600 font-medium">{t('notifications.orders_desc')}</p>
                       </div>
                     </label>
 
@@ -568,8 +583,8 @@ export default function ProfilePage() {
                         className="w-4 h-4 border-2 border-black"
                       />
                       <div>
-                        <span className="font-black text-black uppercase text-sm">Pagos</span>
-                        <p className="text-xs text-gray-600 font-medium">Confirmaciones de pago, facturas</p>
+                        <span className="font-black text-black uppercase text-sm">{t('notifications.payments')}</span>
+                        <p className="text-xs text-gray-600 font-medium">{t('notifications.payments_desc')}</p>
                       </div>
                     </label>
 
@@ -582,8 +597,8 @@ export default function ProfilePage() {
                         className="w-4 h-4 border-2 border-black"
                       />
                       <div>
-                        <span className="font-black text-black uppercase text-sm">Reviews</span>
-                        <p className="text-xs text-gray-600 font-medium">Respuestas de sellers, recordatorios</p>
+                        <span className="font-black text-black uppercase text-sm">{t('notifications.reviews')}</span>
+                        <p className="text-xs text-gray-600 font-medium">{t('notifications.reviews_desc')}</p>
                       </div>
                     </label>
 
@@ -596,8 +611,8 @@ export default function ProfilePage() {
                         className="w-4 h-4 border-2 border-black"
                       />
                       <div>
-                        <span className="font-black text-black uppercase text-sm">Resumen Semanal</span>
-                        <p className="text-xs text-gray-600 font-medium">Resumen de actividad y productos nuevos</p>
+                        <span className="font-black text-black uppercase text-sm">{t('notifications.weekly_digest')}</span>
+                        <p className="text-xs text-gray-600 font-medium">{t('notifications.weekly_digest_desc')}</p>
                       </div>
                     </label>
 
@@ -610,8 +625,8 @@ export default function ProfilePage() {
                         className="w-4 h-4 border-2 border-black"
                       />
                       <div>
-                        <span className="font-black text-black uppercase text-sm">Productos Nuevos</span>
-                        <p className="text-xs text-gray-600 font-medium">Alertas de productos en categorías favoritas</p>
+                        <span className="font-black text-black uppercase text-sm">{t('notifications.new_products')}</span>
+                        <p className="text-xs text-gray-600 font-medium">{t('notifications.new_products_desc')}</p>
                       </div>
                     </label>
 
@@ -624,8 +639,8 @@ export default function ProfilePage() {
                         className="w-4 h-4 border-2 border-black"
                       />
                       <div>
-                        <span className="font-black text-black uppercase text-sm">Ofertas</span>
-                        <p className="text-xs text-gray-600 font-medium">Descuentos en productos favoritos</p>
+                        <span className="font-black text-black uppercase text-sm">{t('notifications.offers')}</span>
+                        <p className="text-xs text-gray-600 font-medium">{t('notifications.offers_desc')}</p>
                       </div>
                     </label>
                   </div>
@@ -644,8 +659,8 @@ export default function ProfilePage() {
                         className="w-5 h-5 border-3 border-black focus:ring-0"
                       />
                       <div>
-                        <span className="text-black font-black text-lg uppercase">Emails de Marketing</span>
-                        <p className="text-orange-800 text-sm font-medium">Promociones especiales, newsletters y ofertas exclusivas</p>
+                        <span className="text-black font-black text-lg uppercase">{t('notifications.marketing_emails')}</span>
+                        <p className="text-orange-800 text-sm font-medium">{t('notifications.marketing_emails_desc')}</p>
                       </div>
                     </label>
                   </div>
@@ -656,19 +671,19 @@ export default function ProfilePage() {
             {/* Security Tab */}
             {activeTab === 'security' && (
               <div>
-                <h2 className="text-2xl font-black text-black uppercase mb-6">Configuración de Seguridad</h2>
+                <h2 className="text-2xl font-black text-black uppercase mb-6">{t('security.title')}</h2>
 
                 {/* Change Password */}
                 <div 
                   className="bg-blue-100 border-4 border-black p-6 mb-6"
                   style={{ boxShadow: '4px 4px 0 #000000' }}
                 >
-                  <h3 className="text-xl font-black text-black uppercase mb-4">Cambiar Contraseña</h3>
+                  <h3 className="text-xl font-black text-black uppercase mb-4">{t('security.change_password')}</h3>
                   
                   <div className="space-y-4">
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
-                        Contraseña Actual
+                        {t('security.current_password')}
                       </label>
                       <div className="relative">
                         <input
@@ -693,7 +708,7 @@ export default function ProfilePage() {
 
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
-                        Nueva Contraseña
+                        {t('security.new_password')}
                       </label>
                       <div className="relative">
                         <input
@@ -718,7 +733,7 @@ export default function ProfilePage() {
 
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
-                        Confirmar Nueva Contraseña
+                        {t('security.confirm_password')}
                       </label>
                       <div className="relative">
                         <input
@@ -748,7 +763,7 @@ export default function ProfilePage() {
                       style={{ boxShadow: '3px 3px 0 #000000' }}
                     >
                       <KeyIcon className="w-4 h-4" />
-                      {isSaving ? 'Cambiando...' : 'Cambiar Contraseña'}
+                      {isSaving ? t('security.changing') : t('security.change_password')}
                     </button>
                   </div>
                 </div>
@@ -760,10 +775,10 @@ export default function ProfilePage() {
                 >
                   <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                     <AlertTriangleIcon className="w-5 h-5 text-red-600" />
-                    Zona Peligrosa
+                    {t('security.danger_zone')}
                   </h3>
                   <p className="text-red-800 font-bold mb-4">
-                    Esta acción eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.
+                    {t('security.delete_warning')}
                   </p>
                   <button
                     onClick={() => setShowDeleteModal(true)}
@@ -771,7 +786,7 @@ export default function ProfilePage() {
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                   >
                     <TrashIcon className="w-4 h-4" />
-                    Eliminar Cuenta
+                    {t('security.delete_account')}
                   </button>
                 </div>
               </div>
@@ -780,7 +795,7 @@ export default function ProfilePage() {
             {/* Stats Tab */}
             {activeTab === 'stats' && (
               <div>
-                <h2 className="text-2xl font-black text-black uppercase mb-6">Estadísticas de Actividad</h2>
+                <h2 className="text-2xl font-black text-black uppercase mb-6">{t('stats.title')}</h2>
 
                 {/* Overview Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -790,19 +805,19 @@ export default function ProfilePage() {
                   >
                     <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                       <ShoppingBagIcon className="w-5 h-5" />
-                      Actividad de Compras
+                      {t('stats.shopping_activity')}
                     </h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-black">Total Pedidos:</span>
+                        <span className="font-bold text-black">{t('stats.total_orders')}:</span>
                         <span className="font-black text-xl text-black">{stats.orders.totalOrders}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-black">Completados:</span>
+                        <span className="font-bold text-black">{t('stats.completed')}:</span>
                         <span className="font-black text-lg text-green-600">{stats.orders.completedOrders}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-black">Total Gastado:</span>
+                        <span className="font-bold text-black">{t('stats.total_spent')}:</span>
                         <span className="font-black text-lg text-blue-600">{formatPrice(stats.orders.totalSpent)}</span>
                       </div>
                     </div>
@@ -814,19 +829,19 @@ export default function ProfilePage() {
                   >
                     <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                       <HeartIcon className="w-5 h-5" />
-                      Engagement
+                      {t('stats.engagement')}
                     </h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-black">Favoritos:</span>
+                        <span className="font-bold text-black">{t('stats.favorites')}:</span>
                         <span className="font-black text-xl text-black">{stats.favorites.totalFavorites}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-black">Reviews Escritas:</span>
+                        <span className="font-bold text-black">{t('stats.reviews_written')}:</span>
                         <span className="font-black text-lg text-purple-600">{stats.reviews.totalReviews}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-black">Votos Útiles:</span>
+                        <span className="font-bold text-black">{t('stats.helpful_votes')}:</span>
                         <span className="font-black text-lg text-green-600">{stats.reviews.helpfulVotes}</span>
                       </div>
                     </div>
@@ -840,20 +855,20 @@ export default function ProfilePage() {
                 >
                   <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                     <DownloadIcon className="w-5 h-5" />
-                    Actividad de Descargas
+                    {t('stats.download_activity')}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center">
                       <div className="text-3xl font-black text-black mb-2">{stats.downloads.totalProducts}</div>
-                      <div className="text-sm font-bold text-purple-800 uppercase">Productos Comprados</div>
+                      <div className="text-sm font-bold text-purple-800 uppercase">{t('stats.products_purchased')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-3xl font-black text-black mb-2">{stats.downloads.totalDownloads}</div>
-                      <div className="text-sm font-bold text-purple-800 uppercase">Descargas Realizadas</div>
+                      <div className="text-sm font-bold text-purple-800 uppercase">{t('stats.downloads_made')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-3xl font-black text-black mb-2">{stats.downloads.downloadsThisMonth}</div>
-                      <div className="text-sm font-bold text-purple-800 uppercase">Este Mes</div>
+                      <div className="text-sm font-bold text-purple-800 uppercase">{t('stats.this_month')}</div>
                     </div>
                   </div>
                 </div>
@@ -866,22 +881,22 @@ export default function ProfilePage() {
                   >
                     <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
                       <TrendingUpIcon className="w-5 h-5" />
-                      Calidad de Reviews
+                      {t('stats.review_quality')}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="text-center">
                         <div className="text-3xl font-black text-black mb-2">{stats.reviews.averageRating.toFixed(1)}</div>
-                        <div className="text-sm font-bold text-green-800 uppercase">Rating Promedio</div>
+                        <div className="text-sm font-bold text-green-800 uppercase">{t('stats.average_rating')}</div>
                       </div>
                       <div className="text-center">
                         <div className="text-3xl font-black text-black mb-2">
                           {stats.reviews.totalReviews > 0 ? Math.round((stats.reviews.helpfulVotes / stats.reviews.totalReviews) * 100) : 0}%
                         </div>
-                        <div className="text-sm font-bold text-green-800 uppercase">Calificadas como Útiles</div>
+                        <div className="text-sm font-bold text-green-800 uppercase">{t('stats.rated_helpful')}</div>
                       </div>
                       <div className="text-center">
                         <div className="text-3xl font-black text-black mb-2">{stats.reviews.totalReviews}</div>
-                        <div className="text-sm font-bold text-green-800 uppercase">Total Reviews</div>
+                        <div className="text-sm font-bold text-green-800 uppercase">{t('stats.total_reviews')}</div>
                       </div>
                     </div>
                   </div>
@@ -905,11 +920,10 @@ export default function ProfilePage() {
                   <AlertTriangleIcon className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-2xl font-black text-black uppercase mb-2">
-                  ¿Eliminar Cuenta?
+                  {t('delete_modal.title')}
                 </h2>
                 <p className="text-gray-700 font-bold">
-                  Esta acción eliminará permanentemente tu cuenta, pedidos, reviews y toda tu información. 
-                  Esta acción no se puede deshacer.
+                  {t('delete_modal.warning')}
                 </p>
               </div>
               
@@ -919,7 +933,7 @@ export default function ProfilePage() {
                   className="flex-1 bg-gray-400 border-3 border-black font-black text-black uppercase py-3 hover:bg-gray-500 transition-all"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  Cancelar
+                  {t('delete_modal.cancel')}
                 </button>
                 <button
                   onClick={() => {
@@ -929,7 +943,7 @@ export default function ProfilePage() {
                   className="flex-1 bg-red-500 border-3 border-black font-black text-white uppercase py-3 hover:bg-red-600 transition-all"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  Eliminar
+                  {t('delete_modal.delete')}
                 </button>
               </div>
             </div>
@@ -939,4 +953,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-                        

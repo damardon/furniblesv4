@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { 
   CreditCardIcon, 
   ShieldIcon, 
@@ -27,6 +28,9 @@ export function PaymentSection({
   onPaymentSubmit,
   disabled = false 
 }: PaymentSectionProps) {
+  const t = useTranslations('checkout.payment')
+  const tCommon = useTranslations('common')
+
   const [cardNumber, setCardNumber] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
   const [cvv, setCvv] = useState('')
@@ -101,7 +105,7 @@ export function PaymentSection({
     >
       <h2 className="text-3xl font-black text-black mb-6 uppercase flex items-center gap-3">
         <CreditCardIcon className="w-8 h-8" />
-        Método de Pago
+        {t('title')}
       </h2>
 
       {/* Stripe Badge */}
@@ -111,20 +115,20 @@ export function PaymentSection({
       >
         <ShieldIcon className="w-6 h-6 text-blue-600" />
         <div>
-          <p className="text-black font-black text-sm uppercase">Pagos Seguros con Stripe</p>
-          <p className="text-gray-600 text-xs font-bold">Tus datos están protegidos con encriptación SSL</p>
+          <p className="text-black font-black text-sm uppercase">{t('secure_payments')}</p>
+          <p className="text-gray-600 text-xs font-bold">{t('ssl_protection')}</p>
         </div>
       </div>
 
       <div className="space-y-6">
         {/* Tarjeta de Crédito/Débito */}
         <div>
-          <h3 className="text-xl font-black text-black mb-4 uppercase">Tarjeta de Crédito/Débito</h3>
+          <h3 className="text-xl font-black text-black mb-4 uppercase">{t('card_section_title')}</h3>
           
           {/* Nombre del Titular */}
           <div className="mb-4">
             <label className="block text-black font-black text-sm uppercase mb-2">
-              Nombre del Titular *
+              {t('cardholder_name')} *
             </label>
             <input
               type="text"
@@ -133,14 +137,14 @@ export function PaymentSection({
               disabled={isProcessing || disabled}
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              placeholder="Nombre como aparece en la tarjeta"
+              placeholder={t('cardholder_placeholder')}
             />
           </div>
 
           {/* Número de Tarjeta */}
           <div className="mb-4">
             <label className="block text-black font-black text-sm uppercase mb-2">
-              Número de Tarjeta *
+              {t('card_number')} *
             </label>
             <input
               type="text"
@@ -149,7 +153,7 @@ export function PaymentSection({
               disabled={isProcessing || disabled}
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              placeholder="1234 5678 9012 3456"
+              placeholder={t('card_number_placeholder')}
               maxLength={19}
             />
           </div>
@@ -158,7 +162,7 @@ export function PaymentSection({
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-black font-black text-sm uppercase mb-2">
-                Vencimiento *
+                {t('expiry_date')} *
               </label>
               <input
                 type="text"
@@ -167,7 +171,7 @@ export function PaymentSection({
                 disabled={isProcessing || disabled}
                 className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
                 style={{ boxShadow: '3px 3px 0 #000000' }}
-                placeholder="MM/AA"
+                placeholder={t('expiry_placeholder')}
                 maxLength={5}
               />
             </div>
@@ -182,7 +186,7 @@ export function PaymentSection({
                 disabled={isProcessing || disabled}
                 className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
                 style={{ boxShadow: '3px 3px 0 #000000' }}
-                placeholder="123"
+                placeholder={t('cvv_placeholder')}
                 maxLength={4}
               />
             </div>
@@ -199,7 +203,7 @@ export function PaymentSection({
                 className="w-5 h-5 border-3 border-black focus:ring-0 focus:ring-offset-0"
               />
               <span className="text-black font-bold text-sm">
-                Guardar tarjeta para futuras compras
+                {t('save_card')}
               </span>
             </label>
           </div>
@@ -212,24 +216,24 @@ export function PaymentSection({
         >
           <h3 className="text-lg font-black text-black mb-3 uppercase flex items-center gap-2">
             <CheckCircleIcon className="w-5 h-5 text-green-600" />
-            Garantías de Compra
+            {t('guarantees.title')}
           </h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2 text-black font-medium">
               <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              Descargas ilimitadas durante 30 días
+              {t('guarantees.unlimited_downloads')}
             </li>
             <li className="flex items-center gap-2 text-black font-medium">
               <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              Soporte técnico incluido
+              {t('guarantees.technical_support')}
             </li>
             <li className="flex items-center gap-2 text-black font-medium">
               <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              Reembolso completo en caso de problemas
+              {t('guarantees.full_refund')}
             </li>
             <li className="flex items-center gap-2 text-black font-medium">
               <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              Acceso inmediato después del pago
+              {t('guarantees.immediate_access')}
             </li>
           </ul>
         </div>
@@ -239,19 +243,19 @@ export function PaymentSection({
           className="bg-gray-100 border-3 border-black p-6"
           style={{ boxShadow: '4px 4px 0 #000000' }}
         >
-          <h3 className="text-lg font-black text-black mb-4 uppercase">Resumen de Pago</h3>
+          <h3 className="text-lg font-black text-black mb-4 uppercase">{t('payment_summary')}</h3>
           <div className="space-y-2">
             <div className="flex justify-between items-center text-black font-bold">
-              <span>Subtotal:</span>
+              <span>{t('subtotal')}:</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between items-center text-black font-bold">
-              <span>Comisión de Plataforma (10%):</span>
+              <span>{t('platform_commission')}:</span>
               <span>{formatPrice(platformFee)}</span>
             </div>
             <div className="border-t-3 border-black pt-2 mt-2">
               <div className="flex justify-between items-center text-black font-black text-xl">
-                <span className="uppercase">Total:</span>
+                <span className="uppercase">{t('total')}:</span>
                 <span>{formatPrice(total)}</span>
               </div>
             </div>
@@ -269,13 +273,13 @@ export function PaymentSection({
               className="w-5 h-5 border-3 border-black focus:ring-0 focus:ring-offset-0 mt-1"
             />
             <span className="text-black font-bold text-sm">
-              Acepto los{' '}
+              {t('terms_acceptance')}{' '}
               <a href="/terminos" target="_blank" className="text-blue-600 hover:text-blue-800 underline">
-                términos y condiciones
+                {t('terms_link')}
               </a>
-              {' '}y la{' '}
+              {' '}{t('and')}{' '}
               <a href="/privacidad" target="_blank" className="text-blue-600 hover:text-blue-800 underline">
-                política de privacidad
+                {t('privacy_link')}
               </a>
             </span>
           </label>
@@ -289,13 +293,13 @@ export function PaymentSection({
           <InfoIcon className="w-5 h-5 text-yellow-600 mt-1 flex-shrink-0" />
           <div className="text-sm">
             <p className="text-black font-bold mb-1">
-              Al completar tu compra recibirás:
+              {t('purchase_info.title')}
             </p>
             <ul className="text-gray-700 font-medium space-y-1">
-              <li>• Confirmación de compra por email</li>
-              <li>• Enlaces de descarga seguros</li>
-              <li>• Factura detallada</li>
-              <li>• Acceso a soporte técnico</li>
+              <li>• {t('purchase_info.confirmation_email')}</li>
+              <li>• {t('purchase_info.download_links')}</li>
+              <li>• {t('purchase_info.detailed_invoice')}</li>
+              <li>• {t('purchase_info.support_access')}</li>
             </ul>
           </div>
         </div>
@@ -310,19 +314,19 @@ export function PaymentSection({
           {isProcessing ? (
             <>
               <div className="w-6 h-6 border-3 border-black border-t-transparent rounded-full animate-spin"></div>
-              Procesando Pago...
+              {t('processing_payment')}
             </>
           ) : (
             <>
               <LockIcon className="w-6 h-6" />
-              Pagar {formatPrice(total)}
+              {t('pay_button', { amount: formatPrice(total) })}
             </>
           )}
         </button>
 
         {/* Métodos de Pago Aceptados */}
         <div className="text-center">
-          <p className="text-gray-600 text-sm font-bold mb-2">Métodos de pago aceptados:</p>
+          <p className="text-gray-600 text-sm font-bold mb-2">{t('accepted_methods')}:</p>
           <div className="flex justify-center items-center gap-4">
             <div className="bg-white border-2 border-black px-3 py-1 text-xs font-black">VISA</div>
             <div className="bg-white border-2 border-black px-3 py-1 text-xs font-black">MASTERCARD</div>
@@ -339,7 +343,7 @@ export function PaymentSection({
           >
             <AlertCircleIcon className="w-5 h-5 text-red-600" />
             <p className="text-red-800 font-bold text-sm">
-              Por favor completa todos los campos requeridos
+              {t('form_validation_error')}
             </p>
           </div>
         )}

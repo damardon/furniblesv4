@@ -13,6 +13,7 @@ type DifficultyFilter = 'all' | Difficulty
 
 export default function ProductsPage() {
   const t = useTranslations('products')
+  const tCommon = useTranslations('common')
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
@@ -63,31 +64,37 @@ export default function ProductsPage() {
   }, [searchTerm, categoryFilter, difficultyFilter, sortBy])
 
   const categories = [
-    { value: 'all' as const, label: 'Todos' },
-    { value: ProductCategory.TABLES, label: 'Mesas' },
-    { value: ProductCategory.CHAIRS, label: 'Sillas' },
-    { value: ProductCategory.BEDS, label: 'Camas' },
-    { value: ProductCategory.SHELVES, label: 'Estanterías' },
-    { value: ProductCategory.STORAGE, label: 'Almacenamiento' },
-    { value: ProductCategory.DESKS, label: 'Escritorios' },
-    { value: ProductCategory.OUTDOOR, label: 'Exterior' },
-    { value: ProductCategory.DECORATIVE, label: 'Decorativo' },
+    { value: 'all' as const, label: t('categories.all') },
+    { value: ProductCategory.FURNITURE, label: t('categories.furniture') },
+    { value: ProductCategory.CHAIRS, label: t('categories.chairs') },
+    { value: ProductCategory.TABLES, label: t('categories.tables') },
+    { value: ProductCategory.BEDS, label: t('categories.beds') },
+    { value: ProductCategory.STORAGE, label: t('categories.storage') },
+    { value: ProductCategory.OUTDOOR, label: t('categories.outdoor') },
+    { value: ProductCategory.DECORATIVE, label: t('categories.decorative') },
+    { value: ProductCategory.OFFICE, label: t('categories.office') },
   ]
 
   const difficulties = [
-    { value: 'all' as const, label: 'Todas' },
-    { value: Difficulty.BEGINNER, label: 'Fácil' },
-    { value: Difficulty.INTERMEDIATE, label: 'Intermedio' },
-    { value: Difficulty.ADVANCED, label: 'Avanzado' },
+    { value: 'all' as const, label: t('difficulties.all') },
+    { value: Difficulty.BEGINNER, label: t('difficulties.beginner') },
+    { value: Difficulty.INTERMEDIATE, label: t('difficulties.intermediate') },
+    { value: Difficulty.ADVANCED, label: t('difficulties.advanced') },
   ]
 
   const sortOptions = [
-    { value: 'newest' as const, label: 'Más recientes' },
-    { value: 'popular' as const, label: 'Más populares' },
-    { value: 'rating' as const, label: 'Mejor valorados' },
-    { value: 'price_low' as const, label: 'Precio: menor a mayor' },
-    { value: 'price_high' as const, label: 'Precio: mayor a menor' },
+    { value: 'newest' as const, label: t('sort.newest') },
+    { value: 'popular' as const, label: t('sort.popular') },
+    { value: 'rating' as const, label: t('sort.rating') },
+    { value: 'price_low' as const, label: t('sort.price_low') },
+    { value: 'price_high' as const, label: t('sort.price_high') },
   ]
+
+  const clearAllFilters = () => {
+    setSearchTerm('')
+    setCategoryFilter('all')
+    setDifficultyFilter('all')
+  }
 
   return (
     <div className="min-h-screen px-8 py-12">
@@ -101,13 +108,13 @@ export default function ProductsPage() {
             className="bg-orange-500 text-black inline-block mb-6 px-4 py-2 border-3 border-black font-black text-sm uppercase tracking-wide"
             style={{ boxShadow: '4px 4px 0 #000000' }}
           >
-            ¡PLANOS PREMIUM!
+            {t('header.badge')}
           </div>
           <h1 className="text-black mb-6 font-black text-6xl leading-tight uppercase">
-            Catálogo de Productos
+            {t('header.title')}
           </h1>
           <p className="text-black font-bold text-xl max-w-2xl mx-auto">
-            Descubre nuestra colección de planos de muebles únicos
+            {t('header.subtitle')}
           </p>
         </div>
       </div>
@@ -123,7 +130,7 @@ export default function ProductsPage() {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-black w-5 h-5" />
             <input
               type="text"
-              placeholder="Buscar productos..."
+              placeholder={t('search.placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
@@ -189,7 +196,7 @@ export default function ProductsPage() {
             className="bg-yellow-400 text-black px-4 py-2 border-3 border-black font-black text-sm uppercase"
             style={{ boxShadow: '3px 3px 0 #000000' }}
           >
-            {filteredAndSortedProducts.length} PRODUCTOS
+            {t('results.count', { count: filteredAndSortedProducts.length })}
           </span>
           
           {searchTerm && (
@@ -197,7 +204,7 @@ export default function ProductsPage() {
               className="bg-blue-400 text-black px-4 py-2 border-3 border-black font-black text-sm uppercase"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              BÚSQUEDA: "{searchTerm.toUpperCase()}"
+              {t('results.search_label')}: "{searchTerm.toUpperCase()}"
             </span>
           )}
           
@@ -206,7 +213,7 @@ export default function ProductsPage() {
               className="bg-orange-500 text-black px-4 py-2 border-3 border-black font-black text-sm uppercase"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              CATEGORÍA: {categories.find(c => c.value === categoryFilter)?.label.toUpperCase()}
+              {t('results.category_label')}: {categories.find(c => c.value === categoryFilter)?.label.toUpperCase()}
             </span>
           )}
 
@@ -215,7 +222,7 @@ export default function ProductsPage() {
               className="bg-green-400 text-black px-4 py-2 border-3 border-black font-black text-sm uppercase"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              DIFICULTAD: {difficulties.find(d => d.value === difficultyFilter)?.label.toUpperCase()}
+              {t('results.difficulty_label')}: {difficulties.find(d => d.value === difficultyFilter)?.label.toUpperCase()}
             </span>
           )}
         </div>
@@ -236,21 +243,17 @@ export default function ProductsPage() {
           >
             <div className="text-8xl mb-6">🔍</div>
             <h3 className="text-black font-black text-2xl mb-4 uppercase">
-              NO HAY PRODUCTOS
+              {t('empty.title')}
             </h3>
             <p className="text-black font-medium">
-              Prueba con otros filtros o términos de búsqueda
+              {t('empty.subtitle')}
             </p>
             <button
-              onClick={() => {
-                setSearchTerm('')
-                setCategoryFilter('all')
-                setDifficultyFilter('all')
-              }}
+              onClick={clearAllFilters}
               className="mt-6 bg-orange-500 border-3 border-black font-black text-black text-sm uppercase px-6 py-3 hover:bg-yellow-400 transition-all"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
-              LIMPIAR FILTROS
+              {t('empty.clear_filters')}
             </button>
           </div>
         </div>
@@ -263,7 +266,7 @@ export default function ProductsPage() {
             className="bg-white border-3 border-black font-black text-black text-xl uppercase px-12 py-4 hover:bg-yellow-400 transition-all"
             style={{ boxShadow: '5px 5px 0 #000000' }}
           >
-            CARGAR MÁS PRODUCTOS
+            {t('load_more')}
           </button>
         </div>
       )}

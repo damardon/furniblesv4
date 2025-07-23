@@ -38,7 +38,9 @@ interface ProductDetailPageProps {
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const t = useTranslations('products')
+  const t = useTranslations('product_detail')
+  const tCommon = useTranslations('common')
+  const tProducts = useTranslations('products')
   const [product, setProduct] = useState<Product | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -69,7 +71,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🪵</div>
-          <p className="text-black font-black text-xl uppercase">Cargando producto...</p>
+          <p className="text-black font-black text-xl uppercase">{t('loading')}</p>
         </div>
       </div>
     )
@@ -177,11 +179,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         <div className="container mx-auto">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              Inicio
+              {tCommon('navigation.home')}
             </Link>
             <span>/</span>
             <Link href="/productos" className="hover:text-orange-500 transition-colors">
-              Productos
+              {tProducts('title')}
             </Link>
             <span>/</span>
             <span className="text-orange-500">{product.title}</span>
@@ -198,7 +200,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             style={{ boxShadow: '4px 4px 0 #000000' }}
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            Volver al Catálogo
+            {t('navigation.back_to_catalog')}
           </Link>
         </div>
 
@@ -218,7 +220,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-8xl mb-4">🪵</div>
-                    <p className="text-black font-black text-xl uppercase">Sin Imagen</p>
+                    <p className="text-black font-black text-xl uppercase">{t('gallery.no_image')}</p>
                   </div>
                 </div>
               )}
@@ -257,7 +259,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     className="bg-orange-500 text-black text-xs font-black px-3 py-1 border-2 border-black uppercase"
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    Destacado
+                    {t('badges.featured')}
                   </span>
                 )}
                 {(() => {
@@ -268,7 +270,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       className="bg-green-500 text-black text-xs font-black px-3 py-1 border-2 border-black uppercase"
                       style={{ boxShadow: '2px 2px 0 #000000' }}
                     >
-                      Nuevo
+                      {t('badges.new')}
                     </span>
                   ) : null
                 })()}
@@ -305,7 +307,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   >
                     <Image
                       src={image}
-                      alt={`${product.title} - imagen ${index + 1}`}
+                      alt={t('gallery.image_alt', { title: product.title, number: index + 1 })}
                       width={100}
                       height={100}
                       className="w-full h-full object-cover"
@@ -331,18 +333,18 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     {product.rating.toFixed(1)}
                   </span>
                   <span className="text-gray-600 font-bold">
-                    ({product.reviewCount} reviews)
+                    ({product.reviewCount} {t('info.reviews')})
                   </span>
                 </div>
                 
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <EyeIcon className="w-4 h-4" />
-                    <span className="font-bold">{formatNumber(product.viewCount)} vistas</span>
+                    <span className="font-bold">{formatNumber(product.viewCount)} {t('info.views')}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <DownloadIcon className="w-4 h-4" />
-                    <span className="font-bold">{formatNumber(product.downloadCount)} descargas</span>
+                    <span className="font-bold">{formatNumber(product.downloadCount)} {t('info.downloads')}</span>
                   </div>
                 </div>
               </div>
@@ -415,7 +417,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               className="bg-gray-100 border-4 border-black p-6"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
-              <h3 className="text-xl font-black text-black mb-3 uppercase">Descripción</h3>
+              <h3 className="text-xl font-black text-black mb-3 uppercase">{t('sections.description')}</h3>
               <p className="text-black leading-relaxed font-medium">
                 {product.description}
               </p>
@@ -428,7 +430,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             >
               <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
                 <UserIcon className="w-5 h-5" />
-                Vendedor
+                {t('sections.seller')}
               </h3>
               
               <div className="flex items-start gap-4">
@@ -454,7 +456,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       </span>
                     </div>
                     <span className="text-sm text-gray-600 font-bold">
-                      {product.seller.sellerProfile?.totalSales || 0} ventas
+                      {product.seller.sellerProfile?.totalSales || 0} {t('seller.sales')}
                     </span>
                   </div>
                   
@@ -471,7 +473,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       rel="noopener noreferrer"
                       className="text-sm text-blue-600 font-bold hover:text-blue-800 transition-colors"
                     >
-                      Visitar tienda →
+                      {t('seller.visit_store')} →
                     </a>
                   )}
                 </div>
@@ -486,14 +488,14 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               style={{ boxShadow: '6px 6px 0 #000000' }}
             >
               <ShoppingCartIcon className="w-6 h-6 inline mr-3" />
-              {isAddingToCart ? 'Agregando...' : 'Agregar al Carrito'}
+              {isAddingToCart ? t('actions.adding') : t('actions.add_to_cart')}
             </button>
 
             {/* Fecha de publicación */}
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <CalendarIcon className="w-4 h-4" />
               <span className="font-bold">
-                Publicado el {formatDate(product.publishedAt || product.createdAt)}
+                {t('info.published_on', { date: formatDate(product.publishedAt || product.createdAt) })}
               </span>
             </div>
           </div>
@@ -508,7 +510,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           >
             <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
               <WrenchIcon className="w-5 h-5" />
-              Herramientas
+              {t('technical.tools')}
             </h3>
             <ul className="space-y-2">
               {product.toolsRequired.map((tool, index) => (
@@ -527,7 +529,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           >
             <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
               <PackageIcon className="w-5 h-5" />
-              Materiales
+              {t('technical.materials')}
             </h3>
             <ul className="space-y-2">
               {product.materials.map((material, index) => (
@@ -549,7 +551,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               >
                 <h3 className="text-xl font-black text-black mb-3 uppercase flex items-center gap-2">
                   <RulerIcon className="w-5 h-5" />
-                  Dimensiones
+                  {t('technical.dimensions')}
                 </h3>
                 <p className="text-black font-bold text-lg">
                   {product.dimensions}
@@ -562,7 +564,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               className="bg-purple-100 border-4 border-black p-6"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
-              <h3 className="text-xl font-black text-black mb-3 uppercase">Tags</h3>
+              <h3 className="text-xl font-black text-black mb-3 uppercase">{t('technical.tags')}</h3>
               <div className="flex flex-wrap gap-2">
                 {product.tags.map((tag, index) => (
                   <span
@@ -582,7 +584,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         {relatedProducts.length > 0 && (
           <div>
             <h2 className="text-3xl font-black text-black mb-8 uppercase text-center">
-              Productos Relacionados
+              {t('related.title')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {relatedProducts.map((relatedProduct) => (

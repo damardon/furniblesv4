@@ -25,7 +25,12 @@ interface SellerLayoutProps {
 export default function SellerLayout({ children }: SellerLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const t = useTranslations('seller')
+  
+  // Traducciones específicas para el layout del seller
+  const t = useTranslations('seller.layout')
+  const tCommon = useTranslations('common')
+  const tNav = useTranslations('seller.navigation')
+  
   const { user, isAuthenticated, canAccessSellerFeatures } = useAuthStore()
 
   // Verificar autenticación y permisos de seller
@@ -41,68 +46,68 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
     }
   }, [isAuthenticated, canAccessSellerFeatures, router])
 
-  // Navegación lateral del seller - coherente con backend
+  // Navegación lateral del seller - coherente con backend y corrigiendo rutas
   const sidebarNavItems = [
     {
-      title: 'Dashboard',
-      href: '/vendedor/dashboard',
+      title: tNav('dashboard'),
+      href: '/vendedor-dashboard/dashboard',
       icon: BarChart3,
-      description: 'Resumen y estadísticas'
+      description: tNav('dashboard_description')
     },
     {
-      title: 'Productos',
-      href: '/vendedor/productos',
+      title: tNav('products'),
+      href: '/vendedor-dashboard/productos',
       icon: Package,
-      description: 'Gestión de productos'
+      description: tNav('products_description')
     },
     {
-      title: 'Ventas',
-      href: '/vendedor/ventas',
+      title: tNav('sales'),
+      href: '/vendedor-dashboard/ventas',
       icon: ShoppingBag,
-      description: 'Ventas y pedidos'
+      description: tNav('sales_description')
     },
     {
-      title: 'Analytics',
-      href: '/vendedor/analytics',
+      title: tNav('analytics'),
+      href: '/vendedor-dashboard/analytics',
       icon: TrendingUp,
-      description: 'Analytics detallados'
+      description: tNav('analytics_description')
     },
     {
-      title: 'Reviews',
-      href: '/vendedor/reviews',
+      title: tNav('reviews'),
+      href: '/vendedor-dashboard/reviews',
       icon: MessageSquare,
-      description: 'Gestión de reseñas'
+      description: tNav('reviews_description')
     },
     {
-      title: 'Perfil',
-      href: '/vendedor/perfil',
+      title: tNav('profile'),
+      href: '/vendedor-dashboard/perfil',
       icon: User,
-      description: 'Perfil de tienda'
+      description: tNav('profile_description')
     },
     {
-      title: 'Configuración',
-      href: '/vendedor/configuracion',
+      title: tNav('settings'),
+      href: '/vendedor-dashboard/configuracion',
       icon: Settings,
-      description: 'Configuración'
+      description: tNav('settings_description')
     },
   ]
 
-  // Función para generar breadcrumb dinámico
+  // Función para generar breadcrumb dinámico con i18n
   const getBreadcrumbText = () => {
     const segments = pathname.split('/').filter(Boolean)
-    if (segments.length <= 1) return 'Panel Vendedor'
+    if (segments.length <= 1) return t('title')
     
     const lastSegment = segments[segments.length - 1]
     const breadcrumbMap: Record<string, string> = {
-      'dashboard': 'Dashboard',
-      'productos': 'Productos',
-      'nuevo': 'Nuevo Producto',
-      'editar': 'Editar Producto',
-      'ventas': 'Ventas',
-      'analytics': 'Analytics',
-      'reviews': 'Reviews',
-      'perfil': 'Perfil',
-      'configuracion': 'Configuración'
+      'dashboard': tNav('dashboard'),
+      'productos': tNav('products'),
+      'nuevo': t('breadcrumb.new_product'),
+      'editar': t('breadcrumb.edit_product'),
+      'ventas': tNav('sales'),
+      'analytics': tNav('analytics'),
+      'reviews': tNav('reviews'),
+      'perfil': tNav('profile'),
+      'configuracion': tNav('settings')
     }
     
     return breadcrumbMap[lastSegment] || lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1)
@@ -114,7 +119,7 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-bold">Verificando permisos...</p>
+          <p className="text-gray-600 font-bold">{t('verifying_permissions')}</p>
         </div>
       </div>
     )
@@ -131,7 +136,7 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
               className="text-gray-600 hover:text-orange-500 transition-colors flex items-center gap-1"
             >
               <Home className="h-4 w-4" />
-              Inicio
+              {tCommon('navigation.home')}
             </Link>
             <span className="text-black font-black">→</span>
             <span className="text-orange-500 font-black uppercase">{getBreadcrumbText()}</span>
@@ -158,9 +163,9 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
                     </h3>
                     <p className="text-sm text-gray-600 font-bold">
                       {user?.sellerProfile?.isVerified ? (
-                        <span className="text-green-600">✓ Verificado</span>
+                        <span className="text-green-600">✓ {t('status.verified')}</span>
                       ) : (
-                        <span className="text-yellow-600">Pendiente verificación</span>
+                        <span className="text-yellow-600">{t('status.pending_verification')}</span>
                       )}
                     </p>
                     {/* Rating del seller si existe */}
@@ -168,7 +173,7 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
                       <div className="flex items-center gap-1 mt-1">
                         <span className="text-yellow-500">⭐</span>
                         <span className="text-xs font-bold text-gray-700">
-                          {user.sellerProfile.rating.toFixed(1)} ({user.sellerProfile.totalSales} ventas)
+                          {user.sellerProfile.rating.toFixed(1)} ({t('sales_count', { count: user.sellerProfile.totalSales })})
                         </span>
                       </div>
                     )}
@@ -210,24 +215,24 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
 
               {/* Quick Actions */}
               <div className="mt-6 pt-6 border-t-[2px] border-black">
-                <h4 className="font-black text-sm uppercase text-black mb-3">Acciones Rápidas</h4>
+                <h4 className="font-black text-sm uppercase text-black mb-3">{t('quick_actions.title')}</h4>
                 <div className="space-y-2">
                   <Link
-                    href="/vendedor/productos/nuevo"
+                    href="/vendedor-dashboard/productos/nuevo"
                     className="flex items-center gap-2 px-3 py-2 bg-green-500 border-2 border-black font-bold text-black text-sm hover:bg-green-400 transition-all"
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                   >
                     <Package className="h-4 w-4" />
-                    SUBIR PRODUCTO
+                    {t('quick_actions.upload_product')}
                   </Link>
                   
                   <Link
-                    href="/vendedor/analytics"
+                    href="/vendedor-dashboard/analytics"
                     className="flex items-center gap-2 px-3 py-2 bg-blue-500 border-2 border-black font-bold text-black text-sm hover:bg-blue-400 transition-all"
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                   >
                     <BarChart3 className="h-4 w-4" />
-                    VER ANALYTICS
+                    {t('quick_actions.view_analytics')}
                   </Link>
                 </div>
               </div>
@@ -235,22 +240,22 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
               {/* Seller Stats Quick View */}
               {user?.sellerProfile && (
                 <div className="mt-6 pt-6 border-t-[2px] border-black">
-                  <h4 className="font-black text-sm uppercase text-black mb-3">Stats Rápidas</h4>
+                  <h4 className="font-black text-sm uppercase text-black mb-3">{t('quick_stats.title')}</h4>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600 font-bold">Ventas Totales:</span>
+                      <span className="text-gray-600 font-bold">{t('quick_stats.total_sales')}:</span>
                       <span className="font-black text-black">{user.sellerProfile.totalSales}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 font-bold">Rating:</span>
+                      <span className="text-gray-600 font-bold">{t('quick_stats.rating')}:</span>
                       <span className="font-black text-black">
-                        {user.sellerProfile.rating > 0 ? user.sellerProfile.rating.toFixed(1) : 'N/A'}
+                        {user.sellerProfile.rating > 0 ? user.sellerProfile.rating.toFixed(1) : tCommon('not_available')}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 font-bold">Verificado:</span>
+                      <span className="text-gray-600 font-bold">{t('quick_stats.verified')}:</span>
                       <span className={`font-black ${user.sellerProfile.isVerified ? 'text-green-600' : 'text-yellow-600'}`}>
-                        {user.sellerProfile.isVerified ? 'SÍ' : 'PENDIENTE'}
+                        {user.sellerProfile.isVerified ? tCommon('yes') : tCommon('pending')}
                       </span>
                     </div>
                   </div>

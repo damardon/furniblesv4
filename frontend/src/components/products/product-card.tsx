@@ -43,21 +43,11 @@ export function ProductCard({ product }: ProductCardProps) {
       [ProductCategory.TABLES]: 'bg-blue-400',
       [ProductCategory.CHAIRS]: 'bg-purple-400', 
       [ProductCategory.BEDS]: 'bg-pink-400',
-      [ProductCategory.SHELVES]: 'bg-green-400',
       [ProductCategory.STORAGE]: 'bg-yellow-400',
-      [ProductCategory.DESKS]: 'bg-orange-400',
       [ProductCategory.OUTDOOR]: 'bg-cyan-400',
       [ProductCategory.DECORATIVE]: 'bg-red-400',
       [ProductCategory.FURNITURE]: 'bg-indigo-400',
-      [ProductCategory.FURNITURES]: 'bg-teal-400',
-      [ProductCategory.LIGHTING]: 'bg-amber-400',
-      [ProductCategory.KITCHEN]: 'bg-lime-400',
-      [ProductCategory.BATHROOM]: 'bg-sky-400',
       [ProductCategory.OFFICE]: 'bg-violet-400',
-      [ProductCategory.GARDEN]: 'bg-emerald-400',
-      [ProductCategory.TOYS]: 'bg-rose-400',
-      [ProductCategory.SPORTS]: 'bg-blue-500',
-      [ProductCategory.ELECTRONICS]: 'bg-gray-500',
     }
     
     return `${colors[category] || 'bg-gray-400'} text-black border-2 border-black`

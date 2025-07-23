@@ -41,15 +41,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Separator } from '@/components/ui/separator'
+import { Modal } from '@/components/ui/modal'
 
 interface AdminProductDetailProps {
   params: {
@@ -62,15 +54,19 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
   const [moderationReason, setModerationReason] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [product, setProduct] = useState<Product | null>(null)
+  const [showModerationModal, setShowModerationModal] = useState(false)
   
   const router = useRouter()
-  const t = useTranslations('admin')
+  
+  // Traducciones
+  const t = useTranslations('admin.products.detail')
+  const tCommon = useTranslations('common')
+  const tStatus = useTranslations('admin.products.status')
+  const tCategories = useTranslations('admin.products.categories')
 
   // Store
   const { 
-    approveProduct,
-    rejectProduct,
-    suspendProduct,
+    updateProductStatus,
     featureProduct,
     isLoading: storeLoading,
     error
@@ -81,6 +77,10 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     const loadProduct = async () => {
       setIsLoading(true)
       try {
+        // TODO: Reemplazar con llamada real a la API
+        // const response = await fetch(`/api/admin/products/${params.id}`)
+        // const data = await response.json()
+        
         // Mock data realista basado en el schema Prisma
         const mockProduct: Product = {
           id: params.id,
@@ -91,9 +91,8 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
           category: ProductCategory.TABLES,
           difficulty: Difficulty.INTERMEDIATE,
           status: ProductStatus.PENDING,
-          pdfFileId: "file_pdf_12345",
-          imageFileIds: ["img_001", "img_002", "img_003", "img_004"],
-          thumbnailFileIds: ["thumb_001"],
+          pdfUrl: "/files/pdf_12345.pdf",
+          previewImages: ["/files/img_001.jpg", "/files/img_002.jpg", "/files/img_003.jpg"],
           tags: ["mesa", "comedor", "rustico", "madera", "roble", "familiar"],
           estimatedTime: "6-8 horas",
           toolsRequired: [
@@ -122,9 +121,9 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             tools_included: false,
             materials_included: false
           },
-          moderatedBy: null,
-          moderatedAt: null,
-          rejectionReason: null,
+          moderatedBy: undefined,
+          moderatedAt: undefined,
+          rejectionReason: undefined,
           sellerId: "seller_abc123",
           viewCount: 342,
           downloadCount: 67,
@@ -133,8 +132,24 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
           rating: 4.7,
           reviewCount: 15,
           createdAt: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 días atrás
-          publishedAt: null,
-          updatedAt: new Date(Date.now() - 3600000).toISOString() // 1 hora atrás
+          publishedAt: undefined,
+          updatedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hora atrás
+          seller: {
+            id: "seller_abc123",
+            email: "seller@example.com",
+            firstName: "Juan",
+            lastName: "Pérez",
+            role: 'SELLER' as any,
+            isBoth: false,
+            emailVerified: true,
+            isActive: true,
+            status: 'ACTIVE' as any,
+            onboardingComplete: true,
+            payoutsEnabled: true,
+            chargesEnabled: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
         }
         
         setProduct(mockProduct)
@@ -155,38 +170,43 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     setIsLoading(true)
     try {
       let result
+      let newStatus: ProductStatus
+
       switch (moderationAction) {
         case 'approve':
-          result = await approveProduct(product.id, moderationReason || undefined)
+          newStatus = ProductStatus.APPROVED
           break
         case 'reject':
-          result = await rejectProduct(product.id, moderationReason)
+          newStatus = ProductStatus.REJECTED
           break
         case 'suspend':
-          result = await suspendProduct(product.id, moderationReason)
+          newStatus = ProductStatus.SUSPENDED
           break
+        default:
+          throw new Error('Invalid moderation action')
       }
+
+      result = await updateProductStatus(product.id, newStatus, moderationReason || undefined)
 
       if (result.success) {
         setModerationAction(null)
         setModerationReason('')
+        setShowModerationModal(false)
         
         // Actualizar el producto local
         setProduct(prev => {
           if (!prev) return null
           return {
             ...prev,
-            status: moderationAction === 'approve' ? ProductStatus.APPROVED :
-                   moderationAction === 'reject' ? ProductStatus.REJECTED :
-                   ProductStatus.SUSPENDED,
+            status: newStatus,
             moderatedAt: new Date().toISOString(),
-            rejectionReason: moderationAction === 'reject' ? moderationReason : null
+            rejectionReason: moderationAction === 'reject' ? moderationReason : undefined
           }
         })
 
         // Redirigir después de la acción
         setTimeout(() => {
-          router.push('/admin/productos')
+          router.push('/admin/dashboard/productos')
         }, 2000)
       }
     } catch (error) {
@@ -208,40 +228,42 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     }
   }
 
+  // Abrir modal de moderación
+  const openModerationModal = (action: 'approve' | 'reject' | 'suspend') => {
+    setModerationAction(action)
+    setModerationReason('')
+    setShowModerationModal(true)
+  }
+
   // Obtener badge de estado
   const getStatusBadge = (status: ProductStatus) => {
     const badges = {
       [ProductStatus.PENDING]: { 
-        variant: "secondary" as const, 
         className: "bg-yellow-400 text-black border-2 border-black", 
-        text: "PENDIENTE" 
+        text: tStatus('pending')
       },
       [ProductStatus.APPROVED]: { 
-        variant: "secondary" as const, 
         className: "bg-green-500 text-white border-2 border-black", 
-        text: "APROBADO" 
+        text: tStatus('approved')
       },
       [ProductStatus.REJECTED]: { 
-        variant: "destructive" as const, 
         className: "bg-red-500 text-white border-2 border-black", 
-        text: "RECHAZADO" 
+        text: tStatus('rejected')
       },
       [ProductStatus.SUSPENDED]: { 
-        variant: "secondary" as const, 
         className: "bg-orange-500 text-white border-2 border-black", 
-        text: "SUSPENDIDO" 
+        text: tStatus('suspended')
       },
       [ProductStatus.DRAFT]: { 
-        variant: "outline" as const, 
         className: "border-2 border-black", 
-        text: "BORRADOR" 
+        text: tStatus('draft')
       }
     }
 
     const config = badges[status] || badges[ProductStatus.DRAFT]
     
     return (
-      <Badge variant={config.variant} className={config.className}>
+      <Badge className={config.className}>
         {config.text}
       </Badge>
     )
@@ -253,7 +275,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <RefreshCw className="h-16 w-16 text-gray-400 animate-spin mx-auto mb-4" />
-            <p className="text-xl font-bold text-gray-600">Cargando producto...</p>
+            <p className="text-xl font-bold text-gray-600">{t('loading')}</p>
           </div>
         </div>
       </div>
@@ -270,15 +292,15 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             className="border-2 border-black"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
+            {t('back')}
           </Button>
         </div>
         
         <Card className="border-3 border-red-500" style={{ boxShadow: '5px 5px 0 #000000' }}>
           <CardContent className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h3 className="text-xl font-black text-red-600 mb-2">Producto no encontrado</h3>
-            <p className="text-gray-500">El producto solicitado no existe o no tienes permisos para verlo.</p>
+            <h3 className="text-xl font-black text-red-600 mb-2">{t('not_found')}</h3>
+            <p className="text-gray-500">{t('not_found_desc')}</p>
           </CardContent>
         </Card>
       </div>
@@ -296,12 +318,12 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             className="border-2 border-black"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            VOLVER
+            {t('back')}
           </Button>
           
           <div>
-            <h1 className="text-2xl font-black uppercase text-black">Moderación de Producto</h1>
-            <p className="text-gray-600 font-bold">ID: {product.id}</p>
+            <h1 className="text-2xl font-black uppercase text-black">{t('title')}</h1>
+            <p className="text-gray-600 font-bold">{t('product_id')}: {product.id}</p>
           </div>
         </div>
         
@@ -313,7 +335,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             style={{ boxShadow: '3px 3px 0 #000000' }}
           >
             <ExternalLink className="h-4 w-4" />
-            VER EN SITIO
+            {t('view_on_site')}
           </Link>
         </div>
       </div>
@@ -332,9 +354,11 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <div>
-                <CardTitle className="font-black text-xl">Estado de Moderación</CardTitle>
+                <CardTitle className="font-black text-xl">{t('moderation_status')}</CardTitle>
                 <CardDescription className="font-bold">
-                  Creado hace {Math.floor((Date.now() - new Date(product.createdAt).getTime()) / (1000 * 60 * 60 * 24))} días
+                  {t('created_days_ago', { 
+                    days: Math.floor((Date.now() - new Date(product.createdAt).getTime()) / (1000 * 60 * 60 * 24)) 
+                  })}
                 </CardDescription>
               </div>
             </div>
@@ -343,7 +367,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               {getStatusBadge(product.status)}
               {product.featured && (
                 <Badge className="bg-yellow-400 text-black border-2 border-black">
-                  ⭐ DESTACADO
+                  ⭐ {t('featured')}
                 </Badge>
               )}
             </div>
@@ -354,28 +378,28 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                onClick={() => setModerationAction('approve')}
+                onClick={() => openModerationModal('approve')}
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white border-2 border-black font-black"
                 style={{ boxShadow: '3px 3px 0 #000000' }}
               >
                 <Check className="h-4 w-4 mr-2" />
-                APROBAR PRODUCTO
+                {t('approve_product')}
               </Button>
               <Button
-                onClick={() => setModerationAction('reject')}
+                onClick={() => openModerationModal('reject')}
                 className="flex-1 bg-red-500 hover:bg-red-600 text-white border-2 border-black font-black"
                 style={{ boxShadow: '3px 3px 0 #000000' }}
               >
                 <X className="h-4 w-4 mr-2" />
-                RECHAZAR PRODUCTO
+                {t('reject_product')}
               </Button>
               <Button
-                onClick={() => setModerationAction('suspend')}
+                onClick={() => openModerationModal('suspend')}
                 variant="outline"
                 className="border-2 border-black font-bold"
               >
                 <Flag className="h-4 w-4 mr-2" />
-                SUSPENDER
+                {t('suspend')}
               </Button>
             </div>
           </CardContent>
@@ -384,7 +408,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
         {product.status === ProductStatus.REJECTED && product.rejectionReason && (
           <CardContent>
             <div className="p-4 bg-red-50 border-2 border-red-200">
-              <h4 className="font-black text-red-800 mb-2">Razón de rechazo:</h4>
+              <h4 className="font-black text-red-800 mb-2">{t('rejection_reason')}:</h4>
               <p className="text-red-700 font-bold">{product.rejectionReason}</p>
             </div>
           </CardContent>
@@ -400,7 +424,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-black">
                 <Package className="h-5 w-5" />
-                INFORMACIÓN DEL PRODUCTO
+                {t('product_info')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -413,7 +437,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-green-600" />
                   <div>
-                    <p className="text-xs font-bold text-gray-600 uppercase">Precio</p>
+                    <p className="text-xs font-bold text-gray-600 uppercase">{t('price')}</p>
                     <p className="font-black text-green-600">${product.price}</p>
                   </div>
                 </div>
@@ -421,15 +445,15 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center gap-2">
                   <Tag className="h-4 w-4 text-blue-600" />
                   <div>
-                    <p className="text-xs font-bold text-gray-600 uppercase">Categoría</p>
-                    <p className="font-bold">{product.category}</p>
+                    <p className="text-xs font-bold text-gray-600 uppercase">{t('category')}</p>
+                    <p className="font-bold">{tCategories(product.category.toLowerCase())}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-orange-600" />
                   <div>
-                    <p className="text-xs font-bold text-gray-600 uppercase">Dificultad</p>
+                    <p className="text-xs font-bold text-gray-600 uppercase">{t('difficulty')}</p>
                     <p className="font-bold">{product.difficulty}</p>
                   </div>
                 </div>
@@ -437,7 +461,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center gap-2">
                   <Timer className="h-4 w-4 text-purple-600" />
                   <div>
-                    <p className="text-xs font-bold text-gray-600 uppercase">Tiempo</p>
+                    <p className="text-xs font-bold text-gray-600 uppercase">{t('time')}</p>
                     <p className="font-bold">{product.estimatedTime}</p>
                   </div>
                 </div>
@@ -447,7 +471,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center gap-2">
                   <Ruler className="h-4 w-4 text-gray-600" />
                   <div>
-                    <p className="text-sm font-bold text-gray-600">Dimensiones:</p>
+                    <p className="text-sm font-bold text-gray-600">{t('dimensions')}:</p>
                     <p className="font-bold">{product.dimensions}</p>
                   </div>
                 </div>
@@ -455,7 +479,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
 
               {product.tags && product.tags.length > 0 && (
                 <div>
-                  <p className="text-sm font-bold text-gray-600 mb-2">Tags:</p>
+                  <p className="text-sm font-bold text-gray-600 mb-2">{t('tags')}:</p>
                   <div className="flex flex-wrap gap-2">
                     {product.tags.map((tag, index) => (
                       <Badge key={index} variant="outline" className="border-black">
@@ -475,7 +499,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-black">
                   <Wrench className="h-5 w-5" />
-                  HERRAMIENTAS REQUERIDAS
+                  {t('required_tools')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -495,7 +519,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-black">
                   <Layers className="h-5 w-5" />
-                  MATERIALES REQUERIDOS
+                  {t('required_materials')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -517,7 +541,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-black">
                   <FileText className="h-5 w-5" />
-                  ESPECIFICACIONES ADICIONALES
+                  {t('additional_specs')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -543,7 +567,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-black">
                 <Eye className="h-5 w-5" />
-                ESTADÍSTICAS
+                {t('statistics')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -551,7 +575,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 font-bold text-gray-600">
                     <Eye className="h-4 w-4" />
-                    Vistas
+                    {t('views')}
                   </span>
                   <span className="font-black">{product.viewCount}</span>
                 </div>
@@ -559,7 +583,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 font-bold text-gray-600">
                     <Download className="h-4 w-4" />
-                    Descargas
+                    {t('downloads')}
                   </span>
                   <span className="font-black">{product.downloadCount}</span>
                 </div>
@@ -567,7 +591,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 font-bold text-gray-600">
                     <Star className="h-4 w-4" />
-                    Rating
+                    {t('rating')}
                   </span>
                   <span className="font-black">{product.rating} ({product.reviewCount})</span>
                 </div>
@@ -575,7 +599,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 font-bold text-gray-600">
                     <Calendar className="h-4 w-4" />
-                    Creado
+                    {t('created')}
                   </span>
                   <span className="font-bold text-sm">
                     {new Date(product.createdAt).toLocaleDateString()}
@@ -590,7 +614,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-black">
                 <User className="h-5 w-5" />
-                VENDEDOR
+                {t('seller')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -601,10 +625,10 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <p className="font-black">ID: {product.sellerId}</p>
                 <div className="mt-3">
                   <Link
-                    href={`/admin/usuarios?search=${product.sellerId}`}
+                    href={`/admin/dashboard/usuarios?search=${product.sellerId}`}
                     className="text-blue-600 hover:text-blue-800 font-bold text-sm"
                   >
-                    Ver perfil completo →
+                    {t('view_full_profile')} →
                   </Link>
                 </div>
               </div>
@@ -616,30 +640,30 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-black">
                 <FileText className="h-5 w-5" />
-                ARCHIVOS
+                {t('files')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {product.pdfFileId && (
+              {product.pdfUrl && (
                 <div className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200">
                   <span className="flex items-center gap-2 font-bold">
                     <FileText className="h-4 w-4 text-red-600" />
-                    PDF Principal
+                    {t('main_pdf')}
                   </span>
                   <Button size="sm" variant="outline" className="border-black">
-                    Ver
+                    {t('view')}
                   </Button>
                 </div>
               )}
               
-              {product.imageFileIds && product.imageFileIds.length > 0 && (
+              {product.previewImages && product.previewImages.length > 0 && (
                 <div className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200">
                   <span className="flex items-center gap-2 font-bold">
                     <ImageIcon className="h-4 w-4 text-blue-600" />
-                    Imágenes ({product.imageFileIds.length})
+                    {t('images')} ({product.previewImages.length})
                   </span>
                   <Button size="sm" variant="outline" className="border-black">
-                    Ver
+                    {t('view')}
                   </Button>
                 </div>
               )}
@@ -652,7 +676,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-black">
                   <Edit className="h-5 w-5" />
-                  ACCIONES
+                  {t('actions')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -661,16 +685,16 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                   variant="outline"
                   className="w-full border-2 border-black font-bold"
                 >
-                  {product.featured ? '⭐ Quitar destaque' : '⭐ Destacar producto'}
+                  {product.featured ? t('remove_featured') : t('make_featured')}
                 </Button>
                 
                 <Button
-                  onClick={() => setModerationAction('suspend')}
+                  onClick={() => openModerationModal('suspend')}
                   variant="outline"
                   className="w-full border-2 border-black font-bold text-orange-600"
                 >
                   <Flag className="h-4 w-4 mr-2" />
-                  Suspender producto
+                  {t('suspend_product')}
                 </Button>
               </CardContent>
             </Card>
@@ -679,96 +703,109 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
       </div>
 
       {/* Modal de moderación */}
-      <Dialog open={!!moderationAction} onOpenChange={() => {
-        setModerationAction(null)
-        setModerationReason('')
-      }}>
-        <DialogContent className="border-3 border-black max-w-lg" style={{ boxShadow: '10px 10px 0 #000000' }}>
-          <DialogHeader>
-            <DialogTitle className="font-black uppercase">
-              {moderationAction === 'approve' && '✅ Aprobar Producto'}
-              {moderationAction === 'reject' && '❌ Rechazar Producto'}
-              {moderationAction === 'suspend' && '⚠️ Suspender Producto'}
-            </DialogTitle>
-            <DialogDescription>
-              <strong>{product.title}</strong>
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {moderationAction === 'approve' ? (
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  Comentario de aprobación (opcional)
-                </label>
-                <Textarea
-                  placeholder="Notas internas sobre la aprobación..."
-                  value={moderationReason}
-                  onChange={(e) => setModerationReason(e.target.value)}
-                  className="border-2 border-black"
-                  rows={3}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Este comentario es solo para uso interno del equipo de moderación.
-                </p>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  Razón de {moderationAction === 'reject' ? 'rechazo' : 'suspensión'} *
-                </label>
-                <Textarea
-                  placeholder={`Explica detalladamente por qué ${moderationAction === 'reject' ? 'rechazas' : 'suspendes'} este producto. Esta información será visible para el vendedor.`}
-                  value={moderationReason}
-                  onChange={(e) => setModerationReason(e.target.value)}
-                  className="border-2 border-black"
-                  rows={4}
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  * Campo obligatorio. Esta razón será enviada al vendedor.
-                </p>
-              </div>
-            )}
+      <Modal
+        isOpen={showModerationModal}
+        onClose={() => {
+          setShowModerationModal(false)
+          setModerationAction(null)
+          setModerationReason('')
+        }}
+        title={
+          moderationAction === 'approve' ? t('modals.approve_title') :
+          moderationAction === 'reject' ? t('modals.reject_title') :
+          moderationAction === 'suspend' ? t('modals.suspend_title') :
+          t('modals.moderation_title')
+        }
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded">
+            <h3 className="font-black text-lg mb-2">{product.title}</h3>
+            <p className="text-gray-600 text-sm">{product.description.slice(0, 100)}...</p>
           </div>
 
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setModerationAction(null)
-                setModerationReason('')
-              }}
-              className="border-2 border-black"
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleModeration}
-              disabled={isLoading || (moderationAction !== 'approve' && !moderationReason.trim())}
-              className={`border-2 border-black font-black ${
-                moderationAction === 'approve' 
-                  ? 'bg-green-500 hover:bg-green-600' 
-                  : 'bg-red-500 hover:bg-red-600'
-              } text-white`}
-              style={{ boxShadow: '3px 3px 0 #000000' }}
-            >
-              {isLoading ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                moderationAction === 'approve' ? (
-                  <Check className="h-4 w-4 mr-2" />
-                ) : (
-                  <X className="h-4 w-4 mr-2" />
-                )
-              )}
-              {moderationAction === 'approve' ? 'APROBAR' : 
-               moderationAction === 'reject' ? 'RECHAZAR' : 'SUSPENDER'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
+          {moderationAction === 'approve' ? (
+            <div>
+              <label className="block text-sm font-bold mb-2">
+                {t('modals.approval_comment')}
+              </label>
+              <Textarea
+                placeholder={t('modals.approval_placeholder')}
+                value={moderationReason}
+                onChange={(e) => setModerationReason(e.target.value)}
+                className="border-2 border-black"
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {t('modals.internal_note')}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-bold mb-2">
+                {t('modals.reason_label')} *
+              </label>
+              <Textarea
+                placeholder={
+                  moderationAction === 'reject' 
+                    ? t('modals.reject_placeholder')
+                    : t('modals.suspend_placeholder')
+                }
+                value={moderationReason}
+                onChange={(e) => setModerationReason(e.target.value)}
+                className="border-2 border-black"
+               rows={4}
+               required
+             />
+             <p className="text-xs text-gray-500 mt-1">
+               {t('modals.required_field')}
+             </p>
+           </div>
+         )}
+
+         <div className="flex justify-end gap-3 pt-4 border-t">
+           <Button 
+             variant="outline" 
+             onClick={() => {
+               setShowModerationModal(false)
+               setModerationAction(null)
+               setModerationReason('')
+             }}
+             className="border-2 border-black"
+             disabled={isLoading}
+           >
+             {tCommon('cancel')}
+           </Button>
+           <Button
+             onClick={handleModeration}
+             disabled={isLoading || (moderationAction !== 'approve' && !moderationReason.trim())}
+             className={`border-2 border-black font-black ${
+               moderationAction === 'approve' 
+                 ? 'bg-green-500 hover:bg-green-600' 
+                 : 'bg-red-500 hover:bg-red-600'
+             } text-white`}
+             style={{ boxShadow: '3px 3px 0 #000000' }}
+           >
+             {isLoading ? (
+               <>
+                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                 {t('modals.processing')}
+               </>
+             ) : (
+               <>
+                 {moderationAction === 'approve' ? (
+                   <Check className="h-4 w-4 mr-2" />
+                 ) : (
+                   <X className="h-4 w-4 mr-2" />
+                 )}
+                 {moderationAction === 'approve' ? t('modals.approve_button') : 
+                  moderationAction === 'reject' ? t('modals.reject_button') : 
+                  t('modals.suspend_button')}
+               </>
+             )}
+           </Button>
+         </div>
+       </div>
+     </Modal>
+   </div>
+ )
 }

@@ -21,6 +21,19 @@ export class ProductsService {
     // I18nService removido temporalmente
   ) {}
 
+  /**
+   * Convierte arrays a JSON strings para SQLite
+   */
+  private prepareArrayFields(data: any) {
+    return {
+      imageFileIds: data.imageFileIds ? JSON.stringify(data.imageFileIds) : "[]",
+      thumbnailFileIds: data.thumbnailFileIds ? JSON.stringify(data.thumbnailFileIds) : "[]",
+      tags: data.tags ? JSON.stringify(data.tags) : "[]",
+      toolsRequired: data.toolsRequired ? JSON.stringify(data.toolsRequired) : "[]",
+      materials: data.materials ? JSON.stringify(data.materials) : "[]",
+    };
+  }
+
   // Crear producto
   async create(sellerId: string, createProductDto: CreateProductDto) {
     // Verificar límite de productos por seller (50)
@@ -35,13 +48,22 @@ export class ProductsService {
     // Generar slug único
     const slug = await this.generateUniqueSlug(createProductDto.title);
 
-    // Crear producto
+    // Crear producto con datos seguros para SQLite
     const product = await this.prisma.product.create({
       data: {
-        ...createProductDto,
+        title: createProductDto.title,
+        description: createProductDto.description,
         slug,
-        sellerId,
+        price: createProductDto.price,
+        category: createProductDto.category,
+        difficulty: createProductDto.difficulty,
         status: ProductStatus.DRAFT,
+        sellerId,
+        // Campos opcionales del DTO
+        estimatedTime: createProductDto.estimatedTime || null,
+        dimensions: createProductDto.dimensions || null,
+        specifications: createProductDto.specifications || null,
+        ...this.prepareArrayFields(createProductDto),
       },
       include: {
         seller: {
@@ -77,12 +99,12 @@ export class ProductsService {
       publishedAt: { not: null },
     };
 
-    // Filtros de búsqueda
+    // Filtros de búsqueda (corregido para SQLite)
     if (q) {
       where.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-        { tags: { hasSome: q.split(' ') } },
+        { title: { contains: q } },
+        { description: { contains: q } },
+        { tags: { contains: q } }, // Búsqueda simple en JSON string
       ];
     }
 
@@ -96,7 +118,7 @@ export class ProductsService {
     }
 
     if (tags && tags.length > 0) {
-      where.tags = { hasSome: tags };
+      where.tags = { contains: tags.join('|') };
     }
 
     // Ordenamiento
@@ -224,8 +246,8 @@ export class ProductsService {
 
   // Obtener producto por slug
   async findBySlug(slug: string, userId?: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { slug },
+    const product = await this.prisma.product.findFirst({
+      where: { slug: slug },
       include: {
         seller: {
           select: {
@@ -303,12 +325,22 @@ export class ProductsService {
       status = ProductStatus.PENDING;
     }
 
+    // Actualización con datos seguros para SQLite
     const updatedProduct = await this.prisma.product.update({
       where: { id },
       data: {
-        ...updateProductDto,
+        // Solo actualizar campos que están en el DTO
+        ...(updateProductDto.title && { title: updateProductDto.title }),
+        ...(updateProductDto.description && { description: updateProductDto.description }),
+        ...(updateProductDto.price !== undefined && { price: updateProductDto.price }),
+        ...(updateProductDto.category && { category: updateProductDto.category }),
+        ...(updateProductDto.difficulty && { difficulty: updateProductDto.difficulty }),
+        ...(updateProductDto.estimatedTime !== undefined && { estimatedTime: updateProductDto.estimatedTime }),
+        ...(updateProductDto.dimensions !== undefined && { dimensions: updateProductDto.dimensions }),
+        ...(updateProductDto.specifications !== undefined && { specifications: updateProductDto.specifications }),
         slug,
         status,
+        ...this.prepareArrayFields(updateProductDto),
       },
       include: {
         seller: {
@@ -462,8 +494,9 @@ export class ProductsService {
       throw new BadRequestException('Product cannot be published');
     }
 
-    // Validar que tenga archivos necesarios
-    if (!product.imageFileIds || product.imageFileIds.length === 0) {
+    // Validar que tenga archivos necesarios (corregido para SQLite)
+    const imageFileIds = JSON.parse(product.imageFileIds || "[]");
+    if (!imageFileIds || imageFileIds.length === 0) {
       throw new BadRequestException('Product must have at least one image');
     }
 
@@ -498,7 +531,7 @@ export class ProductsService {
     let counter = 1;
 
     while (true) {
-      const existing = await this.prisma.product.findUnique({
+      const existing = await this.prisma.product.findFirst({
         where: { slug },
       });
 

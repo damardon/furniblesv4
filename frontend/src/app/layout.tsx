@@ -9,6 +9,7 @@ import { CartModal } from '@/components/cart/cart-modal'
 import { LoginModal } from '@/components/auth/login-modal'
 import { RegisterModal } from '@/components/auth/register-modal'
 import { NotificationPanel } from '@/components/notifications/notification-panel'
+import { Footer } from '@/components/layout/footer'
 import './globals.css'
 
 const montserrat = Montserrat({ 
@@ -122,26 +123,8 @@ export default async function RootLayout({
                 </div>
               </main>
               
-              {/* Footer SABDA Style */}
-              <footer className="bg-black text-white border-t-[5px] border-orange-500">
-                <div className="max-w-6xl mx-auto px-8 py-12 text-center">
-                  <h3 className="text-yellow-400 font-black text-xl uppercase mb-4">
-                    Furnibles - Muebles de Diseño
-                  </h3>
-                  <p className="mb-4">
-                    Transformando espacios con diseños únicos y calidad excepcional.
-                  </p>
-                  <p className="mb-4">
-                    © 2025 Furnibles. Todos los derechos reservados.
-                  </p>
-                  <p>
-                    Síguenos en: 
-                    <a href="#" className="text-yellow-400 hover:text-orange-500 font-bold ml-2">Facebook</a> |
-                    <a href="#" className="text-yellow-400 hover:text-orange-500 font-bold mx-2">Instagram</a> |
-                    <a href="#" className="text-yellow-400 hover:text-orange-500 font-bold">Pinterest</a>
-                  </p>
-                </div>
-              </footer>
+              {/* Footer i18n Component */}
+              <Footer />
 
               {/* Modales y overlays globales */}
               <CartModal />

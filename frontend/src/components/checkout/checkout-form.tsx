@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { UserIcon, MailIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 
 interface BillingData {
@@ -20,6 +21,9 @@ interface CheckoutFormProps {
 }
 
 export function CheckoutForm({ billingData, onDataChange, isProcessing }: CheckoutFormProps) {
+  const t = useTranslations('checkout.form')
+  const tCommon = useTranslations('common')
+
   return (
     <div 
       className="bg-white border-[5px] border-black p-8"
@@ -27,7 +31,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
     >
       <h2 className="text-3xl font-black text-black mb-6 uppercase flex items-center gap-3">
         <UserIcon className="w-8 h-8" />
-        Datos de Facturación
+        {t('title')}
       </h2>
 
       <div className="space-y-6">
@@ -35,7 +39,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-black font-black text-sm uppercase mb-2">
-              Nombre *
+              {t('fields.first_name')} *
             </label>
             <input
               type="text"
@@ -44,12 +48,12 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
               disabled={isProcessing}
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              placeholder="Tu nombre"
+              placeholder={t('placeholders.first_name')}
             />
           </div>
           <div>
             <label className="block text-black font-black text-sm uppercase mb-2">
-              Apellido *
+              {t('fields.last_name')} *
             </label>
             <input
               type="text"
@@ -58,7 +62,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
               disabled={isProcessing}
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              placeholder="Tu apellido"
+              placeholder={t('placeholders.last_name')}
             />
           </div>
         </div>
@@ -67,7 +71,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
         <div>
           <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
             <MailIcon className="w-4 h-4" />
-            Email *
+            {t('fields.email')} *
           </label>
           <input
             type="email"
@@ -76,7 +80,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
             disabled={isProcessing}
             className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
             style={{ boxShadow: '3px 3px 0 #000000' }}
-            placeholder="tu@email.com"
+            placeholder={t('placeholders.email')}
           />
         </div>
 
@@ -84,7 +88,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
         <div>
           <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
             <PhoneIcon className="w-4 h-4" />
-            Teléfono *
+            {t('fields.phone')} *
           </label>
           <input
             type="tel"
@@ -93,7 +97,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
             disabled={isProcessing}
             className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
             style={{ boxShadow: '3px 3px 0 #000000' }}
-            placeholder="+56 9 1234 5678"
+            placeholder={t('placeholders.phone')}
           />
         </div>
 
@@ -101,7 +105,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-black font-black text-sm uppercase mb-2">
-              País *
+              {t('fields.country')} *
             </label>
             <select
               value={billingData.country}
@@ -110,18 +114,18 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="Chile">Chile</option>
-              <option value="Argentina">Argentina</option>
-              <option value="Colombia">Colombia</option>
-              <option value="México">México</option>
-              <option value="Perú">Perú</option>
-              <option value="España">España</option>
-              <option value="Estados Unidos">Estados Unidos</option>
+              <option value="Chile">{t('countries.chile')}</option>
+              <option value="Argentina">{t('countries.argentina')}</option>
+              <option value="Colombia">{t('countries.colombia')}</option>
+              <option value="México">{t('countries.mexico')}</option>
+              <option value="Perú">{t('countries.peru')}</option>
+              <option value="España">{t('countries.spain')}</option>
+              <option value="Estados Unidos">{t('countries.usa')}</option>
             </select>
           </div>
           <div>
             <label className="block text-black font-black text-sm uppercase mb-2">
-              Ciudad *
+              {t('fields.city')} *
             </label>
             <input
               type="text"
@@ -130,7 +134,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
               disabled={isProcessing}
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
               style={{ boxShadow: '3px 3px 0 #000000' }}
-              placeholder="Tu ciudad"
+              placeholder={t('placeholders.city')}
             />
           </div>
         </div>
@@ -139,7 +143,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
         <div>
           <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
             <MapPinIcon className="w-4 h-4" />
-            Dirección *
+            {t('fields.address')} *
           </label>
           <input
             type="text"
@@ -148,14 +152,14 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
             disabled={isProcessing}
             className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
             style={{ boxShadow: '3px 3px 0 #000000' }}
-            placeholder="Calle 123, Depto 456"
+            placeholder={t('placeholders.address')}
           />
         </div>
 
         {/* Código Postal */}
         <div>
           <label className="block text-black font-black text-sm uppercase mb-2">
-            Código Postal *
+            {t('fields.zip_code')} *
           </label>
           <input
             type="text"
@@ -164,7 +168,7 @@ export function CheckoutForm({ billingData, onDataChange, isProcessing }: Checko
             disabled={isProcessing}
             className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:opacity-50"
             style={{ boxShadow: '3px 3px 0 #000000' }}
-            placeholder="12345"
+            placeholder={t('placeholders.zip_code')}
           />
         </div>
       </div>
