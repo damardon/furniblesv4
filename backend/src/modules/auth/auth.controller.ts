@@ -42,11 +42,11 @@ export class AuthController {
     schema: {
       type: 'object',
       properties: {
-        access_token: { type: 'string' },
+        token: { type: 'string' },
         user: {
           type: 'object',
           properties: {
-            id: { type: 'number' },
+            id: { type: 'string' },
             email: { type: 'string' },
             firstName: { type: 'string' },
             lastName: { type: 'string' },

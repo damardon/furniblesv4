@@ -1,364 +1,297 @@
+// frontend/src/app/checkout/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useTranslations } from 'next-intl'
-import { 
-  ArrowLeftIcon, 
-  ShoppingCartIcon, 
-  LockIcon,
-  CheckCircleIcon,
-  AlertTriangleIcon
-} from 'lucide-react'
-import { useCartStore } from '@/lib/stores/cart-store'
-import { useAuthStore } from '@/lib/stores/auth-store'
-import { CheckoutForm } from '@/components/checkout/checkout-form'
-import { OrderSummary } from '@/components/checkout/order-summary'
-import { PaymentSection } from '@/components/checkout/payment-section'
-
-interface BillingData {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  country: string
-  city: string
-  address: string
-  zipCode: string
-}
+import { useCart } from '@/contexts/cart-context'
+import { useAuth } from '@/contexts/auth-context'
+import { usePayment } from '@/contexts/payment-context'
+import { Button } from '@/components/ui/button'
+import { Elements } from '@stripe/react-stripe-js'
+import { StripePaymentForm } from '@/components/checkout/stripe-payment-form'
+import { PayPalPaymentForm } from '@/components/checkout/paypal-payment-form'
 
 export default function CheckoutPage() {
-  const t = useTranslations('checkout')
-  const tCommon = useTranslations('common')
   const router = useRouter()
+  const { state: cartState } = useCart()
+  const { state: authState } = useAuth()
+  const { state: paymentState, setPaymentMethod, initializeStripe, initializePayPal } = usePayment()
   
-  // Stores
-  const { items, subtotal, platformFee, total, clearCart } = useCartStore()
-  const { isAuthenticated, user, setLoginModalOpen } = useAuthStore()
-
-  // States
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [orderNumber, setOrderNumber] = useState('')
-  const [billingData, setBillingData] = useState<BillingData>({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    email: user?.email || '',
-    phone: user?.buyerProfile?.phone || '',
-    country: 'Chile',
-    city: '',
-    address: '',
-    zipCode: ''
+  const [customerInfo, setCustomerInfo] = useState({
+    email: authState.user?.email || '',
+    name: `${authState.user?.firstName || ''} ${authState.user?.lastName || ''}`.trim(),
+    address: {
+      line1: '',
+      city: '',
+      state: '',
+      postal_code: '',
+      country: 'US'
+    }
   })
 
-  // Redirect if not authenticated
+  // Redireccionar si no hay items en el carrito
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLoginModalOpen(true)
-      router.push('/productos')
+    if (cartState.items.length === 0) {
+      router.push('/carrito')
       return
     }
-  }, [isAuthenticated, setLoginModalOpen, router])
+  }, [cartState.items, router])
 
-  // Redirect if cart is empty
+  // Redireccionar si no está autenticado
   useEffect(() => {
-    if (items.length === 0) {
-      router.push('/productos')
+    if (!authState.isAuthenticated && !authState.isLoading) {
+      router.push('/auth/login?redirect=/checkout')
       return
     }
-  }, [items, router])
+  }, [authState.isAuthenticated, authState.isLoading, router])
 
-  // Update billing data when user changes
+  // Inicializar métodos de pago
   useEffect(() => {
-    if (user) {
-      setBillingData(prev => ({
+    initializeStripe()
+    initializePayPal()
+  }, [])
+
+  const handleCustomerInfoChange = (field: string, value: string) => {
+    if (field.includes('address.')) {
+      const addressField = field.split('.')[1]
+      setCustomerInfo(prev => ({
         ...prev,
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.buyerProfile?.phone || ''
+        address: {
+          ...prev.address,
+          [addressField]: value
+        }
+      }))
+    } else {
+      setCustomerInfo(prev => ({
+        ...prev,
+        [field]: value
       }))
     }
-  }, [user])
-
-  // Handle billing data changes
-  const handleBillingDataChange = (field: keyof BillingData, value: string) => {
-    setBillingData(prev => ({
-      ...prev,
-      [field]: value
-    }))
   }
 
-  // Validate form
-  const isFormValid = () => {
-    return Object.values(billingData).every(value => value.trim() !== '')
-  }
-
-  // Handle payment submission
-  const handlePaymentSubmit = async () => {
-    if (!isFormValid() || isProcessing) {
-      return
-    }
-
-    setIsProcessing(true)
-
-    try {
-      // TODO: Integrate with real Stripe payment
-      // For now, simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 3000))
-
-      // Generate mock order number
-      const mockOrderNumber = 'FUR-' + Date.now().toString().slice(-8)
-      setOrderNumber(mockOrderNumber)
-
-      // Clear cart
-      clearCart()
-
-      // Show success modal
-      setShowSuccessModal(true)
-
-      // TODO: Redirect to order confirmation page
-      // setTimeout(() => {
-      //   router.push(`/pedidos/${mockOrderNumber}`)
-      // }, 3000)
-
-    } catch (error) {
-      console.error('Payment error:', error)
-      // TODO: Show error toast
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
-  // Don't render if not authenticated or cart is empty
-  if (!isAuthenticated || items.length === 0) {
+  if (authState.isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">🛒</div>
-          <p className="text-black font-black text-xl uppercase mb-4">
-            {!isAuthenticated ? t('not_authenticated') : t('empty_cart')}
-          </p>
-          <Link 
-            href="/productos"
-            className="inline-flex items-center gap-2 bg-yellow-400 border-4 border-black px-6 py-3 font-black text-black uppercase hover:bg-orange-500 transition-all"
-            style={{ boxShadow: '4px 4px 0 #000000' }}
-          >
-            <ArrowLeftIcon className="w-4 h-4" />
-            {t('go_to_products')}
-          </Link>
+          <div className="text-6xl mb-4">⏳</div>
+          <p className="text-xl font-bold">Cargando checkout...</p>
         </div>
       </div>
     )
   }
 
+  if (cartState.items.length === 0) {
+    return null // Se redireccionará
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-yellow-400 border-b-4 border-black p-4">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
-              <Link href="/" className="hover:text-orange-500 transition-colors">
-                {tCommon('home')}
-              </Link>
-              <span>/</span>
-              <Link href="/productos" className="hover:text-orange-500 transition-colors">
-                {tCommon('products')}
-              </Link>
-              <span>/</span>
-              <span className="text-orange-500">{t('breadcrumb')}</span>
-            </div>
-            
-            {/* Security Badge */}
-            <div className="flex items-center gap-2">
-              <LockIcon className="w-4 h-4 text-black" />
-              <span className="text-black font-black text-sm uppercase">{t('secure_payment')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Title */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-8 py-16">
+        {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Link 
-              href="/productos"
-              className="inline-flex items-center gap-2 bg-white border-4 border-black px-4 py-2 font-black text-black uppercase hover:bg-yellow-400 transition-all"
-              style={{ boxShadow: '4px 4px 0 #000000' }}
-            >
-              <ArrowLeftIcon className="w-4 h-4" />
-              {tCommon('back')}
-            </Link>
-            
-            <div>
-              <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
-                <ShoppingCartIcon className="w-8 h-8" />
-                {t('title')}
-              </h1>
-              <p className="text-gray-600 font-bold mt-2">
-                {t('items_in_cart', { 
-                  count: items.length, 
-                  item: items.length === 1 ? t('item.singular') : t('item.plural') 
-                })}
-              </p>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div 
-            className="bg-gray-200 border-3 border-black p-4"
-            style={{ boxShadow: '4px 4px 0 #000000' }}
-          >
-            <div className="flex items-center justify-between text-sm font-black uppercase">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-500 border-2 border-black rounded-full flex items-center justify-center text-white text-xs">
-                  ✓
-                </div>
-                <span className="text-black">{t('progress.cart')}</span>
-              </div>
-              
-              <div className="flex-1 h-1 bg-gray-300 mx-4"></div>
-              
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-yellow-400 border-2 border-black rounded-full flex items-center justify-center text-black text-xs font-black">
-                  2
-                </div>
-                <span className="text-black">{t('progress.checkout')}</span>
-              </div>
-              
-              <div className="flex-1 h-1 bg-gray-300 mx-4"></div>
-              
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gray-300 border-2 border-black rounded-full flex items-center justify-center text-black text-xs font-black">
-                  3
-                </div>
-                <span className="text-gray-500">{t('progress.confirmation')}</span>
-              </div>
-            </div>
-          </div>
+          <h1 className="text-4xl font-black uppercase mb-4">Checkout</h1>
+          <p className="text-lg">Completa tu compra de manera segura</p>
         </div>
 
-        {/* Checkout Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Forms */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Billing Information */}
-            <CheckoutForm
-              billingData={billingData}
-              onDataChange={handleBillingDataChange}
-              isProcessing={isProcessing}
-            />
-
-            {/* Payment Section */}
-            <PaymentSection
-              total={total}
-              platformFee={platformFee}
-              subtotal={subtotal}
-              isProcessing={isProcessing}
-              onPaymentSubmit={handlePaymentSubmit}
-              disabled={!isFormValid()}
-            />
-          </div>
-
-          {/* Right Column - Order Summary */}
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Información del cliente */}
+          <div className="space-y-6">
             <div 
-              className="bg-white border-[5px] border-black p-6 sticky top-8"
-              style={{ boxShadow: '8px 8px 0 #000000' }}
+              className="bg-white border-4 border-black p-6"
+              style={{ boxShadow: '6px 6px 0 #000000' }}
             >
-              <OrderSummary
-                items={items}
-                subtotal={subtotal}
-                platformFee={platformFee}
-                total={total}
-              />
+              <h2 className="font-black text-xl uppercase mb-4">Información de Facturación</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-black mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={customerInfo.email}
+                    onChange={(e) => handleCustomerInfoChange('email', e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-black focus:border-orange-500 focus:outline-none"
+                    required
+                  />
+                </div>
 
-              {/* Form Validation Warning */}
-              {!isFormValid() && (
-                <div 
-                  className="bg-orange-100 border-3 border-orange-500 p-4 mt-6 flex items-start gap-3"
-                  style={{ boxShadow: '3px 3px 0 #000000' }}
-                >
-                  <AlertTriangleIcon className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <div>
+                  <label className="block text-sm font-bold text-black mb-2">
+                    Nombre Completo
+                  </label>
+                  <input
+                    type="text"
+                    value={customerInfo.name}
+                    onChange={(e) => handleCustomerInfoChange('name', e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-black focus:border-orange-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-black mb-2">
+                    Dirección
+                  </label>
+                  <input
+                    type="text"
+                    value={customerInfo.address.line1}
+                    onChange={(e) => handleCustomerInfoChange('address.line1', e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-black focus:border-orange-500 focus:outline-none"
+                    placeholder="Calle y número"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-orange-800 font-bold text-sm mb-1">
-                      {t('validation.incomplete_form')}
-                    </p>
-                    <p className="text-orange-700 text-xs font-medium">
-                      {t('validation.complete_fields')}
-                    </p>
+                    <label className="block text-sm font-bold text-black mb-2">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      value={customerInfo.address.city}
+                      onChange={(e) => handleCustomerInfoChange('address.city', e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-black focus:border-orange-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-black mb-2">
+                      Código Postal
+                    </label>
+                    <input
+                      type="text"
+                      value={customerInfo.address.postal_code}
+                      onChange={(e) => handleCustomerInfoChange('address.postal_code', e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-black focus:border-orange-500 focus:outline-none"
+                      required
+                    />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Selección de método de pago */}
+            <div 
+              className="bg-white border-4 border-black p-6"
+              style={{ boxShadow: '6px 6px 0 #000000' }}
+            >
+              <h2 className="font-black text-xl uppercase mb-4">Método de Pago</h2>
+              
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="stripe"
+                    name="payment-method"
+                    checked={paymentState.selectedMethod === 'stripe'}
+                    onChange={() => setPaymentMethod('stripe')}
+                    className="mr-3"
+                  />
+                  <label htmlFor="stripe" className="flex items-center gap-2 font-bold">
+                    <span>💳</span>
+                    <span>Tarjeta de Crédito/Débito</span>
+                    <span className="text-xs text-gray-500">(Visa, Mastercard, American Express)</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="paypal"
+                    name="payment-method"
+                    checked={paymentState.selectedMethod === 'paypal'}
+                    onChange={() => setPaymentMethod('paypal')}
+                    className="mr-3"
+                  />
+                  <label htmlFor="paypal" className="flex items-center gap-2 font-bold">
+                    <span>💙</span>
+                    <span>PayPal</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Formulario de pago */}
+            <div 
+              className="bg-white border-4 border-black p-6"
+              style={{ boxShadow: '6px 6px 0 #000000' }}
+            >
+              <h2 className="font-black text-xl uppercase mb-4">Detalles de Pago</h2>
+              
+              {paymentState.selectedMethod === 'stripe' && paymentState.stripe && (
+                <Elements stripe={paymentState.stripe}>
+                  <StripePaymentForm 
+                    amount={cartState.summary.totalAmount}
+                    currency="USD"
+                    cartItems={cartState.items}
+                    customerInfo={customerInfo}
+                  />
+                </Elements>
               )}
 
-              {/* Security Notice */}
-              <div 
-                className="bg-blue-100 border-3 border-blue-500 p-4 mt-6"
-                style={{ boxShadow: '3px 3px 0 #000000' }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <LockIcon className="w-4 h-4 text-blue-600" />
-                  <p className="text-blue-800 font-black text-sm uppercase">
-                    {t('security.title')}
-                  </p>
+              {paymentState.selectedMethod === 'paypal' && paymentState.paypalLoaded && (
+                <PayPalPaymentForm
+                  amount={cartState.summary.totalAmount}
+                  currency="USD"
+                  cartItems={cartState.items}
+                  customerInfo={customerInfo}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Resumen del pedido */}
+          <div className="lg:col-span-1">
+            <div 
+              className="bg-white border-4 border-black p-6 sticky top-8"
+              style={{ boxShadow: '6px 6px 0 #000000' }}
+            >
+              <h2 className="font-black text-xl uppercase mb-4">Resumen del Pedido</h2>
+              
+              <div className="space-y-3 mb-6">
+                {cartState.items.map((item) => (
+                  <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-200">
+                    <div>
+                      <h4 className="font-bold text-sm">{item.productTitle}</h4>
+                      <p className="text-xs text-gray-600">Por: {item.seller.storeName}</p>
+                    </div>
+                    <span className="font-bold">${item.currentPrice.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2 mb-6">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span className="font-bold">${cartState.summary.subtotal.toFixed(2)}</span>
                 </div>
-                <p className="text-blue-700 text-xs font-medium">
-                  {t('security.description')}
-                </p>
+                
+                {cartState.summary.feeBreakdown.map((fee, index) => (
+                  <div key={index} className="flex justify-between text-sm text-gray-600">
+                    <span>{fee.description}:</span>
+                    <span>${fee.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+                
+                <hr className="border-black border-2" />
+                
+                <div className="flex justify-between text-xl font-black">
+                  <span>Total:</span>
+                  <span className="text-orange-500">${cartState.summary.totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-500 text-center">
+                <p>🔒 Pago 100% seguro y cifrado</p>
+                <p>Todos los métodos de pago están protegidos</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white border-6 border-black p-8 max-w-md w-full"
-            style={{ boxShadow: '8px 8px 0 #000000' }}
-          >
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-500 border-4 border-black rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircleIcon className="w-8 h-8 text-white" />
-              </div>
-              
-              <h2 className="text-2xl font-black text-black uppercase mb-4">
-                {t('success_modal.title')}
-              </h2>
-              
-              <p className="text-black font-bold mb-2">
-                {t('success_modal.order_processed', { orderNumber })}
-              </p>
-              
-              <p className="text-gray-600 text-sm font-medium mb-6">
-                {t('success_modal.email_sent')}
-              </p>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={() => router.push('/productos')}
-                  className="w-full bg-yellow-400 border-4 border-black font-black text-black uppercase py-3 hover:bg-orange-500 transition-all"
-                  style={{ boxShadow: '4px 4px 0 #000000' }}
-                >
-                  {t('success_modal.continue_shopping')}
-                </button>
-                
-                <button
-                  onClick={() => setShowSuccessModal(false)}
-                  className="w-full bg-white border-4 border-black font-black text-black uppercase py-3 hover:bg-gray-100 transition-all"
-                  style={{ boxShadow: '4px 4px 0 #000000' }}
-                >
-                  {tCommon('close')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

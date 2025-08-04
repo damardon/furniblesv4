@@ -506,12 +506,18 @@ export default function SellerProductsPage() {
                 className="w-full px-3 py-2 border-2 border-black rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="ALL">{t('filters.all_categories')}</option>
-                <option value="TABLES">{tProducts('categories.tables')}</option>
-                <option value="CHAIRS">{tProducts('categories.chairs')}</option>
-                <option value="BEDS">{tProducts('categories.beds')}</option>
-                <option value="STORAGE">{tProducts('categories.storage')}</option>
+                <option value="LIVING_DINING">{tProducts('categories.living_dining')}</option>
+                <option value="BEDROOM">{tProducts('categories.bedroom')}</option>
                 <option value="OUTDOOR">{tProducts('categories.outdoor')}</option>
+                <option value="STORAGE">{tProducts('categories.storage')}</option>
+                <option value="NORDIC">{tProducts('categories.nordic')}</option>
                 <option value="DECORATIVE">{tProducts('categories.decorative')}</option>
+                <option value="FURNITURE">{tProducts('categories.furniture')}</option>
+                <option value="BEDS">{tProducts('categories.beds')}</option>
+                <option value="OFFICE">{tProducts('categories.office')}</option>
+                <option value="BATHROOM">{tProducts('categories.bathroom')}</option>
+                <option value="KITCHEN">{tProducts('categories.kitchen')}</option>
+                
               </select>
             </div>
 

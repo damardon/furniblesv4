@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -44,12 +44,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
 
 interface AdminProductDetailProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function AdminProductDetail({ params }: AdminProductDetailProps) {
+  const resolvedParams = use(params)
   const [moderationAction, setModerationAction] = useState<'approve' | 'reject' | 'suspend' | null>(null)
   const [moderationReason, setModerationReason] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -83,12 +84,12 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
         
         // Mock data realista basado en el schema Prisma
         const mockProduct: Product = {
-          id: params.id,
+          id: resolvedParams.id,
           title: "Mesa de Comedor Rústica Premium",
           description: "Una hermosa mesa de comedor hecha de madera maciza de roble con acabado rústico artesanal. Diseño perfecto para reuniones familiares, con capacidad para 6-8 personas. Incluye planos detallados, lista de materiales y guía paso a paso.",
           slug: "mesa-comedor-rustica-premium",
           price: 89.99,
-          category: ProductCategory.TABLES,
+          category: ProductCategory.LIVING_DINING,
           difficulty: Difficulty.INTERMEDIATE,
           status: ProductStatus.PENDING,
           pdfUrl: "/files/pdf_12345.pdf",
@@ -161,7 +162,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     }
 
     loadProduct()
-  }, [params.id])
+  }, [resolvedParams.id])
 
   // Manejar moderación
   const handleModeration = async () => {

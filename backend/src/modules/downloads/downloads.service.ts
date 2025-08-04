@@ -58,22 +58,18 @@ export class DownloadsService {
   }
 
   /**
-   * Descargar archivo por token
+   * Descargar archivo por token - CORREGIDO
    */
   async downloadFile(
     token: string, 
     req: any, 
     res: Response
   ): Promise<StreamableFile> {
-    // Validar token
+    // Validar token - SIN incluir pdfFile
     const downloadToken = await this.prisma.downloadToken.findUnique({
       where: { token },
       include: {
-        product: {
-          include: {
-            pdfFile: true
-          }
-        },
+        product: true, // Solo obtener producto básico
         order: true
       }
     });
@@ -97,13 +93,14 @@ export class DownloadsService {
       throw new BadRequestException('Límite de descargas excedido');
     }
 
-    // Verificar que el producto tiene archivo PDF
-    if (!downloadToken.product.pdfFile) {
+    // Obtener archivo PDF desde pdfFileId - CORREGIDO
+    const pdfFile = await this.getPdfFile(downloadToken.product);
+    
+    if (!pdfFile) {
       throw new NotFoundException('Archivo no encontrado');
     }
 
-    const file = downloadToken.product.pdfFile;
-    const filePath = path.join(process.env.STORAGE_PATH || './storage', file.key);
+    const filePath = path.join(process.env.STORAGE_PATH || './storage', pdfFile.key);
 
     // Verificar que el archivo existe físicamente
     if (!fs.existsSync(filePath)) {
@@ -122,13 +119,13 @@ export class DownloadsService {
     });
 
     // Log de descarga
-    console.log(`Download: ${file.filename} by token ${token} (${downloadToken.downloadCount + 1}/${downloadToken.downloadLimit})`);
+    console.log(`Download: ${pdfFile.filename} by token ${token} (${downloadToken.downloadCount + 1}/${downloadToken.downloadLimit})`);
 
     // Configurar headers de respuesta
     res.set({
-      'Content-Type': file.mimeType,
-      'Content-Disposition': `attachment; filename="${file.filename}"`,
-      'Content-Length': file.size.toString(),
+      'Content-Type': pdfFile.mimeType,
+      'Content-Disposition': `attachment; filename="${pdfFile.filename}"`,
+      'Content-Length': pdfFile.size.toString(),
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
@@ -140,14 +137,37 @@ export class DownloadsService {
   }
 
   /**
+   * Helper function para obtener archivo PDF del producto - NUEVA
+   */
+  private async getPdfFile(product: any) {
+    try {
+      if (!product.pdfFileId) {
+        return null;
+      }
+
+      const pdfFile = await this.prisma.file.findUnique({
+        where: { 
+          id: product.pdfFileId,
+          type: 'PDF',
+          status: 'ACTIVE'
+        }
+      });
+
+      return pdfFile;
+    } catch (error) {
+      console.error('Error getting PDF file:', error);
+      return null;
+    }
+  }
+
+  /**
    * Obtener estadísticas de descargas para un seller
    */
   async getSellerDownloadStats(sellerId: string, fromDate?: Date, toDate?: Date) {
+    // Corrector: Buscar por products del seller, no por sellerIds en order
     const where: any = {
-      order: {
-        sellerIds: {
-          has: sellerId
-        }
+      product: {
+        sellerId: sellerId
       }
     };
 
@@ -200,5 +220,104 @@ export class DownloadsService {
     });
 
     return result.count;
+  }
+
+  /**
+   * Regenerar token de descarga (para casos especiales)
+   */
+  async regenerateDownloadToken(tokenId: string, sellerId: string): Promise<string> {
+    // Verificar que el token pertenece al seller
+    const existingToken = await this.prisma.downloadToken.findFirst({
+      where: {
+        id: tokenId,
+        product: {
+          sellerId: sellerId
+        }
+      }
+    });
+
+    if (!existingToken) {
+      throw new NotFoundException('Token no encontrado o sin permisos');
+    }
+
+    // Generar nuevo token
+    const newToken = this.generateUniqueToken();
+
+    // Actualizar token
+    await this.prisma.downloadToken.update({
+      where: { id: tokenId },
+      data: {
+        token: newToken,
+        downloadCount: 0, // Resetear contador
+        isActive: true,
+        lastDownloadAt: null
+      }
+    });
+
+    return newToken;
+  }
+
+  /**
+   * Generar token único
+   */
+  private generateUniqueToken(): string {
+    const timestamp = Date.now().toString();
+    const random = Math.random().toString(36).substring(2);
+    return `dl_${timestamp}_${random}`;
+  }
+
+  /**
+   * Obtener detalles de un token específico
+   */
+  async getTokenDetails(token: string, userId: string) {
+    const downloadToken = await this.prisma.downloadToken.findUnique({
+      where: { token },
+      include: {
+        product: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            category: true,
+            sellerId: true
+          }
+        },
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            createdAt: true,
+            buyerId: true
+          }
+        }
+      }
+    });
+
+    if (!downloadToken) {
+      throw new NotFoundException('Token no encontrado');
+    }
+
+    // Verificar permisos (comprador o vendedor)
+    const hasPermission = downloadToken.order.buyerId === userId || 
+                         downloadToken.product.sellerId === userId;
+
+    if (!hasPermission) {
+      throw new BadRequestException('Sin permisos para acceder a este token');
+    }
+
+    return {
+      id: downloadToken.id,
+      token: downloadToken.token,
+      productTitle: downloadToken.product.title,
+      productSlug: downloadToken.product.slug,
+      orderNumber: downloadToken.order.orderNumber,
+      downloadLimit: downloadToken.downloadLimit,
+      downloadCount: downloadToken.downloadCount,
+      remainingDownloads: downloadToken.downloadLimit - downloadToken.downloadCount,
+      expiresAt: downloadToken.expiresAt,
+      isActive: downloadToken.isActive,
+      lastDownloadAt: downloadToken.lastDownloadAt,
+      createdAt: downloadToken.createdAt
+    };
   }
 }

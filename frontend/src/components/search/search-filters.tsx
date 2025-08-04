@@ -191,22 +191,24 @@ export function SearchFilters({
 
   const categories = [
     { value: 'ALL', label: tProducts('categories.all') },
-    { value: ProductCategory.FURNITURE, label: tProducts('categories.furniture') },
-    { value: ProductCategory.CHAIRS, label: tProducts('categories.chairs') },
-    { value: ProductCategory.TABLES, label: tProducts('categories.tables') },
+    { value: ProductCategory.LIVING_DINING, label: tProducts('categories.living_dining') },
+    { value: ProductCategory.BEDROOM, label: tProducts('categories.bedroom') },
+    { value: ProductCategory.OUTDOOR, label: tProducts('categories.outdoor') },
     { value: ProductCategory.STORAGE, label: tProducts('categories.storage') },
+    { value: ProductCategory.NORDIC, label: tProducts('categories.nordic') },
+    { value: ProductCategory.DECORATIVE, label: tProducts('categories.decorative') },
+    { value: ProductCategory.FURNITURE, label: tProducts('categories.furniture') },
     { value: ProductCategory.BEDS, label: tProducts('categories.beds') },
     { value: ProductCategory.OFFICE, label: tProducts('categories.office') },
-    { value: ProductCategory.OUTDOOR, label: tProducts('categories.outdoor') },
-    { value: ProductCategory.DECORATIVE, label: tProducts('categories.decorative') }
+    { value: ProductCategory.BATHROOM, label: tProducts('categories.bathroom') },    
+    { value: ProductCategory.KITCHEN, label: tProducts('categories.kitchen') },  
   ]
 
   const difficulties = [
     { value: 'ALL', label: t('difficulty.all') },
-    { value: Difficulty.BEGINNER, label: t('difficulty.beginner') },
+    { value: Difficulty.EASY, label: t('difficulty.easy') },
     { value: Difficulty.INTERMEDIATE, label: t('difficulty.intermediate') },
-    { value: Difficulty.ADVANCED, label: t('difficulty.advanced') },
-    { value: Difficulty.EXPERT, label: t('difficulty.expert') }
+    { value: Difficulty.ADVANCED, label: t('difficulty.advanced') }
   ]
 
   const sortOptions = [

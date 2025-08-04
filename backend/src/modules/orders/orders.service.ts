@@ -123,6 +123,44 @@ async handleCheckoutExpired(params: {
   }
 }
 
+async findOrderByPayPalId(paypalOrderId: string) {
+  return await this.prisma.order.findFirst({
+    where: { paypalOrderId },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              seller: true
+            }
+          }
+        }
+      },
+      buyer: true
+    }
+  });
+}
+
+async findOrderByPaymentId(paymentIntentId: string) {
+  return await this.prisma.order.findFirst({
+    where: { paymentIntentId },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              seller: true
+            }
+          }
+        }
+      },
+      buyer: true
+    }
+  });
+}
+
+
+
 async handlePaymentCanceled(params: {
   orderId: string;
   paymentIntentId: string;
@@ -347,6 +385,30 @@ private generateFeeBreakdown(summary: any, sellerIds: string[]): any[] {
 
   return breakdown;
 }
+
+/**
+ * Construir objeto de ordenamiento para Prisma
+ */
+private buildOrderBy(sortBy?: string, sortOrder?: string): any {
+  const order = (sortOrder === 'asc') ? 'asc' as const : 'desc' as const;
+  
+  switch (sortBy) {
+    case 'createdAt':
+      return { createdAt: order };
+    case 'updatedAt':
+      return { updatedAt: order };
+    case 'totalAmount':
+      return { totalAmount: order };
+    case 'orderNumber':
+      return { orderNumber: order };
+    case 'status':
+      return { status: order };
+    case 'paidAt':
+      return { paidAt: order };
+    default:
+      return { createdAt: 'desc' };
+  }
+}
   /**
    * Obtener orden por ID
    */
@@ -415,7 +477,7 @@ private generateFeeBreakdown(summary: any, sellerIds: string[]): any[] {
         },
         buyer: true
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: this.buildOrderBy(filters.sortBy, filters.sortOrder),
       skip: (filters.page - 1) * filters.limit,
       take: filters.limit
     });
@@ -468,7 +530,7 @@ private generateFeeBreakdown(summary: any, sellerIds: string[]): any[] {
         },
         buyer: true
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: this.buildOrderBy(filters.sortBy, filters.sortOrder),
       skip: (filters.page - 1) * filters.limit,
       take: filters.limit
     });
@@ -732,7 +794,7 @@ private generateFeeBreakdown(summary: any, sellerIds: string[]): any[] {
         },
         buyer: true
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: this.buildOrderBy(filters.sortBy, filters.sortOrder),
       skip: (filters.page - 1) * filters.limit,
       take: filters.limit
     });

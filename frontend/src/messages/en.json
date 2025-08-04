@@ -3,6 +3,9 @@
     "login": "login",
     "signup": "Sign up"
   },
+  "breadcrumb": {
+    "home": "Navigation route"
+  },
   "navigation": {
     "home": "Home",
     "products": "Products",
@@ -10,102 +13,118 @@
     "contact": "Contact"
   },
   "header": {
-    "login": "Login",
-    "register": "Sign up",
-    "logout": "Log out",
-    "my_account": "My Account",
-    "my_orders": "My Orders",
-    "my_downloads": "My Downloads",
-    "my_profile": "My Profile",
-    "cart": "Cart",
-    "notifications": "Notifications",
-    "seller_dashboard": "Seller Dashboard",
-    "admin_panel": "Adin Panel",
-    "dark_mode": "Dark mode",
-    "light_mode": "Light mode",
-    "language": "Language",
-    "search_placeholder": "Search products...",
-    "welcome": "Welcome",
-    "menu": "Menu",
-    "home": "Home",
-    "products": "Products",
-    "sellers": "Sellers",
-    "help": "Help",
-    "favorites": "Favorites",
-    "upload_product": "UPLOAD PRODUCT",
-    "admin_moderation_pending": "MODERATION PENDING",
-    "admin_products": "PRODUCTS",
-    "admin_reviews": "REVIEWS",
-    "admin_reports": "REPORTS",
-    "admin_dashboard": "ADMIN DASHBOARD",
-    "admin_users": "USERS",
-    "admin_analytics": "ANALYTICS",
-    "admin_pending": "PENDING"
+      "login": "Login",
+      "register": "Sign up",
+      "logout": "Log out",
+      "my_account": "My Account",
+      "my_orders": "My Orders",
+      "my_downloads": "My Downloads",
+      "my_profile": "My Profile",
+      "cart": "Cart",
+      "notifications": "Notifications",
+      "seller_dashboard": "Seller Dashboard",
+      "admin_panel": "Adin Panel",
+      "dark_mode": "Dark mode",
+      "light_mode": "Light mode",
+      "language": "Language",
+      "search_placeholder": "Search products...",
+      "welcome": "Welcome",
+      "menu": "Menu",
+      "home": "Home",
+      "catalog": "CATÁLOGO",
+      "our_designers": "NUESTROS DISEÑADORES", 
+      "help_heart": "FURNILOVERS HELP ❤️",
+      "favorites": "Favorites",
+      "upload_product": "UPLOAD PRODUCT",
+      "products":"CATÁLOGO",
+      "sellers":"NUESTROS DISEÑADORES", 
+      "help":"FURNILOVERS HELP ❤️",
+      "admin_moderation_pending": "MODERATION PENDING",
+      "admin_products": "PRODUCTS",
+      "admin_reviews": "REVIEWS",
+      "admin_reports": "REPORTS",
+      "admin_dashboard": "ADMIN DASHBOARD",
+      "admin_users": "USERS",
+      "admin_analytics": "ANALYTICS",
+      "admin_pending": "PENDING"
   },
   "home": {
     "hero_title": "Easy plans for moderns furnitures,",
     "hero_subtitle": "doing for you",
     "exclusive_designs": "EXCLUSIVES DESIGNS",
     "exclusive_designs_desc": "Explore our store with +1000 models, with exclsuive and modern designs",
-    "step_by_step": "PLANOS PASO A PASO",
-    "step_by_step_desc": "Cada PDF tiene una guía con explicaciones 'para principiantes' para hacer los muebles.",
+    "step_by_step": "PLANS STEP BY STEP",
+    "step_by_step_desc": "All our PDFs are a complete DIY guide 'for dummies' to build any furniture.",
     "share_work": "¡COMPARTE TU TRABAJO!",
     "share_work_desc": "Furnibles es una comunidad vibrante y entusiasta que ama ver modelos materializados. ¡Comparte tu arte!",
     "always_save": "AHORRA SIEMPRE",
     "always_save_desc": "Construye tus propios muebles a una fracción del costo de comprar uno terminado.",
     "quality": "CALIDAD",
-    "exclusive_design": "DISEÑO EXCLUSIVO",
+    "exclusive_design": "EXCLUSIVE DESIGNS",
     "savings": "SAVINGS",
     "categories": "CATEGORIES",
-    "living_dining": "SALA Y COMEDOR",
-    "kitchen": "COCINA",
-    "bedroom": "DORMITORIO",
-    "outdoor": "EXTERIOR",
-    "what_includes": "¿Qué incluyen nuestros planos?",
-    "step1": "Cada PDF tiene una guía con explicaciones 'para principiantes' para hacer los muebles.",
-    "step2": "Será como ir al supermercado: Tu lista de materiales tiene fotografías y alternativas en caso de que no tengas el material.",
-    "step3": "Puedes llevar el PDF a la tienda de cortes y dimensionado y pedir los cortes directamente.",
-    "step4": "Sabemos que tendrás dudas. Para eso tenemos un equipo que te asistirá en caso de que necesites ayuda.",
-    "join_community": "SÉ PARTE DE LA COMUNIDAD FURNIBLES",
-    "community_desc": "Esta comunidad crece gracias a ti. Cada mes hacemos reuniones virtuales para conocer los diseños.",
-    "models": "Modelos",
+    "living_dining": "LIVING & DINING",
+    "bedroom": "BEDROOM",
+    "outdoor": "OUTDOOR",
+    "what_includes": "¿What includes our plans?",
+    "step1": "Each PDF has a guide with 'beginner-friendly' explanations for making the furniture.",
+    "step2": "It will be like going to the supermarket: Your materials list has photographs and alternatives in case you don't have the material.",
+    "step3": "You can take the PDF to the cutting and sizing shop and request the cuts directly.",
+    "step4": "We know you'll have questions. That's why we have a team that will assist you in case you need help.",
+    "join_community": "BE PART OF THE FURNIBLES COMMUNITY",
+    "community_desc": "This community grows thanks to you. Every month we hold virtual meetings to showcase the designs.",
+    "furniture":"Furniture",
+    "models": "Models",
     "members": "Members",
-    "countries": "Países",
-    "join_now": "¡ÚNETE AHORA!",
-    "furniture": "furniture",
-    "storage": "storage",
-    "chairs": "chairs",
-    "tables": "tables",
+    "countries": "Countries",
+    "join_now": "¡JOIN NOW!",
+    "storage": "Storage",
+    "nordic": "Nordic",
+    "living dining": "Living & dining room",
     "office": "Office",
-    "lighting": "lighting"
+    "kitchen": "kitchen"
+  },
+  "homepage": {
+    "featuredProducts": {
+      "title": "Featured Products",
+      "viewCatalog": "View Full Catalog",
+      "noProducts": "No featured products available at this time",
+      "viewFullCatalog": "View Full Catalog"
+    }
   },
   "products": {
-    "title": "Catálogo de Productos",
-    "subtitle": "Descubre nuestra colección de planos de muebles únicos",
-    "search_placeholder": "Buscar productos...",
-    "filter_all": "Todos",
-    "filter_chairs": "Sillas",
-    "filter_tables": "Mesas",
-    "filter_furniture": "Muebles",
-    "filter_storage": "Almacenamiento",
-    "sort_by": "Ordenar por",
-    "sort_newest": "Más recientes",
-    "sort_popular": "Más populares",
-    "sort_price_low": "Precio: menor a mayor",
-    "sort_price_high": "Precio: mayor a menor",
-    "price": "Precio",
-    "rating": "Calificación",
+    "title": "Products",
+    "subtitle": "Discover digital plans for unique furniture",
+    "search_placeholder": "BFind products...",
+    "load_more": "Load more",
+    "no_results": "No results",
+    "filter_all": "Filter all",
+    "filter_living_dining": "living & dining room",
+    "filter_bedroom": "Bedroom",
+    "filter_outdoor": "Outdoor",
+    "filter_Storage": "Storage",
+    "filter_nordic": "Nordic",
+    "filter_decorative": "Decorative",
+    "filter_beds": "Beds",
+    "filter_office": "Office",
+    "filter_bathroom": "Bathroom",
+    "filter_kitchen": "Kitchen",
+    "sort_by": "Sort by",
+    "sort_newest": "Sort newest",
+    "sort_popular": "Sort popular",
+    "sort_price_low": "Sort price low",
+    "sort_price_high": "Sort price high",
+    "price": "Price",
+    "rating": "Rating",
     "downloads": "descargas",
     "add_to_cart": "Agregar al carrito",
     "view_details": "Ver detalles",
     "no_products": "No se encontraron productos",
     "no_products_desc": "Prueba con otros filtros o términos de búsqueda",
     "loading": "Cargando productos...",
-    "difficulty": "Dificultad",
-    "beginner": "Principiante",
+    "easy": "Principiante",
     "intermediate": "Intermedio",
     "advanced": "Avanzado",
-    "expert": "Experto",
     "estimated_time": "Tiempo estimado",
     "hours": "horas",
     "featured": "Destacado",
@@ -120,7 +139,110 @@
     "product_details": "Detalles del Producto",
     "description": "Descripción",
     "reviews": "Reseñas",
-    "write_review": "Escribir Reseña"
+    "write_review": "Escribir Reseña",
+    "sort": {
+      "newest": "Más nuevos",
+      "oldest": "Más antiguos",
+      "price_low": "Precio: menor a mayor",
+      "price_high": "Precio: mayor a menor",
+      "popular": "Más populares",
+      "rating": "Mejor calificados"
+    },
+    "filters_button": "Filters",
+    "categories": {
+      "all": "Todas las categorías",
+      "living_dining": "Living Comedor",
+      "bedroom": "Dormitorio",
+      "outdoor": "Exterior",
+      "storage": "Almacenamiento",
+      "nordic": "Nordico",
+      "decorative": "Decorativos",
+      "furniture": "Muebles general",
+      "beds": "Camas",
+      "office": "Oficina",
+      "bathroom": "Baño",
+      "kitchen": "Cocina" 
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado"
+    },
+    "details": {
+      "price": "Precio",
+      "rating": "Calificación",
+      "reviews": "reseñas",
+      "difficulty": "Dificultad",
+      "materials": "Materiales",
+      "dimensions": "Dimensiones",
+      "tools_required": "Herramientas requeridas",
+      "estimated_time": "Tiempo estimado",
+      "includes": "Incluye",
+      "description": "Descripción",
+      "seller": "Vendedor",
+      "files_included": "Archivos incluidos"
+    },
+    "actions": {
+      "add_to_cart": "Agregar al carrito",
+      "buy_now": "Comprar ahora",
+      "view_details": "Ver detalles",
+      "download": "Descargar",
+      "share": "Compartir",
+      "favorite": "Agregar a favoritos",
+      "compare": "Comparar",
+      "preview": "Vista previa"
+    },
+    "status": {
+      "available": "Disponible",
+      "out_of_stock": "Agotado",
+      "coming_soon": "Próximamente",
+      "discontinued": "Descontinuado"
+    },
+    "notifications": {
+      "added_to_cart": "Producto agregado al carrito",
+      "added_to_favorites": "Producto agregado a favoritos",
+      "removed_from_favorites": "Producto removido de favoritos",
+      "shared": "Producto compartido exitosamente"
+    },
+    "create": {
+      "title": "Crear Producto",
+      "basic_info": "Información Básica",
+      "pricing": "Precios",
+      "files": "Archivos",
+      "preview": "Vista Previa"
+    },
+    "upload": {
+      "drag_drop": "Arrastra y suelta archivos aquí",
+      "or": "o",
+      "browse": "Examinar archivos",
+      "supported_formats": "Formatos soportados",
+      "max_size": "Tamaño máximo"
+    },
+    "header": {
+      "badge": "¡PLANOS PREMIUM!",
+      "title": "Catálogo de Productos", 
+      "subtitle": "Descubre nuestra colección de planos de muebles únicos"
+    },
+    "search": {
+      "placeholder": "Buscar productos..."
+    },
+    "difficulties": {
+      "all": "Todas",
+      "beginner": "Fácil",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado"
+    },
+    "results": {
+      "count": "{count} PRODUCTOS",
+      "search_label": "BÚSQUEDA",
+      "category_label": "CATEGORÍA", 
+      "difficulty_label": "DIFICULTAD"
+    },
+    "empty": {
+      "title": "NO HAY PRODUCTOS",
+      "subtitle": "Prueba con otros filtros o términos de búsqueda",
+      "clear_filters": "LIMPIAR FILTROS"
+    }
   },
   "product_detail": {
     "loading": "Cargando producto...",
@@ -164,14 +286,14 @@
     }
   },
   "seller": {
-    "title": "Nuestros Vendedores",
-    "subtitle": "Descubre a los mejores artesanos y creadores de muebles de nuestra plataforma",
+    "title": "Our sellers",
+    "subtitle": "Find the best artisans and creators of furnitures in our platform",
     "banner_alt": "Banner de {storeName}",
-    "verified": "VERIFICADO",
-    "by_seller": "Por {firstName} {lastName}",
-    "default_description": "Tienda de {firstName} {lastName}",
-    "results_count": "{count} vendedores encontrados",
-    "loading_sellers": "Cargando vendedores...",
+    "verified": "VERIFIED",
+    "by_seller": "By {firstName} {lastName}",
+    "default_description": "Store of {firstName} {lastName}",
+    "results_count": "{count} sellers results",
+    "loading_sellers": "Loading sellers...",
     "stats": {
       "reviews_count": "{count} reviews",
       "sales": "ventas",
@@ -201,24 +323,50 @@
       "description": "Intenta con otros términos de búsqueda"
     },
     "dashboard": {
-      "title": "Panel del Vendedor",
-      "welcome": "Bienvenido, {storeName}",
-      "overview": "Resumen",
-      "quick_stats": "Estadísticas Rápidas",
-      "revenue_overview": "Resumen de Ingresos",
-      "recent_sales": "Ventas Recientes",
-      "top_products": "Productos Destacados",
-      "recent_reviews": "Reseñas Recientes",
-      "total_revenue": "Ingresos Totales",
-      "total_sales": "Ventas Totales",
-      "total_products": "Productos Totales",
-      "average_rating": "Calificación Promedio",
-      "view_all": "Ver Todos",
-      "no_data": "No hay datos disponibles",
-      "this_month": "Este Mes",
-      "last_month": "Mes Pasado",
-      "growth": "Crecimiento",
-      "vs_last_month": "vs mes anterior"
+      "title": "Seller Dashboard",
+      "welcome": "Welcome, {storeName}",
+      "overview": "Overview",
+      "quick_stats": "Quick Stats",
+      "revenue_overview": "Revenue Overview",
+      "recent_sales": "Recent Sales",
+      "top_products": "Top Products",
+      "recent_reviews": "Recent Reviews",
+      "total_revenue": "Total Revenue",
+      "total_sales": "Total Sales",
+      "total_products": "Total Products",
+      "average_rating": "Average Rating",
+      "view_all": "View All",
+      "no_data": "No data available",
+      "this_month": "This Month",
+      "last_month": "Last Month",
+      "growth": "Growth",
+      "vs_last_month": "vs last month",
+      "last_update": "Last update",
+      "no_change": "No change",
+      "active_products": "Active Products",
+      "sales": "Sales",
+      "views": "Views",
+      "respond": "Respond",
+      "quick_actions": {
+        "upload_product": "Upload Product",
+        "upload_product_desc": "Add a new product to your catalog",
+        "create_product": "Create Product",
+        "analytics": "Analytics",
+        "analytics_desc": "View detailed statistics of your store",
+        "view_analytics": "View Analytics",
+        "reviews": "Reviews",
+        "reviews_desc": "Manage your product reviews",
+        "manage": "Manage"
+      },
+      "tips": {
+        "title": "Seller Tips",
+        "tip1": "Upload high-quality photos to better showcase your products",
+        "tip2": "Respond quickly to reviews to build trust",
+        "tip3": "Keep your descriptions clear and detailed",
+        "tip4": "Provide accurate and easy-to-follow plans",
+        "tip5": "Promote your products on social media",
+        "tip6": "Maintain competitive but fair prices for your work"
+      }
     },
     "navigation": {
       "dashboard": "Dashboard",
@@ -582,11 +730,18 @@
         "jun": "Jun"
       },
       "categories": {
-        "tables": "Mesas",
-        "chairs": "Sillas",
+        "nordic": "Nórdico",
+        "kitchen": "Cocina", 
         "storage": "Almacenamiento",
         "decorative": "Decorativo",
-        "others": "Otros"
+        "living_dining": "Salón y Comedor",
+        "bedroom": "Dormitorio",
+        "outdoor": "Exterior",
+        "organization": "Organización",
+        "furniture": "Muebles",
+        "beds": "Camas",
+        "office": "Oficina",
+        "bathroom": "Baño"
       },
       "key_metrics": {
         "avg_order_value": "VALOR PROMEDIO PEDIDO",
@@ -927,6 +1082,15 @@
     }
   },
   "admin": {
+    "layout": {
+        "panel_title": "General",
+        "system_status":"Estado del Sistema",
+        "system_active":"Sistema activo",
+        "back_to_site":"volver",
+        "total_users":"Total Usuarios",
+        "total_products":"Total Productos",
+        "open_menu":"Abrir"
+      },
     "login": {
       "title": "Panel Admin",
       "subtitle": "Acceso Exclusivo para Administradores",
@@ -1117,6 +1281,13 @@
         "promote_to": "Promover a {role}",
         "demote_to": "Degradar a {role}",
         "reset_password": "Reset Password"
+      },
+      "management": {
+        "title": "titulo",
+        "description": "Descripción",
+        "coming_soon": "Pronto",
+        "coming_soon_description": "pronto sorpresas para ti",
+        "view_all": "ver todo"
       }
     },
     "products": {
@@ -1200,8 +1371,8 @@
         "draft": "BORRADOR"
       },
       "categories": {
-        "tables": "Mesas",
-        "chairs": "Sillas",
+        "living_dining": "Living Comedor",
+        "Kitchen": "Cocina",
         "beds": "Camas",
         "storage": "Almacenamiento",
         "outdoor": "Exterior",
@@ -1293,6 +1464,13 @@
         "suspend_product": "Suspender Producto",
         "feature_product": "Destacar Producto",
         "unfeature_product": "Quitar Destacado"
+      },
+      "moderation": {
+        "title": "moderacion panel",
+        "description": "descripcion moderacion",
+        "coming_soon": "pronto moderacion",
+        "coming_soon_description": "descripcion de la moderacion",
+        "view_pending": "Ver pendientes..."
       }
     },
     "orders": {
@@ -1324,27 +1502,27 @@
     }
   },
   "orders": {
-    "title": "My orders",
+    "title": "Mis Pedidos",
     "subtitle": "Historial completo de tus compras",
-    "breadcrumb": "My orders",
-    "access_restricted": "Access restricted",
-    "order_number": "Order number",
-    "order_date": "Order date",
-    "order_status": "Status",
+    "breadcrumb": "Mis Pedidos",
+    "access_restricted": "Acceso restringido",
+    "order_number": "Número de Pedido",
+    "order_date": "Fecha del Pedido",
+    "order_status": "Estado",
     "order_total": "Total",
-    "order_items": "Products",
-    "view_order": "View order",
-    "download_products": "Download products",
-    "order_details": "Order details",
-    "billing_information": "Billing information",
-    "payment_information": "Payment information",
-    "order_history": "Order history",
-    "order_summary": "Order summary",
+    "order_items": "Productos",
+    "view_order": "Ver Pedido",
+    "download_products": "Descargar Productos",
+    "order_details": "Detalles del Pedido",
+    "billing_information": "Información de Facturación",
+    "payment_information": "Información de Pago",
+    "order_history": "Historial del Pedido",
+    "order_summary": "Resumen del Pedido",
     "subtotal": "Subtotal",
-    "platform_fee": "Platform fee",
+    "platform_fee": "Comisión de Plataforma",
     "total": "Total",
     "quantity_label": "Qty",
-    "results_showing": "Showing {showing} of {total} orders",
+    "results_showing": "Mostrando {showing} de {total} pedidos",
     "no_orders": "No tienes pedidos aún",
     "no_orders_desc": "Comienza explorando nuestro catálogo de productos",
     "no_orders_found": "No se encontraron pedidos",
@@ -1354,19 +1532,19 @@
     "sort_by_date": "Ordenar por fecha",
     "sort_by_amount": "Ordenar por monto",
     "sort_by_status": "Ordenar por estado",
-    "sort_newest": "Sort newest",
-    "sort_oldest": "Sort oldest",
-    "total_orders": "Total Orders",
-    "completed_orders": "Completed orders",
-    "pending_orders": "Pending orders",
-    "total_spent": "Total Spent",
-    "order_created": "Order created",
-    "payment_confirmed": "Payment confirmed",
-    "order_completed": "Order completed",
-    "payment_id": "Payment ID",
-    "payment_status": "Payment status",
-    "payment_method": "Payment method",
-    "credit_debit_card": "Credit/Debit Card",
+    "sort_newest": "Más reciente",
+    "sort_oldest": "Más antiguo",
+    "total_orders": "Total Pedidos",
+    "completed_orders": "Completados",
+    "pending_orders": "Pendientes",
+    "total_spent": "Total Gastado",
+    "order_created": "Pedido Creado",
+    "payment_confirmed": "Pago Confirmado",
+    "order_completed": "Pedido Completado",
+    "payment_id": "ID de Pago",
+    "payment_status": "Estado de Pago",
+    "payment_method": "Método de Pago",
+    "credit_debit_card": "Tarjeta de Crédito/Débito",
     "continue_shopping": "Seguir Comprando",
     "go_to_downloads": "Ir a Descargas",
     "download": "Descargar",
@@ -1376,13 +1554,74 @@
     "back": "Volver",
     "showing_results": "Mostrando {count} de {total} pedidos",
     "items_count": "{count} {item}",
+    "empty": {
+      "title": "No tienes pedidos aún",
+      "description": "Cuando realices tu primera compra, aparecerá aquí",
+      "browse_products": "Explorar Productos",
+      "no_orders": "No tienes pedidos aún",
+      "no_results": "No se encontraron pedidos",
+      "start_shopping": "Comienza explorando nuestro catálogo de productos",
+      "adjust_filters": "Intenta ajustar los filtros de búsqueda"
+    },
+    "filters": {
+      "all": "Todos",
+      "all_statuses": "Todos los Estados",
+      "pending": "Pendientes",
+      "completed": "Completados",
+      "cancelled": "Cancelados",
+      "disputed": "Disputados",
+      "paid": "Pagados",
+      "refunded": "Reembolsados"
+    },
     "status": {
       "pending": "Pendiente",
       "processing": "Procesando",
-      "paid": "Pagado",
       "completed": "Completado",
+      "cancelled": "Cancelado",
+      "disputed": "En Disputa",
+      "paid": "Pagado",
+      "refunded": "Reembolsado",
       "failed": "Fallido",
-      "refunded": "Reembolsado"
+      "shipped": "Enviado",
+      "delivered": "Entregado"
+    },
+    "actions": {
+      "view_details": "Ver Detalles",
+      "view_products": "Ver Productos",
+      "download": "Descargar",
+      "cancel": "Cancelar",
+      "dispute": "Disputar",
+      "reorder": "Volver a Pedir",
+      "contact_seller": "Contactar Vendedor",
+      "leave_review": "Dejar Reseña"
+    },
+    "details": {
+    "order_number": "Número de Pedido",
+    "order_date": "Fecha del Pedido",
+    "total_amount": "Monto Total",
+    "payment_method": "Método de Pago",
+    "billing_address": "Dirección de Facturación",
+    "order_summary": "Resumen del Pedido",
+    "items": "Artículos",
+    "subtotal": "Subtotal",
+    "tax": "Impuestos",
+    "total": "Total",
+    "estimated_delivery": "Entrega Estimada",
+    "tracking_number": "Número de Seguimiento"
+    },
+    "timeline": {
+    "order_placed": "Pedido Realizado",
+    "payment_confirmed": "Pago Confirmado",
+    "processing": "Procesando",
+    "shipped": "Enviado",
+    "delivered": "Entregado",
+    "completed": "Completado"
+    },
+    "notifications": {
+    "order_cancelled": "Pedido cancelado exitosamente",
+    "order_disputed": "Disputa creada exitosamente",
+    "download_started": "Descarga iniciada",
+    "review_submitted": "Reseña enviada exitosamente"
     },
     "status_descriptions": {
       "pending": "El pedido está pendiente de procesamiento",
@@ -1401,9 +1640,6 @@
     "search": {
       "placeholder": "Buscar por número o producto..."
     },
-    "filters": {
-      "all_statuses": "Todos los estados"
-    },
     "sort": {
       "by_date": "Ordenar por fecha",
       "by_amount": "Ordenar por monto",
@@ -1411,48 +1647,36 @@
       "newest": "Más reciente",
       "oldest": "Más antiguo"
     },
-    "empty": {
-      "no_orders": "No tienes pedidos aún",
-      "no_results": "No se encontraron pedidos",
-      "start_shopping": "Comienza explorando nuestro catálogo de productos",
-      "adjust_filters": "Intenta ajustar los filtros de búsqueda"
-    },
-    "actions": {
-      "view": "Ver",
-      "view_products": "Ver Productos",
-      "download": "Descargar",
-      "view_detail": "Ver Detalle"
-    },
     "item": {
       "singular": "producto",
       "plural": "productos"
     },
-    "card": {
-      "order_title": "Order #{orderNumber}",
+     "card": {
+      "order_title": "Orden #{orderNumber}",
       "status": {
-        "pending": "PENDING",
-        "processing": "PROCESSING",
-        "paid": "PAID", 
-        "completed": "COMPLETED",
-        "cancelled": "CANCELLED",
-        "refunded": "REFUNDED",
-        "disputed": "DISPUTED"
+        "pending": "PENDIENTE",
+        "processing": "PROCESANDO", 
+        "paid": "PAGADO",
+        "completed": "COMPLETADO",
+        "cancelled": "CANCELADO",
+        "refunded": "REEMBOLSADO",
+        "disputed": "DISPUTADO"
       },
       "product_count": "{count} {text}",
-      "product_singular": "product",
-      "product_plural": "products",
-      "paid_at": "Paid: {date}",
+      "product_singular": "producto",
+      "product_plural": "productos",
+      "paid_at": "Pagado: {date}",
       "actions": {
-        "view_details": "View Details",
-        "download": "Download",
-        "write_review": "Write Review"
+        "view_details": "Ver Detalles",
+        "download": "Descargar",
+        "write_review": "Escribir Reseña"
       },
       "expanded": {
-        "products_title": "Products",
+        "products_title": "Productos",
         "quantity_price": "Qty: {quantity} • {price}",
-        "summary_title": "Summary",
+        "summary_title": "Resumen",
         "subtotal": "Subtotal",
-        "platform_fee": "Platform fee",
+        "platform_fee": "Fee plataforma",
         "total": "Total"
       }
     }
@@ -2262,7 +2486,57 @@
   },
   "common": {
     "loading": "Cargando...",
-    "error": "Error",
+    "save_changes":"Guardar Cambios",
+     "errors": {
+      "unexpected_error_title": "Algo salió mal",
+      "unexpected_error_message": "Ha ocurrido un error inesperado. Por favor, intenta nuevamente.",
+      "error_details": "Mostrar detalles del error",
+      "try_again": "Intentar nuevamente", 
+      "go_home": "Ir al inicio",
+      "network_error_title": "Error de conexión",
+      "network_error_message": "No se pudo conectar al servidor. Verifica tu conexión.",
+      "loading_error_title": "Error de carga",
+      "loading_error_message": "Hubo un problema cargando esta sección."
+      },
+    "navigation": {
+      "home": "Inicio",
+      "products": "Productos",
+      "sellers": "Vendedores",
+      "contact": "Contacto",
+      "about": "Acerca de",
+      "help": "Ayuda"
+    },
+    "actions": {
+      "back": "Volver",
+      "continue": "Continuar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "view": "Ver",
+      "close": "Cerrar",
+      "search": "Buscar",
+      "filter": "Filtrar",
+      "sort": "Ordenar",
+      "load_more": "Cargar más",
+      "submit": "Enviar"
+    },
+    "status": {
+      "loading": "Cargando...",
+      "error": "Error",
+      "success": "Éxito",
+      "pending": "Pendiente",
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "time": {
+      "minutes": "minutos",
+      "hours": "horas",
+      "days": "días",
+      "weeks": "semanas",
+      "months": "meses",
+      "years": "años"
+    },
     "success": "Éxito",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
@@ -2311,10 +2585,10 @@
     "saved_searches": "Saved Searches",
     "difficulty": {
       "all": "All difficulties",
-      "beginner": "Beginner",
+      "easy": "facil",
       "intermediate": "Intermediate",
-      "advanced": "Advanced",
-      "expert": "Expert"
+      "advanced": "Advanced"
+
     },
     "sort": {
       "relevance": "Relevance",
@@ -2359,5 +2633,211 @@
       "error": "Save Error",
       "error_message": "Could not save the search. Please try again."
     }
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Personaliza tu experiencia en Furnibles",
+    "page_title":"Titulo de la pagina",
+    "page_description":"Descripción",
+    "page_subtitle": "Subtitulo",
+    "common":{
+          "save_changes":"guardar cambios"
+        },
+    "account": {
+      "title": "Cuenta",
+      "profile": "Perfil",
+      "security": "Seguridad",
+      "notifications": "Notificaciones",
+      "privacy": "Privacidad"
+    },
+    "preferences": {
+      "title": "Preferencias",
+      "language": "Idioma",
+      "currency": "Moneda",
+      "timezone": "Zona horaria",
+      "theme": "Tema"
+    },
+    "seller": {
+      "title": "Configuración de Vendedor",
+      "store": "Tienda",
+      "payments": "Pagos",
+      "shipping": "Envío",
+      "policies": "Políticas"
+    },
+    "actions": {
+      "save": "Guardar cambios",
+      "cancel": "Cancelar",
+      "reset": "Restablecer",
+      "delete_account": "Eliminar cuenta"
+    },
+    "notifications": {
+      "saved": "Configuración guardada exitosamente",
+      "error": "Error al guardar la configuración"
+    },
+    "tabs": {
+      "profile": "Perfil",
+      "notifications": "Notificaciones",
+      "security":"Seguridad",
+      "privacy": "Privacidad"
+    },
+    "profile":{
+      "title":"Accesos Rápidos",
+      "change_avatar":"Cambiar Foto",
+      "first_name":"Nombre",
+      "last_name":"Apellido",
+      "email":"Email",
+      "email_placeholder":"email placeholder",
+      "first_name_placeholder":"first name placeholder",
+      "last_name_placeholder":"last name placeholder"
+    },
+    "seo": {
+    "default_description": "Description default",
+    "default_title": "Titulo por default",
+    "default_keywords": "Palabra clave por default",
+    "defaults": {
+      "title": "Furnibles - Planos digitales de muebles",
+      "description": "Descubre y compra planos digitales únicos de muebles. Marketplace C2C para creadores y amantes del bricolaje.",
+      "keywords": "planos muebles, DIY, bricolaje, carpintería, diseños digitales"
+    },
+    "pages": {
+      "home": {
+        "title": "Inicio | Furnibles",
+        "description": "Descubre planos digitales únicos de muebles en Furnibles"
+      },
+      "products": {
+        "title": "Productos | Furnibles",
+        "description": "Explora nuestra colección de planos digitales de muebles"
+      },
+      "profile": {
+        "title": "Mi Perfil | Furnibles",
+        "description": "Gestiona tu perfil y configuración en Furnibles"
+      },
+      "settings": {
+        "title": "Configuración | Furnibles",
+        "description": "Personaliza tu experiencia en Furnibles"
+      },
+      "cart": {
+        "title": "Carrito | Furnibles",
+        "description": "Revisa los productos en tu carrito de compras"
+      },
+      "orders": {
+        "title": "Mis Pedidos | Furnibles",
+        "description": "Gestiona tus pedidos y descargas"
+      }
+    },
+    "social": {
+      "site_name": "Furnibles",
+      "type": "website",
+      "locale": "es_ES"
+    }
+    }
+  },
+  "contact": {
+    "page_title": "Contacto",
+    "page_description": "Ponte en contacto con nosotros para cualquier consulta o soporte",
+    "page_subtitle": "Estamos aquí para ayudarte. Contacta con nuestro equipo de soporte.",
+    "form": {
+      "title": "Enviar Mensaje",
+      "name": "Nombre",
+      "name_placeholder": "Tu nombre completo",
+      "email": "Correo Electrónico",
+      "email_placeholder": "tu@email.com",
+      "subject": "Asunto",
+      "subject_placeholder": "Asunto de tu mensaje",
+      "category": "Categoría",
+      "message": "Mensaje",
+      "message_placeholder": "Describe tu consulta o problema...",
+      "attachments": "Archivos Adjuntos",
+      "attachment_text": "Haz clic para adjuntar archivos o arrástralos aquí",
+      "attachment_limit": "Máximo 5MB por archivo",
+      "required_fields": "Por favor completa todos los campos requeridos",
+      "success_title": "Mensaje Enviado",
+      "success_message": "Tu mensaje ha sido enviado exitosamente. Te responderemos pronto.",
+      "error_title": "Error",
+      "error_message": "Hubo un error al enviar tu mensaje. Por favor intenta de nuevo.",
+      "send_button": "Enviar Mensaje",
+      "send": "Enviar",
+      "sending": "Enviando..."
+    },
+    "categories": {
+      "general": "Consulta General",
+      "technical": "Soporte Técnico",
+      "billing": "Facturación",
+      "seller": "Soporte para Vendedores",
+      "buyer": "Soporte para Compradores",
+      "partnership": "Colaboraciones",
+      "press": "Prensa",
+      "legal": "Legal"
+    },
+    "methods": {
+      "email": {
+        "title": "Correo Electrónico",
+        "description": "Para consultas generales",
+        "response": "Respondemos en 24 horas"
+      },
+      "title": "Correo",
+      "support": {
+        "title": "Soporte Técnico",
+        "description": "Para problemas técnicos",
+        "response": "Respondemos en 12 horas"
+      },
+      "phone": {
+        "title": "Teléfono",
+        "description": "Llámanos directamente",
+        "response": "Lun-Vie 9AM-6PM"
+      },
+      "whatsapp": {
+        "title": "WhatsApp",
+        "description": "Chat en tiempo real",
+        "response": "Respuesta inmediata"
+      }
+    },
+    "faq": {
+      "title":"title",
+      "more_help":"ms ayuda",
+      "visit_help_center":"visita el centro de ayuda!",
+      "seller_fees": {
+        "question": "¿Cuáles son las comisiones para vendedores?",
+        "answer": "Cobramos una comisión del 5% por cada venta exitosa."
+      },
+      "upload_products": {
+        "question": "¿Cómo subo mis productos?",
+        "answer": "Ve al panel de vendedor y haz clic en 'Subir Producto'."
+      },
+      "payment_methods": {
+        "question": "¿Qué métodos de pago aceptan?",
+        "answer": "Aceptamos tarjetas de crédito, PayPal y transferencias bancarias."
+      },
+      "download_issues": {
+        "question": "Tengo problemas para descargar",
+        "answer": "Verifica tu conexión y contacta soporte si persiste el problema."
+      },
+      "refund_policy": {
+        "question": "¿Cuál es la política de reembolsos?",
+        "answer": "Ofrecemos reembolsos completos dentro de los primeros 30 días."
+      }
+    },
+    "hours":{
+        "title":"titulo",
+        "monday_friday":"lunes a viernes",
+        "saturday": "sabado",
+        "sunday":"domingo",
+        "closed": "cerrado",
+        "timezone":"Zona horaria"
+      }
+  },
+  "categories": {
+    "nordic": "Nordic",
+    "kitchen": "Kitchen", 
+    "storage": "Storage",
+    "decorative": "Decorative",
+    "living_dining": "Living & Dining",
+    "bedroom": "Bedroom",
+    "outdoor": "Outdoor",
+    "organization": "Organization",
+    "furniture": "Furniture",
+    "beds": "Beds",
+    "office": "Office",
+    "bathroom": "Bathroom"
   }
 }

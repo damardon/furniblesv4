@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getLocale } from 'next-intl/server'
+// ✅ REMOVER la importación de getLocale que causa el error
+// import { getLocale } from 'next-intl/server'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
-  const locale = await getLocale()
+  // ✅ REMOVER la línea que obtiene locale que causa el error
+  // const locale = await getLocale()
 
   // ✅ EXCLUIR /vendedores (página pública) de la protección
   if (pathname === '/vendedores' || pathname.startsWith('/vendedores/')) {
@@ -13,9 +15,8 @@ export async function middleware(request: NextRequest) {
 
   // ✅ PERMITIR acceso al login de admin (página pública)
   if (pathname === '/admin') {
-  return NextResponse.next()
+    return NextResponse.next()
   }
-
 
   // ✅ Rutas protegidas del seller (ACTUALIZADAS con nuevos nombres)
   const sellerRoutes = [
@@ -28,7 +29,6 @@ export async function middleware(request: NextRequest) {
     '/vendedor-dashboard/perfil',
     '/vendedor-dashboard/configuracion'
   ]
-
 
   // ✅ Rutas protegidas del admin
   const adminRoutes = [

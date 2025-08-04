@@ -449,4 +449,262 @@ export class StripeService {
       netAmount,
     };
   }
+    // ============================================
+  // 🆕 MÉTODOS PARA FRONTEND CHECKOUT
+  // ============================================
+
+  /**
+   * 🆕 MÉTODO CRÍTICO: Crear Payment Intent simple (para el frontend)
+   * Este método es el que llama el frontend desde el checkout
+   */
+  async createPaymentIntent(
+    amount: number, 
+    currency: string, 
+    metadata: Record<string, string>
+  ): Promise<Stripe.PaymentIntent> {
+    try {
+      this.logger.log(`Creating Payment Intent: ${amount} ${currency}`);
+      
+      return await this.stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convertir a centavos
+        currency: currency.toLowerCase(),
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata,
+        confirmation_method: 'manual',
+        confirm: false,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to create Payment Intent: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 🆕 MÉTODO CRÍTICO: Confirmar Payment Intent
+   */
+  async confirmPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    try {
+      this.logger.log(`Confirming Payment Intent: ${paymentIntentId}`);
+      return await this.stripe.paymentIntents.confirm(paymentIntentId);
+    } catch (error) {
+      this.logger.error(`Failed to confirm Payment Intent: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 🆕 MÉTODO CRÍTICO: Construir evento de webhook (método público)
+   * Tu método verifyWebhookSignature ya existe, este es similar pero público
+   */
+  constructWebhookEvent(body: Buffer, signature: string): Stripe.Event {
+    const endpointSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
+    
+    if (!endpointSecret) {
+      throw new Error('STRIPE_WEBHOOK_SECRET not configured');
+    }
+    
+    return this.stripe.webhooks.constructEvent(body, signature, endpointSecret);
+  }
+
+  /**
+   * 🆕 Obtener detalles de pago para la página de éxito
+   */
+  async getPaymentDetails(paymentIntentId: string): Promise<{
+    paymentId: string;
+    amount: number;
+    currency: string;
+    status: string;
+    customerEmail?: string;
+    metadata?: Record<string, string>;
+    createdAt: string;
+  }> {
+    try {
+      const paymentIntent = await this.retrievePaymentIntent(paymentIntentId);
+      
+      return {
+        paymentId: paymentIntent.id,
+        amount: paymentIntent.amount / 100, // Convertir de centavos
+        currency: paymentIntent.currency.toUpperCase(),
+        status: paymentIntent.status,
+        customerEmail: paymentIntent.receipt_email || undefined,
+        metadata: paymentIntent.metadata,
+        createdAt: new Date(paymentIntent.created * 1000).toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get payment details: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 🆕 Buscar Payment Intent por metadata (útil para buscar por orderId)
+   */
+  async findPaymentIntentByMetadata(metadataKey: string, metadataValue: string): Promise<Stripe.PaymentIntent | null> {
+    try {
+      const paymentIntents = await this.stripe.paymentIntents.list({
+        limit: 100,
+      });
+
+      const found = paymentIntents.data.find(pi => pi.metadata[metadataKey] === metadataValue);
+      return found || null;
+    } catch (error) {
+      this.logger.error(`Failed to find payment intent by metadata: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * 🆕 Crear Payment Intent con split payment (para marketplace)
+   */
+  async createPaymentIntentWithSplit(
+    amount: number,
+    currency: string,
+    sellerId: string,
+    platformFeeAmount: number,
+    metadata: Record<string, string>
+  ): Promise<Stripe.PaymentIntent> {
+    try {
+      this.logger.log(`Creating split Payment Intent: ${amount} ${currency} for seller ${sellerId}`);
+      
+      return await this.stripe.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency: currency.toLowerCase(),
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        application_fee_amount: Math.round(platformFeeAmount * 100),
+        transfer_data: {
+          destination: sellerId,
+        },
+        metadata: {
+          ...metadata,
+          sellerId,
+          splitPayment: 'true',
+        },
+        confirmation_method: 'manual',
+        confirm: false,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to create split Payment Intent: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 🆕 Getter público para Stripe instance (para webhooks y otros servicios)
+   */
+  get stripeClient(): Stripe {
+    return this.stripe;
+  }
+
+  /**
+   * 🆕 Test de conectividad con Stripe
+   */
+  async testConnection(): Promise<{ success: boolean; message: string; balance?: number }> {
+    try {
+      const balance = await this.stripe.balance.retrieve();
+      
+      return {
+        success: true,
+        message: 'Stripe connection successful',
+        balance: balance.available[0]?.amount || 0,
+      };
+    } catch (error) {
+      this.logger.error(`Stripe connection test failed: ${error.message}`);
+      return {
+        success: false,
+        message: `Stripe connection failed: ${error.message}`,
+      };
+    }
+  }
+
+  /**
+   * 🆕 Validar que una cuenta puede procesar pagos
+   */
+  async validateAccountForPayment(accountId: string): Promise<{
+    isValid: boolean;
+    reasons: string[];
+  }> {
+    try {
+      const account = await this.retrieveAccount(accountId);
+      const reasons: string[] = [];
+
+      if (!account.charges_enabled) {
+        reasons.push('Account cannot accept charges');
+      }
+
+      if (!account.payouts_enabled) {
+        reasons.push('Account cannot receive payouts');
+      }
+
+      if (!account.details_submitted) {
+        reasons.push('Account setup not completed');
+      }
+
+      if (account.requirements?.currently_due?.length > 0) {
+        reasons.push(`Missing requirements: ${account.requirements.currently_due.join(', ')}`);
+      }
+
+      return {
+        isValid: reasons.length === 0,
+        reasons,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to validate account: ${error.message}`);
+      return {
+        isValid: false,
+        reasons: [`Account validation failed: ${error.message}`],
+      };
+    }
+  }
+
+  /**
+   * 🆕 Obtener estadísticas de pagos
+   */
+  async getPaymentStats(options: {
+    startDate?: Date;
+    endDate?: Date;
+    currency?: string;
+  } = {}): Promise<{
+    totalAmount: number;
+    totalTransactions: number;
+    averageAmount: number;
+    currency: string;
+  }> {
+    try {
+      const params: any = {
+        limit: 100,
+      };
+
+      if (options.startDate) {
+        params.created = { gte: Math.floor(options.startDate.getTime() / 1000) };
+      }
+
+      if (options.endDate) {
+        if (!params.created) params.created = {};
+        params.created.lte = Math.floor(options.endDate.getTime() / 1000);
+      }
+
+      const paymentIntents = await this.stripe.paymentIntents.list(params);
+      
+      const successful = paymentIntents.data.filter(pi => pi.status === 'succeeded');
+      const totalAmount = successful.reduce((sum, pi) => sum + pi.amount, 0) / 100;
+      const totalTransactions = successful.length;
+      const averageAmount = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
+
+      return {
+        totalAmount,
+        totalTransactions,
+        averageAmount,
+        currency: options.currency || 'USD',
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get payment stats: ${error.message}`);
+      throw error;
+    }
+  }
 }
+
+

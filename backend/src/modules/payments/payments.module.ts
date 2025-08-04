@@ -1,17 +1,18 @@
-// src/modules/payments/payments.module.ts
-import { Module, forwardRef } from '@nestjs/common';
-import { PaymentsController } from './payments.controller';
+// backend/src/modules/payments/payments.module.ts
+import { Module } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
-import { PrismaModule } from '../prisma/prisma.module';
+import { PaymentsController } from './payments.controller';
+import { PayPalService } from '../paypal/paypal.service'; // ✅ NUEVO
 import { StripeModule } from '../stripe/stripe.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    forwardRef(() => StripeModule), // 🆕 Usar forwardRef para evitar dependencia circular
-  ],
+  imports: [StripeModule, PrismaModule],
   controllers: [PaymentsController],
-  providers: [PaymentsService],
-  exports: [PaymentsService], // Exportamos para uso en otros módulos
+  providers: [
+    PaymentsService,
+    PayPalService, // ✅ AGREGAR
+  ],
+  exports: [PaymentsService, PayPalService], // ✅ EXPORTAR
 })
 export class PaymentsModule {}

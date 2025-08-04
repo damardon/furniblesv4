@@ -34,6 +34,9 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { HealthController } from './health/health.controller';
 
+// 🆕 Stage 9: Sellers System module
+import { SellersModule } from './modules/sellers/sellers.module'; // 🆕 AGREGADO
+
 @Module({
   imports: [
     // 🔧 Configuration
@@ -80,6 +83,7 @@ import { HealthController } from './health/health.controller';
     TransactionsModule,
     InvoicesModule,
     AnalyticsModule,
+    SellersModule, // 🆕 AGREGADO
   ],
   controllers: [HealthController],
   providers: [

@@ -102,11 +102,11 @@ export default function SellerAnalyticsPage() {
             { month: t('months.jun'), revenue: 3200, sales: 64 },
           ],
           categoryBreakdown: [
-            { category: t('categories.tables'), sales: 45, percentage: 35 },
-            { category: t('categories.chairs'), sales: 32, percentage: 25 },
+            { category: t('categories.nordic'), sales: 45, percentage: 35 },
+            { category: t('categories.kitchen'), sales: 32, percentage: 25 },
             { category: t('categories.storage'), sales: 28, percentage: 22 },
             { category: t('categories.decorative'), sales: 15, percentage: 12 },
-            { category: t('categories.others'), sales: 8, percentage: 6 },
+            { category: t('categories.bathroom'), sales: 8, percentage: 6 },
           ]
         }
         

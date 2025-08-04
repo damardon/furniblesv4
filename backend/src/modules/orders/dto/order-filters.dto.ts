@@ -37,6 +37,27 @@ export class OrderFiltersDto {
   @IsString()
   search?: string;
 
+  // ✅ NUEVOS CAMPOS PARA ORDENAMIENTO:
+  @ApiProperty({
+    description: 'Campo por el cual ordenar',
+    enum: ['createdAt', 'updatedAt', 'totalAmount', 'status', 'orderNumber'],
+    default: 'createdAt',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  sortBy?: 'createdAt' | 'updatedAt' | 'totalAmount' | 'status' | 'orderNumber' = 'createdAt';
+
+  @ApiProperty({
+    description: 'Dirección del ordenamiento',
+    enum: ['asc', 'desc'],
+    default: 'desc',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'asc' | 'desc' = 'desc';
+
   @ApiProperty({
     description: 'Página',
     default: 1,

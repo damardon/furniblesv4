@@ -1,128 +1,188 @@
 // src/modules/stripe/controllers/stripe.controller.ts
-import { Controller, Post, Body, Headers, RawBodyRequest, Req, Logger, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
-import { Request } from 'express';
+// backend/src/modules/stripe/controllers/stripe.controller.ts
+import { 
+  Controller, 
+  Post, 
+  Get, 
+  Body, 
+  Param, 
+  UseGuards,
+  Logger,
+  BadRequestException 
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { StripeService } from '../stripe.service';
-import { Public } from '../../auth/decorators/public.decorator';
+
+// ✅ DTOs para los nuevos endpoints
+interface CreatePaymentIntentDto {
+  amount: number;
+  currency: string;
+  cartItems: any[];
+  customerInfo: {
+    email: string;
+    name: string;
+    address?: any;
+  };
+}
+
+interface PaymentDetailsResponse {
+  paymentId: string;
+  amount: number;
+  status: string;
+  orderItems: any[];
+  customerEmail: string;
+}
 
 @ApiTags('stripe')
-@Controller('webhooks/stripe')
+@Controller('api/payments/stripe')
 export class StripeController {
   private readonly logger = new Logger(StripeController.name);
 
   constructor(private readonly stripeService: StripeService) {}
 
   /**
-   * 🎯 Webhook principal de Stripe para pagos regulares
-   * Maneja: payment_intent.succeeded, payment_intent.payment_failed, checkout.session.completed
+   * 🆕 ENDPOINT CRÍTICO: Crear Payment Intent para el checkout
    */
-  @Public()
-  @Post()
-  @HttpCode(HttpStatus.OK)
-  @ApiExcludeEndpoint() // No mostrar en docs públicos por seguridad
-  async handleStripeWebhook(
-    @Req() request: RawBodyRequest<Request>,
-    @Headers('stripe-signature') signature: string,
+  @Post('create-intent')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Create payment intent for checkout',
+    description: 'Creates a Stripe payment intent for processing card payments'
+  })
+  @ApiResponse({ status: 201, description: 'Payment intent created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request data' })
+  async createPaymentIntent(
+    @Body() createIntentDto: CreatePaymentIntentDto,
+    @CurrentUser() user: any,
   ) {
-    this.logger.log('Received Stripe webhook');
-
     try {
-      // Verificar la firma del webhook
-      const event = this.stripeService.verifyWebhookSignature(
-        request.rawBody,
-        signature,
-      );
+      this.logger.log(`Creating payment intent for user ${user.id}, amount: ${createIntentDto.amount}`);
 
-      this.logger.log(`Processing webhook event: ${event.type}`);
-
-      // Procesar diferentes tipos de eventos
-      switch (event.type) {
-        case 'payment_intent.succeeded':
-          await this.handlePaymentIntentSucceeded(event);
-          break;
-
-        case 'payment_intent.payment_failed':
-          await this.handlePaymentIntentFailed(event);
-          break;
-
-        case 'checkout.session.completed':
-          await this.handleCheckoutSessionCompleted(event);
-          break;
-
-        case 'payment_intent.canceled':
-          await this.handlePaymentIntentCanceled(event);
-          break;
-
-        default:
-          this.logger.warn(`Unhandled webhook event type: ${event.type}`);
+      // Validaciones básicas
+      if (!createIntentDto.amount || createIntentDto.amount <= 0) {
+        throw new BadRequestException('Amount must be greater than 0');
       }
 
-      return { received: true };
+      if (!createIntentDto.cartItems || createIntentDto.cartItems.length === 0) {
+        throw new BadRequestException('Cart items are required');
+      }
+
+      // Crear el Payment Intent
+      const paymentIntent = await this.stripeService.stripe.paymentIntents.create({
+        amount: Math.round(createIntentDto.amount * 100), // Convertir a centavos
+        currency: createIntentDto.currency.toLowerCase(),
+        customer_email: createIntentDto.customerInfo.email,
+        metadata: {
+          userId: user.id,
+          customerName: createIntentDto.customerInfo.name,
+          itemCount: createIntentDto.cartItems.length.toString(),
+        },
+        // Configurar para que se confirme automáticamente
+        confirmation_method: 'manual',
+        confirm: false,
+      });
+
+      this.logger.log(`Payment intent created: ${paymentIntent.id}`);
+
+      return {
+        success: true,
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      };
+
     } catch (error) {
-      this.logger.error(`Webhook error: ${error.message}`, error.stack);
-      throw error;
+      this.logger.error(`Failed to create payment intent: ${error.message}`);
+      throw new BadRequestException(`Failed to create payment intent: ${error.message}`);
     }
   }
 
   /**
-   * Procesar pago exitoso
+   * 🆕 ENDPOINT CRÍTICO: Obtener detalles de pago para página de éxito
    */
-  private async handlePaymentIntentSucceeded(event: any) {
-    const paymentIntent = event.data.object;
-    this.logger.log(`Payment succeeded: ${paymentIntent.id}`);
+  @Get('payment-details/:paymentId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Get payment details',
+    description: 'Retrieves payment details for confirmation page'
+  })
+  @ApiResponse({ status: 200, description: 'Payment details retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
+  async getPaymentDetails(
+    @Param('paymentId') paymentId: string,
+    @CurrentUser() user: any,
+  ): Promise<PaymentDetailsResponse> {
+    try {
+      this.logger.log(`Getting payment details for ${paymentId}`);
 
-    // TODO: Implementar lógica de negocio
-    // - Actualizar estado de orden a PAID
-    // - Crear registros de transacción
-    // - Enviar notificaciones
-    // - Generar tokens de descarga
+      // Recuperar el Payment Intent de Stripe
+      const paymentIntent = await this.stripeService.retrievePaymentIntent(paymentId);
 
-    // Por ahora solo logueamos
-    this.logger.log(`Payment Intent ${paymentIntent.id} succeeded for amount ${paymentIntent.amount}`);
+      if (!paymentIntent) {
+        throw new BadRequestException('Payment intent not found');
+      }
+
+      // Verificar que el payment intent pertenece al usuario
+      if (paymentIntent.metadata?.userId !== user.id) {
+        throw new BadRequestException('Unauthorized access to payment details');
+      }
+
+      // Construir respuesta
+      const response: PaymentDetailsResponse = {
+        paymentId: paymentIntent.id,
+        amount: paymentIntent.amount / 100, // Convertir de centavos
+        status: paymentIntent.status,
+        customerEmail: paymentIntent.metadata?.customerEmail || user.email,
+        orderItems: [
+          // Por ahora datos mock, en producción deberías obtener esto de la base de datos
+          {
+            productTitle: `Compra de ${paymentIntent.metadata?.itemCount || '1'} producto(s)`,
+            seller: 'Varios vendedores',
+            price: paymentIntent.amount / 100,
+          }
+        ],
+      };
+
+      return response;
+
+    } catch (error) {
+      this.logger.error(`Failed to get payment details: ${error.message}`);
+      throw new BadRequestException(`Failed to get payment details: ${error.message}`);
+    }
   }
 
   /**
-   * Procesar pago fallido
+   * 🔧 Test endpoint para verificar conectividad con Stripe
    */
-  private async handlePaymentIntentFailed(event: any) {
-    const paymentIntent = event.data.object;
-    this.logger.warn(`Payment failed: ${paymentIntent.id}`);
+  @Get('test')
+  @ApiOperation({ 
+    summary: 'Test Stripe connectivity',
+    description: 'Tests connection to Stripe API'
+  })
+  async testStripeConnection() {
+    try {
+      // Hacer una llamada simple a Stripe para verificar conectividad
+      const balance = await this.stripeService.stripe.balance.retrieve();
+      
+      return {
+        success: true,
+        message: 'Stripe connection successful',
+        balance: balance.available[0]?.amount || 0,
+        currency: balance.available[0]?.currency || 'usd',
+        timestamp: new Date().toISOString(),
+      };
 
-    // TODO: Implementar lógica de negocio
-    // - Marcar orden como fallida
-    // - Enviar notificación de error
-    // - Limpiar carrito si es necesario
-
-    this.logger.warn(`Payment Intent ${paymentIntent.id} failed: ${paymentIntent.last_payment_error?.message || 'Unknown error'}`);
-  }
-
-  /**
-   * Procesar checkout session completada
-   */
-  private async handleCheckoutSessionCompleted(event: any) {
-    const session = event.data.object;
-    this.logger.log(`Checkout session completed: ${session.id}`);
-
-    // TODO: Implementar lógica de negocio
-    // - Verificar pago
-    // - Confirmar orden
-    // - Iniciar proceso de entrega
-
-    this.logger.log(`Checkout session ${session.id} completed for customer ${session.customer_email}`);
-  }
-
-  /**
-   * Procesar pago cancelado
-   */
-  private async handlePaymentIntentCanceled(event: any) {
-    const paymentIntent = event.data.object;
-    this.logger.log(`Payment canceled: ${paymentIntent.id}`);
-
-    // TODO: Implementar lógica de negocio
-    // - Restaurar carrito
-    // - Notificar cancelación
-    // - Limpiar estado temporal
-
-    this.logger.log(`Payment Intent ${paymentIntent.id} was canceled`);
+    } catch (error) {
+      this.logger.error(`Stripe connection test failed: ${error.message}`);
+      return {
+        success: false,
+        message: 'Stripe connection failed',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 }

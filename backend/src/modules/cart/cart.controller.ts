@@ -27,6 +27,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { CartResponseDto } from './dto/cart-response.dto';
 import { UserRole } from '@prisma/client';
+import { SyncCartDto } from './dto/sync-cart.dto';
 
 @ApiTags('Cart')
 @Controller('cart')
@@ -185,6 +186,39 @@ export class CartController {
     const lang = this.detectLanguage(acceptLanguage);
     return this.cartService.migrateTemporaryCart(req.user.id, temporaryItems, lang);
   }
+
+
+  
+@Post('sync')
+@HttpCode(HttpStatus.OK)
+@Roles(UserRole.BUYER)
+@ApiOperation({ 
+  summary: 'Sincronizar carrito desde el cliente',
+  description: 'Sincroniza el carrito local del cliente con el carrito del servidor. Útil después del login o para sincronizar entre dispositivos.'
+})
+@ApiHeader({
+  name: 'accept-language',
+  description: 'Idioma preferido (en, es)',
+  required: false,
+  example: 'es'
+})
+@ApiResponse({ 
+  status: 200, 
+  description: 'Carrito sincronizado exitosamente',
+  type: CartResponseDto 
+})
+@ApiResponse({ 
+  status: 403, 
+  description: 'Solo compradores pueden sincronizar el carrito' 
+})
+async syncCart(
+  @Request() req,
+  @Body() dto: SyncCartDto,
+  @Headers('accept-language') acceptLanguage?: string
+): Promise<CartResponseDto> {
+  const lang = this.detectLanguage(acceptLanguage);
+  return this.cartService.syncCart(req.user.id, dto, lang);
+}
 
   /**
    * Detectar idioma del header Accept-Language

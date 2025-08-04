@@ -21,16 +21,13 @@ import {
   Award
 } from 'lucide-react'
 
-// Types (basados en tu schema)
+// ✅ Types correctos basados en tu schema de Prisma
 interface SellerProfile {
   id: string
+  userId: string
   storeName: string
   slug: string
-  description?: string
-  website?: string
-  phone?: string
-  avatar?: string
-  banner?: string
+  description?: string | null
   rating: number
   totalSales: number
   totalReviews: number
@@ -41,8 +38,19 @@ interface SellerProfile {
     id: string
     firstName: string
     lastName: string
-    email: string
+    avatar?: string | null
+    isActive: boolean
   }
+}
+
+interface SellersResponse {
+  data: SellerProfile[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
 }
 
 export default function SellersPage() {
@@ -51,108 +59,107 @@ export default function SellersPage() {
   const [sortBy, setSortBy] = useState<'rating' | 'sales' | 'newest'>('rating')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const t = useTranslations('sellers')
+  const t = useTranslations('seller')
   const tCommon = useTranslations('common')
 
-  // Mock data mientras implementas la API real
+  // ✅ Función para cargar vendedores desde el API real
   useEffect(() => {
     const loadSellers = async () => {
       setIsLoading(true)
+      setError(null)
+      
       try {
-        // Simular API call - reemplazar con fetch real
+        console.log('🔍 [FRONTEND] Loading sellers from API...')
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sellers`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        })
+
+        console.log('🔍 [FRONTEND] API Response status:', response.status)
+
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`)
+        }
+
+        const data: SellersResponse = await response.json()
+        console.log('🔍 [FRONTEND] Sellers loaded:', data.data.length)
+        
+        setSellers(data.data)
+      } catch (error) {
+        console.error('❌ [FRONTEND] Error loading sellers:', error)
+        setError(error instanceof Error ? error.message : 'Error loading sellers')
+        
+        // ⚠️ Fallback a datos mock solo en caso de error
+        console.log('⚠️ [FRONTEND] Using fallback mock data')
         const mockSellers: SellerProfile[] = [
           {
-            id: '1',
-            storeName: 'Muebles Artesanales El Roble',
-            slug: 'muebles-el-roble',
-            description: 'Especialistas en muebles rústicos de madera maciza con más de 15 años de experiencia.',
-            website: 'https://elroble.com',
-            phone: '+34 123 456 789',
-            avatar: 'https://picsum.photos/100/100?random=101',
-            banner: 'https://picsum.photos/800/200?random=201',
-            rating: 4.8,
-            totalSales: 245,
-            totalReviews: 128,
-            isVerified: true,
-            createdAt: '2023-01-15T00:00:00Z',
-            updatedAt: '2024-12-01T00:00:00Z',
-            user: {
-              id: 'user1',
-              firstName: 'Carlos',
-              lastName: 'Martínez',
-              email: 'carlos@elroble.com'
-            }
-          },
-          {
-            id: '2',
-            storeName: 'Diseños Modernos Luna',
-            slug: 'disenos-luna',
-            description: 'Muebles contemporáneos y minimalistas para espacios modernos.',
-            website: 'https://diseñosluna.es',
-            avatar: 'https://picsum.photos/100/100?random=102',
-            banner: 'https://picsum.photos/800/200?random=202',
-            rating: 4.6,
-            totalSales: 189,
-            totalReviews: 95,
-            isVerified: true,
-            createdAt: '2023-03-20T00:00:00Z',
-            updatedAt: '2024-11-28T00:00:00Z',
-            user: {
-              id: 'user2',
-              firstName: 'Ana',
-              lastName: 'González',
-              email: 'ana@diseñosluna.es'
-            }
-          },
-          {
-            id: '3',
-            storeName: 'Carpintería Tradicional Vega',
-            slug: 'carpinteria-vega',
-            description: 'Técnicas tradicionales aplicadas a diseños contemporáneos.',
-            phone: '+34 987 654 321',
-            avatar: 'https://picsum.photos/100/100?random=103',
+            id: 'cmdjni1ny00026693cjf4vaz1',
+            userId: 'cmdjni1nr00006693aw9c9022',
+            storeName: 'Furnibles Official Store',
+            slug: 'furnibles-official',
+            description: 'Tienda oficial de Furnibles con los mejores diseños',
             rating: 4.9,
-            totalSales: 156,
-            totalReviews: 89,
-            isVerified: false,
-            createdAt: '2023-06-10T00:00:00Z',
-            updatedAt: '2024-12-05T00:00:00Z',
+            totalSales: 50,
+            totalReviews: 0,
+            isVerified: true,
+            createdAt: '2025-07-26T02:48:30.958Z',
+            updatedAt: '2025-07-26T02:48:30.958Z',
             user: {
-              id: 'user3',
-              firstName: 'Miguel',
-              lastName: 'Vega',
-              email: 'miguel@vega.com'
+              id: 'cmdjni1nr00006693aw9c9022',
+              firstName: 'Admin',
+              lastName: 'Furnibles',
+              avatar: null,
+              isActive: true,
             }
           },
           {
-            id: '4',
-            storeName: 'Eco Muebles Sostenibles',
-            slug: 'eco-muebles',
-            description: 'Muebles ecológicos fabricados con materiales sostenibles y técnicas respetuosas.',
-            website: 'https://ecomuebles.org',
-            avatar: 'https://picsum.photos/100/100?random=104',
-            banner: 'https://picsum.photos/800/200?random=204',
+            id: 'cmdjni1xh000766939p4zg67e',
+            userId: 'cmdjni1xb00056693ufmi55eh',
+            storeName: 'Muebles Juan',
+            slug: 'muebles-juan',
+            description: 'Especialista en muebles de madera rústicos y modernos con 15 años de experiencia',
             rating: 4.7,
-            totalSales: 78,
-            totalReviews: 42,
+            totalSales: 127,
+            totalReviews: 0,
             isVerified: true,
-            createdAt: '2023-09-05T00:00:00Z',
-            updatedAt: '2024-11-30T00:00:00Z',
+            createdAt: '2025-07-26T02:48:31.301Z',
+            updatedAt: '2025-07-26T02:48:31.301Z',
             user: {
-              id: 'user4',
-              firstName: 'Laura',
-              lastName: 'Fernández',
-              email: 'laura@ecomuebles.org'
+              id: 'cmdjni1xb00056693ufmi55eh',
+              firstName: 'Juan',
+              lastName: 'Carpintero',
+              avatar: null,
+              isActive: true,
+            }
+          },
+          {
+            id: 'cmdjni2h3000f66937myjjddx',
+            userId: 'cmdjni2gs000b6693ujffm30z',
+            storeName: 'Ana Designs',
+            slug: 'ana-designs',
+            description: 'Diseños únicos y personalizados con enfoque minimalista',
+            rating: 4.8,
+            totalSales: 23,
+            totalReviews: 0,
+            isVerified: true,
+            createdAt: '2025-07-26T02:48:32.008Z',
+            updatedAt: '2025-07-26T02:48:32.008Z',
+            user: {
+              id: 'cmdjni2gs000b6693ujffm30z',
+              firstName: 'Ana',
+              lastName: 'Híbrida',
+              avatar: null,
+              isActive: true,
             }
           }
         ]
-
-        // Simular delay de red
-        await new Promise(resolve => setTimeout(resolve, 500))
         setSellers(mockSellers)
-      } catch (error) {
-        console.error('Error loading sellers:', error)
       } finally {
         setIsLoading(false)
       }
@@ -192,57 +199,51 @@ export default function SellersPage() {
   const renderSellerCard = (seller: SellerProfile) => (
     <div
       key={seller.id}
-      className="bg-white border-[5px] border-black transition-all duration-300 group hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[11px_11px_0_#000000]"
+      className="bg-white border-[4px] border-black transition-all duration-300 group hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[11px_11px_0_#000000] h-full flex flex-col"
       style={{ boxShadow: '8px 8px 0 #000000' }}
     >
-      {/* Banner */}
-      {seller.banner && (
-        <div className="relative h-32 overflow-hidden border-b-4 border-black">
-          <Image
-            src={seller.banner}
-            alt={t('banner_alt', { storeName: seller.storeName })}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
-          />
+      {/* Banner placeholder */}
+      <div className="relative h-32 overflow-hidden border-b-4 border-black">
+        <div className="w-full h-full bg-gradient-to-r from-orange-400 to-yellow-400 flex items-center justify-center">
+          <Package className="w-12 h-12 text-black opacity-20" />
         </div>
-      )}
+      </div>
 
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-1">
         {/* Header con avatar y nombre */}
-        <div className="flex items-start gap-4 mb-4">
-          <div className="relative">
-            {seller.avatar ? (
-              <div className="w-16 h-16 border-4 border-black overflow-hidden">
+        <div className="flex items-start gap-4 mb-4 min-h-[80px]">
+          <div className="relative flex-shrink-0">
+            <div className="w-16 h-16 border-4 border-black overflow-hidden bg-orange-500">
+              {seller.user.avatar ? (
                 <Image
-                  src={seller.avatar}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/image/${seller.user.avatar}`}
                   alt={seller.storeName}
                   width={64}
                   height={64}
-                  className="object-cover"
+                  className="object-cover w-full h-full"
                 />
-              </div>
-            ) : (
-              <div className="w-16 h-16 bg-orange-500 border-4 border-black flex items-center justify-center">
-                <span className="text-black font-black text-xl">
-                  {seller.user.firstName?.charAt(0) || 'U'}
-                </span>
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-black font-black text-xl">
+                    {seller.user.firstName?.charAt(0) || seller.storeName.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </div>
             {seller.isVerified && (
-              <div className="absolute -bottom-1 -right-1 bg-blue-500 border-2 border-black p-1">
+              <div className="absolute -bottom-1 -right-1 bg-blue-500 border-2 border-black p-1 rounded-sm">
                 <CheckCircle className="w-4 h-4 text-white" />
               </div>
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-black text-lg text-black uppercase truncate">
+            <div className="flex items-start gap-2 mb-1">
+              <h3 className="font-black text-lg text-black uppercase truncate leading-tight">
                 {seller.storeName}
               </h3>
               {seller.isVerified && (
-                <span className="bg-blue-500 text-white text-xs font-black px-2 py-1 border-2 border-black">
+                <span className="bg-blue-500 text-white text-xs font-black px-2 py-1 border-2 border-black flex-shrink-0">
                   {t('verified')}
                 </span>
               )}
@@ -257,74 +258,53 @@ export default function SellersPage() {
         </div>
 
         {/* Descripción */}
-        {seller.description && (
-          <p className="text-black text-sm mb-4 line-clamp-2 font-medium">
-            {seller.description}
+        <div className="mb-4 min-h-[60px]">
+          <p className="text-black text-sm line-clamp-3 font-medium">
+            {seller.description || t('default_description', { 
+              firstName: seller.user.firstName, 
+              lastName: seller.user.lastName 
+            })}
           </p>
-        )}
+        </div>
 
         {/* Estadísticas */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Star className="w-4 h-4 fill-orange-500 text-orange-500" />
+              <Star className="w-4 h-4 fill-orange-500 text-orange-500 flex-shrink-0" />
               <span className="font-black text-black">{seller.rating.toFixed(1)}</span>
             </div>
-            <p className="text-xs font-bold text-gray-600">
+            <p className="text-xs font-bold text-gray-600 leading-tight">
               {t('stats.reviews_count', { count: seller.totalReviews })}
             </p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <ShoppingBag className="w-4 h-4 text-green-600" />
+              <ShoppingBag className="w-4 h-4 text-green-600 flex-shrink-0" />
               <span className="font-black text-black">{formatNumber(seller.totalSales)}</span>
             </div>
-            <p className="text-xs font-bold text-gray-600">{t('stats.sales')}</p>
+            <p className="text-xs font-bold text-gray-600 leading-tight">{t('stats.sales')}</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Package className="w-4 h-4 text-blue-600" />
+              <Package className="w-4 h-4 text-blue-600 flex-shrink-0" />
               <span className="font-black text-black">+</span>
             </div>
-            <p className="text-xs font-bold text-gray-600">{t('stats.products')}</p>
+            <p className="text-xs font-bold text-gray-600 leading-tight">{t('stats.products')}</p>
           </div>
         </div>
 
-        {/* Enlaces de contacto */}
-        <div className="flex items-center gap-2 mb-4">
-          {seller.website && (
-            <a
-              href={seller.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 bg-blue-400 border-2 border-black hover:bg-blue-500 transition-all"
-              style={{ boxShadow: '2px 2px 0 #000000' }}
-              title={t('contact.website')}
-            >
-              <Globe className="w-4 h-4 text-black" />
-            </a>
-          )}
-          {seller.phone && (
-            <a
-              href={`tel:${seller.phone}`}
-              className="p-2 bg-green-400 border-2 border-black hover:bg-green-500 transition-all"
-              style={{ boxShadow: '2px 2px 0 #000000' }}
-              title={t('contact.phone')}
-            >
-              <Phone className="w-4 h-4 text-black" />
-            </a>
-          )}
-        </div>
-
         {/* Botón de ver tienda */}
-        <Link href={`/vendedores/${seller.slug}`}>
-          <button
-            className="w-full bg-orange-500 border-3 border-black font-black text-black text-sm uppercase py-3 hover:bg-yellow-400 transition-all"
-            style={{ boxShadow: '4px 4px 0 #000000' }}
-          >
-            {t('actions.view_store')}
-          </button>
-        </Link>
+        <div className="mt-auto">
+          <Link href={`/vendedores/${seller.slug}`}>
+            <button
+              className="w-full bg-orange-500 border-3 border-black font-black text-black text-sm uppercase py-3 hover:bg-yellow-400 transition-all"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              {t('actions.view_store')}
+            </button>
+          </Link>
+        </div>
       </div>
     </div>
   )
@@ -336,33 +316,31 @@ export default function SellersPage() {
       style={{ boxShadow: '4px 4px 0 #000000' }}
     >
       <div className="flex items-center gap-4">
-        {/* Avatar */}
         <div className="relative flex-shrink-0">
-          {seller.avatar ? (
-            <div className="w-12 h-12 border-3 border-black overflow-hidden">
+          <div className="w-12 h-12 border-3 border-black overflow-hidden bg-orange-500">
+            {seller.user.avatar ? (
               <Image
-                src={seller.avatar}
+                src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/image/${seller.user.avatar}`}
                 alt={seller.storeName}
                 width={48}
                 height={48}
-                className="object-cover"
+                className="object-cover w-full h-full"
               />
-            </div>
-          ) : (
-            <div className="w-12 h-12 bg-orange-500 border-3 border-black flex items-center justify-center">
-              <span className="text-black font-black">
-                {seller.user.firstName?.charAt(0) || 'U'}
-              </span>
-            </div>
-          )}
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-black font-black">
+                  {seller.user.firstName?.charAt(0) || seller.storeName.charAt(0)}
+                </span>
+              </div>
+            )}
+          </div>
           {seller.isVerified && (
-            <div className="absolute -bottom-1 -right-1 bg-blue-500 border border-black p-0.5">
+            <div className="absolute -bottom-1 -right-1 bg-blue-500 border border-black p-0.5 rounded-sm">
               <CheckCircle className="w-3 h-3 text-white" />
             </div>
           )}
         </div>
 
-        {/* Info principal */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-black text-black uppercase">{seller.storeName}</h3>
@@ -372,7 +350,7 @@ export default function SellersPage() {
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600 font-bold mb-2">
+          <p className="text-sm text-gray-600 font-bold mb-2 line-clamp-2">
             {seller.description || t('default_description', { 
               firstName: seller.user.firstName, 
               lastName: seller.user.lastName 
@@ -390,7 +368,6 @@ export default function SellersPage() {
           </div>
         </div>
 
-        {/* Botón de acción */}
         <div className="flex-shrink-0">
           <Link href={`/vendedores/${seller.slug}`}>
             <button
@@ -421,7 +398,6 @@ export default function SellersPage() {
 
           {/* Filtros y búsqueda */}
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            {/* Búsqueda */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -434,9 +410,7 @@ export default function SellersPage() {
               />
             </div>
 
-            {/* Controles */}
             <div className="flex items-center gap-3">
-              {/* Ordenar */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
@@ -448,7 +422,6 @@ export default function SellersPage() {
                 <option value="newest">{t('sort.newest')}</option>
               </select>
 
-              {/* Vista */}
               <div className="flex border-2 border-black">
                 <button
                   onClick={() => setViewMode('grid')}
@@ -472,17 +445,20 @@ export default function SellersPage() {
 
       {/* Contenido principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
         <div className="mb-8">
           <p className="text-black font-bold">
             {isLoading ? 
               tCommon('loading') : 
               t('results_count', { count: filteredSellers.length })
             }
+            {error && (
+              <span className="text-red-600 ml-2">
+                ⚠️ {error} ({tCommon('using_fallback_data')})
+              </span>
+            )}
           </p>
         </div>
 
-        {/* Lista/Grid de vendedores */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">

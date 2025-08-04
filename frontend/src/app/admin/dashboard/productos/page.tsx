@@ -484,10 +484,15 @@ export default function AdminProductsPage() {
                 className="w-full px-3 py-2 border-2 border-black rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="ALL">{t('filters.all_categories')}</option>
-                <option value={ProductCategory.TABLES}>{tCategories('tables')}</option>
-                <option value={ProductCategory.CHAIRS}>{tCategories('chairs')}</option>
-                <option value={ProductCategory.BEDS}>{tCategories('beds')}</option>
+                <option value={ProductCategory.LIVING_DINING}>{tCategories('living_dining')}</option>
+                <option value={ProductCategory.BEDROOM}>{tCategories('bedroom')}</option>
                 <option value={ProductCategory.STORAGE}>{tCategories('storage')}</option>
+                <option value={ProductCategory.NORDIC}>{tCategories('NORDIC')}</option>
+                <option value={ProductCategory.FURNITURE}>{tCategories('furniture')}</option>
+                <option value={ProductCategory.BEDS}>{tCategories('beds')}</option>
+                <option value={ProductCategory.OFFICE}>{tCategories('office')}</option>
+                <option value={ProductCategory.BATHROOM}>{tCategories('bathroom')}</option>
+                <option value={ProductCategory.KITCHEN}>{tCategories('kitchen')}</option>
                 <option value={ProductCategory.OUTDOOR}>{tCategories('outdoor')}</option>
                 <option value={ProductCategory.DECORATIVE}>{tCategories('decorative')}</option>
               </select>

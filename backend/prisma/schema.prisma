@@ -31,15 +31,18 @@ enum ProductStatus {
 }
 
 enum ProductCategory {
-  FURNITURE
-  CHAIRS
-  TABLES
-  BEDS
-  STORAGE
+  LIVING_DINING
+  BEDROOM
   OUTDOOR
+  STORAGE
+  NORDIC
   DECORATIVE
-  KITCHEN
+  FURNITURE
+  BEDS
   OFFICE
+  BATHROOM  
+  KITCHEN
+  
 }
 
 enum Difficulty {
@@ -561,9 +564,11 @@ model Order {
 
   transferGroup  String?
   applicationFee Float?
-
-  paymentIntentId String?
   paymentStatus   String?
+
+  paymentIntentId String? @unique  // Para Stripe (ya existe)
+  paypalOrderId   String? @unique  // ✅ NUEVO: Para PayPal
+  paypalPaymentId String?          // ✅ NUEVO: ID del pago capturado de PayPal
 
   buyerEmail   String
   feeBreakdown Json?
@@ -591,6 +596,7 @@ model Order {
   @@index([buyerId])
   @@index([orderNumber])
   @@index([paymentIntentId])
+  @@index([paypalOrderId])  // ✅ NUEVO: Índice para PayPal
   @@map("Order")
 }
 

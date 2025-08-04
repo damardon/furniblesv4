@@ -247,6 +247,8 @@ interface SellerAnalytics {
   repeatBuyerRate: number
 }
 
+
+
 // INITIAL STATE - con valores vacíos que corresponden a los enums
 const initialState: SellerState = {
   sellerProfile: null,
@@ -318,19 +320,59 @@ const initialState: SellerState = {
 
 // HELPER FUNCTIONS
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('furnibles-auth-storage')
-  const parsedToken = token ? JSON.parse(token).state?.token : null
+  let token = null
   
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+  try {
+    const authData = localStorage.getItem('furnibles-auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      token = parsed.state?.token || parsed.token
+    }
+  } catch (error) {
+    console.error('Error parsing auth token:', error)
+  }
+  
+  console.log('🔍 API Request Debug:', {
+    endpoint,
+    hasToken: !!token,
+    tokenLength: token?.length,
+    apiUrl: process.env.NEXT_PUBLIC_API_URL
+  })
+  
+  const fullUrl = `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`
+  
+  const response = await fetch(fullUrl, {
     headers: {
       'Content-Type': 'application/json',
-      ...(parsedToken && { 'Authorization': `Bearer ${parsedToken}` }),
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
   })
   
-  return response.json()
+  console.log('🔍 API Response Debug:', {
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok,
+    url: fullUrl
+  })
+  
+  // ✅ CORRECCIÓN: Leer la respuesta UNA SOLA VEZ
+  const result = await response.json()
+  
+  if (!response.ok) {
+    console.error('🚨 API Request Failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      endpoint,
+      fullUrl,
+      hasAuthHeader: !!token,
+      backendErrorMessage: result.message || result.error,
+      backendFullResponse: result
+    })
+  }
+  
+  return result
 }
 
 // SELLER STORE
@@ -388,11 +430,11 @@ export const useSellerStore = create<SellerState & SellerActions>()(
       },
 
       // DASHBOARD STATS
-      loadDashboardStats: async (period = 'month') => {
+      loadDashboardStats: async (groupBy = 'month') => {
         set({ statsLoading: true })
         
         try {
-          const result = await apiRequest(`/analytics/seller/dashboard?period=${period}`)
+          const result = await apiRequest(`/analytics/seller/dashboard?groupBy=${groupBy}`)
           
           if (result.success && result.data) {
             set({ 

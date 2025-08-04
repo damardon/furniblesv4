@@ -1,13 +1,16 @@
 // Enums coherentes con el backend
 export enum ProductCategory {
-  FURNITURE = 'FURNITURE',
-  CHAIRS = 'CHAIRS', 
-  TABLES = 'TABLES',
-  STORAGE = 'STORAGE',
-  BEDS = 'BEDS',
-  DESKS = 'DESKS',
-  OUTDOOR = 'OUTDOOR',
-  DECORATIVE = 'DECORATIVE'
+  LIVING_DINING = 'LIVING_DINING',     // Living room & dining room
+  BEDROOM = 'BEDROOM',                 // Bedroom/room furniture  
+  OUTDOOR = 'OUTDOOR',                 // Garden/patio/outdoor
+  STORAGE = 'ORGANIZATION',       // Storage/organization
+  NORDIC = 'NORDIC',                   // Nordic/Scandinavian style
+  DECORATIVE = 'DECORATIVE',           // Decorative elements
+  FURNITURE = 'FURNITURE',             // General furniture
+  BEDS = 'BEDS',                       // Beds and sleeping furniture
+  OFFICE = 'OFFICE',                   // Office/workspace
+  BATHROOM = 'BATHROOM',               // Bathroom furniture
+  KITCHEN = 'KITCHEN'                  // Kitchen furniture
 }
 
 export enum Difficulty {

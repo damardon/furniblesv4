@@ -57,14 +57,33 @@ export class ProductFiltersDto {
   @Transform(({ value }) => Array.isArray(value) ? value : [value])
   tags?: string[];
 
+  // ✅ ACTUALIZAR: Campos que SÍ existen en el schema de Prisma
   @ApiPropertyOptional({
-    description: 'Ordenar por',
-    enum: ['newest', 'oldest', 'popular', 'rating', 'price_asc', 'price_desc'],
-    default: 'newest',
+    description: 'Campo por el cual ordenar',
+    enum: [
+      'createdAt', 'updatedAt', 'price', 'rating', 'viewCount', 
+      'downloadCount', 'favoriteCount', 'reviewCount', 'title',  // ✅ CAMPOS REALES
+      'newest', 'oldest', 'popular', 'price_asc', 'price_desc'  // ✅ COMPATIBILIDAD
+    ],
+    default: 'createdAt',
   })
   @IsOptional()
   @IsString()
-  sortBy?: 'newest' | 'oldest' | 'popular' | 'rating' | 'price_asc' | 'price_desc' = 'newest';
+  sortBy?: 
+    | 'createdAt' | 'updatedAt' | 'price' | 'rating' | 'viewCount' 
+    | 'downloadCount' | 'favoriteCount' | 'reviewCount' | 'title'  // ✅ CAMPOS REALES
+    | 'newest' | 'oldest' | 'popular' | 'price_asc' | 'price_desc'  // ✅ COMPATIBILIDAD
+    = 'createdAt';
+
+  // ✅ AGREGAR: Soporte para sortOrder
+  @ApiPropertyOptional({
+    description: 'Dirección del ordenamiento',
+    enum: ['asc', 'desc'],
+    default: 'desc',
+  })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'asc' | 'desc' = 'desc';
 
   @ApiPropertyOptional({
     description: 'Número de página',

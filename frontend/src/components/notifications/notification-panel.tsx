@@ -73,7 +73,7 @@ const mockNotifications: Notification[] = [
     message: 'Has recibido un pago de $25.64 USD por tus ventas del período anterior.',
     isRead: true,
     createdAt: '2024-12-05T09:15:00Z',
-    actionUrl: '/vendedor/dashboard'
+    actionUrl: '/vendedor-dashboard/dashboard'
   },
   {
     id: 'notif_004',

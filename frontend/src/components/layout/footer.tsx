@@ -1,16 +1,18 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+
 export function Footer() {
   const t = useTranslations('footer')
   
   return (
     <footer className="bg-black text-white border-t-[5px] border-orange-500">
-      <div className="max-w-6xl mx-auto px-8 py-12 text-center">
+      {/* Contenedor de ancho completo y responsivo */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 text-center">
         <h3 className="text-yellow-400 font-black text-xl uppercase mb-4">
           {t('title')}
         </h3>
-        <p className="mb-4">
+        <p className="mb-4 max-w-4xl mx-auto">
           {t('description')}
         </p>
         <p className="mb-4">

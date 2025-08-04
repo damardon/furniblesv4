@@ -131,7 +131,7 @@ export class AdminService {
     }
   }
 
-  // 📦 MODERACIÓN DE PRODUCTOS
+  // 📦 MODERACIÓN DE PRODUCTOS - CORREGIDO
   async getPendingProducts(page = 1, limit = 20) {
     try {
       this.logger.log(`Getting pending products - page: ${page}, limit: ${limit}`);
@@ -155,9 +155,6 @@ export class AdminService {
                 }
               }
             },
-            pdfFile: true, // Archivo PDF principal
-            imageFiles: true, // Archivos de imágenes
-            thumbnailFiles: true, // Archivos de thumbnails
             _count: {
               select: {
                 reviews: true
@@ -169,9 +166,20 @@ export class AdminService {
         this.prisma.product.count({ where: { status: ProductStatus.PENDING } })
       ]);
 
+      // Enriquecer productos con información de archivos
+      const enrichedProducts = await Promise.all(
+        products.map(async (product) => {
+          const fileInfo = await this.getProductFileInfo(product);
+          return {
+            ...product,
+            fileInfo
+          };
+        })
+      );
+
       return {
         success: true,
-        data: products,
+        data: enrichedProducts,
         meta: {
           total,
           page,
@@ -294,5 +302,69 @@ export class AdminService {
     // En un sistema real, esto vendría de un sistema de logging
     // Por ahora retornamos un array vacío
     return [];
+  }
+
+  // NUEVA FUNCIÓN HELPER para obtener información de archivos
+  private async getProductFileInfo(product: any) {
+    try {
+      const fileInfo = {
+        pdfFile: null,
+        imageFiles: [],
+        thumbnailFiles: []
+      };
+
+      // Obtener archivo PDF
+      if (product.pdfFileId) {
+        const pdfFile = await this.prisma.file.findUnique({
+          where: { id: product.pdfFileId }
+        });
+        fileInfo.pdfFile = pdfFile;
+      }
+
+      // Obtener archivos de imagen
+      if (product.imageFileIds) {
+        try {
+          const imageIds = JSON.parse(product.imageFileIds);
+          if (Array.isArray(imageIds) && imageIds.length > 0) {
+            const imageFiles = await this.prisma.file.findMany({
+              where: { 
+                id: { in: imageIds },
+                type: 'IMAGE'
+              }
+            });
+            fileInfo.imageFiles = imageFiles;
+          }
+        } catch (error) {
+          this.logger.warn(`Error parsing imageFileIds for product ${product.id}:`, error);
+        }
+      }
+
+      // Obtener archivos de thumbnail
+      if (product.thumbnailFileIds) {
+        try {
+          const thumbnailIds = JSON.parse(product.thumbnailFileIds);
+          if (Array.isArray(thumbnailIds) && thumbnailIds.length > 0) {
+            const thumbnailFiles = await this.prisma.file.findMany({
+              where: { 
+                id: { in: thumbnailIds },
+                type: 'THUMBNAIL'
+              }
+            });
+            fileInfo.thumbnailFiles = thumbnailFiles;
+          }
+        } catch (error) {
+          this.logger.warn(`Error parsing thumbnailFileIds for product ${product.id}:`, error);
+        }
+      }
+
+      return fileInfo;
+    } catch (error) {
+      this.logger.error(`Error getting file info for product ${product.id}:`, error);
+      return {
+        pdfFile: null,
+        imageFiles: [],
+        thumbnailFiles: []
+      };
+    }
   }
 }

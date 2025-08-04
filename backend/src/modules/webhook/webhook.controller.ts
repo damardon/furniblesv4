@@ -1,3 +1,4 @@
+// backend/src/modules/webhook/webhook.controller.ts - CORREGIDO
 import {
   Controller,
   Post,
@@ -82,6 +83,98 @@ export class WebhookController {
       }
 
       // ✅ NUEVO: Para errores internos, retornar 200 para evitar retries infinitos de Stripe
+      return { 
+        received: false, 
+        error: error.message 
+      };
+    }
+  }
+
+  /**
+   * 🆕 PayPal Webhook Handler - CORREGIDO
+   */
+  @Post('paypal')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'PayPal webhook endpoint',
+    description: 'Handles PayPal webhook events'
+  })
+  @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid webhook' })
+  async handlePayPalWebhook(
+    @Request() req: RawBodyRequest<Request>,
+    @Headers() headers: any
+  ): Promise<{ received: boolean; error?: string }> {
+    
+    if (!req.rawBody) {
+      this.logger.error('Missing PayPal webhook body');
+      throw new BadRequestException('Missing request body');
+    }
+
+    this.logger.log('Received PayPal webhook', {
+      bodySize: req.rawBody.length,
+      contentType: headers['content-type']
+    });
+
+    try {
+      // ✅ CORREGIDO: Parsear el body correctamente
+      let webhookBody: any;
+      
+      try {
+        // Convertir el raw body a string y luego parsearlo
+        const bodyString = req.rawBody.toString('utf8');
+        webhookBody = JSON.parse(bodyString);
+      } catch (parseError) {
+        this.logger.error('Failed to parse PayPal webhook body', {
+          error: parseError.message,
+          bodyPreview: req.rawBody.toString('utf8').substring(0, 200)
+        });
+        throw new BadRequestException('Invalid JSON in webhook body');
+      }
+
+      // ✅ AHORA SÍ podemos acceder a las propiedades
+      const eventType = webhookBody.event_type;
+      
+      if (eventType) {
+        this.logger.log(`Processing PayPal event: ${eventType}`);
+        
+        // Procesar según el tipo de evento
+        switch (eventType) {
+          case 'CHECKOUT.ORDER.COMPLETED':
+            this.logger.log(`PayPal order completed: ${webhookBody.resource?.id}`);
+            // TODO: Procesar orden completada
+            break;
+            
+          case 'PAYMENT.CAPTURE.COMPLETED':
+            this.logger.log(`PayPal payment captured: ${webhookBody.resource?.id}`);
+            // TODO: Procesar captura de pago
+            break;
+            
+          case 'PAYMENT.CAPTURE.DENIED':
+            this.logger.warn(`PayPal payment denied: ${webhookBody.resource?.id}`);
+            // TODO: Procesar pago denegado
+            break;
+            
+          default:
+            this.logger.log(`Unhandled PayPal event: ${eventType}`);
+        }
+      } else {
+        this.logger.warn('PayPal webhook missing event_type');
+      }
+      
+      return { received: true };
+      
+    } catch (error) {
+      this.logger.error('PayPal webhook processing failed', {
+        error: error.message,
+        stack: error.stack
+      });
+
+      // Para PayPal también retornamos 200 en errores internos
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
       return { 
         received: false, 
         error: error.message 

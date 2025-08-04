@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import toast from 'react-hot-toast' // ← AGREGAR IMPORT
 import { 
   X, 
   Mail, 
@@ -76,14 +77,48 @@ export function LoginModal() {
 
     try {
       setError(null)
-      await login(formData.email, formData.password)
+      const result = await login(formData.email, formData.password)
       
-      // Success - modal will close automatically via store
-      setFormData({ email: '', password: '' })
-      setValidationErrors({})
+      if (result.success) {
+        // ✅ SUCCESS FEEDBACK
+        const userName = result.data?.user?.firstName || 'Usuario'
+        
+        toast.success(`¡Bienvenido de vuelta, ${userName}!`, {
+          duration: 4000,
+          icon: '🎉',
+          style: {
+            background: '#22c55e',
+            color: '#ffffff',
+            border: '3px solid #000000',
+            fontWeight: '700',
+            fontSize: '16px',
+          }
+        })
+        
+        // Clear form
+        setFormData({ email: '', password: '' })
+        setValidationErrors({})
+        
+        // Modal se cierra automáticamente via store
+        
+      } else {
+        // Handle error from store
+        setError(result.error || 'Error al iniciar sesión')
+        
+        toast.error('Error al iniciar sesión', {
+          duration: 3000,
+          icon: '❌'
+        })
+      }
       
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión')
+      const errorMessage = err.message || 'Error al iniciar sesión'
+      setError(errorMessage)
+      
+      toast.error(errorMessage, {
+        duration: 3000,
+        icon: '❌'
+      })
     }
   }
 
@@ -260,38 +295,35 @@ export function LoginModal() {
               <span className="font-bold text-black">Comprador:</span>
               <button
                 onClick={() => {
-                  setFormData({ email: 'buyer@test.com', password: 'password123' })
+                  setFormData({ email: 'buyer@furnibles.com', password: 'buyer123' })
                 }}
                 className="text-blue-600 font-bold hover:text-blue-800 transition-colors"
               >
-                buyer@test.com
+                buyer@furnibles.com
               </button>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-bold text-black">Vendedor:</span>
               <button
                 onClick={() => {
-                  setFormData({ email: 'seller@test.com', password: 'password123' })
+                  setFormData({ email: 'seller@furnibles.com', password: 'seller123' })
                 }}
                 className="text-blue-600 font-bold hover:text-blue-800 transition-colors"
               >
-                seller@test.com
+                seller@furnibles.com
               </button>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-bold text-black">Admin:</span>
               <button
                 onClick={() => {
-                  setFormData({ email: 'admin@test.com', password: 'password123' })
+                  setFormData({ email: 'admin@furnibles.com', password: 'admind123' })
                 }}
                 className="text-blue-600 font-bold hover:text-blue-800 transition-colors"
               >
-                admin@test.com
+                admin@furnibles.com
               </button>
             </div>
-            <p className="text-gray-600 font-medium text-center mt-2">
-              Contraseña para todas: <strong>password123</strong>
-            </p>
           </div>
         </div>
 

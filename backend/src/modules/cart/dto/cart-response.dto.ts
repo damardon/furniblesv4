@@ -81,4 +81,21 @@ export class CartResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({
+  description: 'Resultados de la sincronización (solo presente en respuesta de sync)',
+  required: false
+})
+syncResults?: {
+  totalItemsReceived: number;
+  itemsAlreadyInCart: number;
+  itemsSynced: number;
+  itemsSkipped: number;
+  availableSlots: number;
+  results: Array<{
+    productId: string;
+    success: boolean;
+    error: string | null;
+  }>;
+}
 }

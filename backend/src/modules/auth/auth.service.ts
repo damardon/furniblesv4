@@ -61,15 +61,24 @@ export class AuthService {
     };
 
     return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: fullUser.id,
-        email: fullUser.email,
-        firstName: fullUser.firstName,
-        lastName: fullUser.lastName,
-        role: fullUser.role,
-      },
-    };
+  success: true,
+  message: 'Login successful',
+  data: {
+    token: this.jwtService.sign(payload),        // Cambió: access_token → token
+    refreshToken: this.jwtService.sign(payload, { // Agregado: refreshToken
+      expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRES_IN', '7d'),
+    }),
+    expiresIn: 24 * 60 * 60, // 24 horas en segundos        // Agregado: expiresIn
+    user: {
+      id: fullUser.id,
+      email: fullUser.email,
+      firstName: fullUser.firstName,
+      lastName: fullUser.lastName,
+      role: fullUser.role,
+      status: fullUser.isActive ? 'ACTIVE' : 'INACTIVE', // Agregado: status
+    },
+  },
+};
   }
 
   async register(registerDto: RegisterDto) {

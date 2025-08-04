@@ -85,7 +85,7 @@ async function createUsers() {
     data: {
       userId: admin.id,
       preferences: { 
-        categories: ['TABLES', 'CHAIRS', 'BEDS'],
+        categories: ['LIVING_DINING', 'NORDIC', 'STORAGE'],
         notifications: { email: true, push: true }
       },
       totalOrders: 5,
@@ -143,7 +143,7 @@ async function createUsers() {
     data: {
       userId: buyer.id,
       preferences: { 
-        categories: ['TABLES', 'CHAIRS', 'DECORATIVE'],
+        categories: ['KITCHEN', 'NORDIC', 'DECORATIVE'],
         budget: 'medium',
         style: 'modern'
       },
@@ -263,7 +263,7 @@ async function createSampleProducts() {
       title: 'Mesa de Comedor Moderna Escandinava',
       description: 'Diseño elegante y minimalista inspirado en el estilo escandinavo. Perfecta para comedores modernos con capacidad para 6 personas. Incluye planos detallados con medidas exactas y lista completa de materiales.',
       price: 12.99,
-      category: ProductCategory.TABLES,
+      category: ProductCategory.DECORATIVE,
       difficulty: Difficulty.INTERMEDIATE,
       // Arrays convertidos a JSON strings para SQLite
       tags: JSON.stringify(['mesa', 'comedor', 'escandinavo', 'moderno', 'madera']),
@@ -291,7 +291,7 @@ async function createSampleProducts() {
       title: 'Silla de Oficina Ergonómica DIY',
       description: 'Diseño ergonómico para largas horas de trabajo. Respaldo ajustable y asiento acolchado. Planos incluyen variaciones para diferentes alturas y patrones para el tapizado.',
       price: 8.99,
-      category: ProductCategory.CHAIRS,
+      category: ProductCategory.OFFICE,
       difficulty: Difficulty.ADVANCED,
       tags: JSON.stringify(['silla', 'oficina', 'ergonomica', 'tapizado']),
       estimatedTime: '6-8 horas',

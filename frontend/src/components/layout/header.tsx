@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { useTheme } from 'next-themes'
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import {
@@ -13,8 +12,6 @@ import {
   User,
   Menu,
   X,
-  Sun,
-  Moon,
   Settings,
   LogOut,
   Plus,
@@ -60,7 +57,6 @@ export function Header() {
   // Hooks
   const router = useRouter()
   const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
   
   // ✅ Traducciones
   const t = useTranslations('header')
@@ -71,7 +67,7 @@ export function Header() {
   const { itemCount, isCartOpen, setCartOpen } = useCartStore()
   const { unreadCount, setNotificationPanelOpen } = useNotificationStore()
   
-  // 🆕 Admin Store
+  // Admin Store
   const { 
     pendingProducts, 
     pendingReviews, 
@@ -82,7 +78,7 @@ export function Header() {
     fetchFlaggedContent
   } = useAdminStore()
 
-  // 🆕 Calcular total de items pendientes de moderación
+  // Calcular total de items pendientes de moderación
   const getPendingModerationCount = () => {
     const pendingProductsCount = pendingProducts?.length || 0
     const pendingReviewsCount = pendingReviews?.length || 0
@@ -90,7 +86,7 @@ export function Header() {
     return pendingProductsCount + pendingReviewsCount + flaggedContentCount
   }
 
-  // 🆕 Efecto para cargar datos de admin si es necesario
+  // Efecto para cargar datos de admin si es necesario
   useEffect(() => {
     if (user?.role === UserRole.ADMIN && isAuthenticated) {
       // Cargar datos de moderación en background
@@ -100,9 +96,8 @@ export function Header() {
     }
   }, [user, isAuthenticated, fetchPendingProducts, fetchPendingReviews, fetchFlaggedContent])
 
-  // ✅ Navegación principal con traducciones
+  // Navegación principal con traducciones
   const mainNavItems = [
-    { href: '/', label: t('home'), icon: Home },
     { href: '/productos', label: t('products'), icon: Grid3X3 },
     { href: '/vendedores', label: t('sellers'), icon: Users },
     { href: '/ayuda', label: t('help'), icon: HelpCircle },
@@ -131,16 +126,37 @@ export function Header() {
   }
 
   return (
-    <header className="bg-white border-b-[5px] border-black">
+    <header className="bg-white">
       {/* Contenedor principal con mismo ancho que layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between gap-4">
-          {/* LOGO SABDA */}
+          {/* LOGO Y MARCA FURNIBLES - APLICANDO SOLO LOS AJUSTES SOLICITADOS */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center group">
-              <h1 className="text-2xl lg:text-3xl font-black uppercase text-black hover:text-orange-500 transition-colors">
-                🪵 Furnibles
-              </h1>
+            <Link href="/" className="flex items-center">
+              <div className="flex items-center gap-2">
+                {/* Logo principal JPG - MÁS GRANDE, SIN HOVER, FIJO */}
+                <div 
+                  className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 bg-white border-3 border-black"
+                >
+                  <img 
+                    src="/images/logo furnibles.jpg" 
+                    alt="FURNIBLES Logo" 
+                    className="w-16 h-16 lg:w-20 lg:h-20 object-contain"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </div>
+                
+                {/* Texto de marca con Montserrat - SIN HOVER, 5% MÁS PEQUEÑO, MÁS PEGADO */}
+                <div className="flex flex-col items-center">
+                  <h1 className="furnibles-logo-text text-[2.28rem] lg:text-[2.85rem] xl:text-[3.42rem] text-black">
+                    FURNIBLES
+                  </h1>
+                  <span className="furnibles-tagline text-sm lg:text-base text-black mt-1 hidden sm:block">
+                    CRAFT • BUILD • SHARE
+                  </span>
+                </div>
+              </div>
             </Link>
           </div>
 
@@ -155,7 +171,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={`
-                    flex items-center gap-2 px-3 py-2 font-black text-xs xl:text-sm uppercase transition-all duration-200
+                    flex items-center gap-3 px-4 py-3 font-black text-xl xl:text-base uppercase transition-all duration-200
                     ${isActive 
                       ? 'bg-orange-500 text-black border-2 border-black' 
                       : 'text-black hover:text-orange-500 hover:bg-yellow-400 border-2 border-transparent hover:border-black'
@@ -197,14 +213,14 @@ export function Header() {
           <div className="flex items-center gap-2 lg:gap-3">
             {/* Búsqueda Mobile */}
             <button
-              className="md:hidden p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all"
+              className="md:hidden px-4 py-3 bg-white border-2 border-black hover:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search className="h-4 w-4 text-black" />
             </button>
 
-            {/* 🆕 Admin Alert Button - Solo para ADMIN */}
+            {/* Admin Alert Button - Solo para ADMIN */}
             {user?.role === UserRole.ADMIN && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -335,29 +351,18 @@ export function Header() {
                 )}
               </button>
             )}
-
-            {/* Toggle Tema SABDA */}
-            <button
-              className="hidden sm:block p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all relative"
-              style={{ boxShadow: '3px 3px 0 #000000' }}
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-              <Sun className="h-4 w-4 text-black rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute top-2 left-2 h-4 w-4 text-black rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            </button>
-
             {/* Usuario Menu SABDA */}
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button 
-                    className="relative p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all"
-                    style={{ boxShadow: '3px 3px 0 #000000' }}
-                  >
-                    <div className="w-6 h-6 bg-orange-500 border-2 border-black flex items-center justify-center text-black text-xs font-black">
-                      {getUserInitials()}
-                    </div>
-                  </button>
+                  className="relative px-8 py-4 bg-green-500 border-2 border-black hover:bg-green-400 transition-all"
+                  style={{ boxShadow: '3px 3px 0 #000000' }}
+                >
+                  <div className="w-8 h-8 bg-white border-2 border-black flex items-center justify-center text-black text-sm font-black">
+                    {getUserInitials()}
+                  </div>
+                </button>
                 </DropdownMenuTrigger>
                 
                 <DropdownMenuContent 
@@ -415,14 +420,14 @@ export function Header() {
                     <>
                       <div className="h-[2px] bg-black my-2" />
                       <DropdownMenuItem asChild>
-                        <Link href="/vendedor/dashboard" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
+                        <Link href="/vendedor-dashboard/dashboard" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                           <BarChart3 className="mr-2 h-4 w-4" />
                           <span>{t('seller_dashboard')}</span>
                         </Link>
                       </DropdownMenuItem>
                       
                       <DropdownMenuItem asChild>
-                        <Link href="/vendedor/productos/nuevo" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
+                        <Link href="/vendedor-dashboard/productos/nuevo" className="cursor-pointer font-bold text-black hover:bg-yellow-400 px-2 py-1">
                           <Plus className="mr-2 h-4 w-4" />
                           <span>{t('upload_product')}</span>
                         </Link>
@@ -430,7 +435,7 @@ export function Header() {
                     </>
                   )}
 
-                  {/* 🆕 Admin features mejoradas */}
+                  {/* Admin features mejoradas */}
                   {user.role === UserRole.ADMIN && (
                     <>
                       <div className="h-[2px] bg-black my-2" />
@@ -455,7 +460,7 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
 
-                      {/* 🆕 Mostrar badge de moderación pendiente */}
+                      {/* Mostrar badge de moderación pendiente */}
                       {getPendingModerationCount() > 0 && (
                         <div className="px-2 py-1 mt-2">
                           <div className="bg-red-500 text-white text-xs font-black px-2 py-1 border-2 border-black text-center">
@@ -506,7 +511,6 @@ export function Header() {
             )}
             {/* Selector de idioma SABDA  */}
             <LanguageSwitcher />
-
 
             {/* Mobile Menu Toggle */}
             <button
@@ -573,7 +577,7 @@ export function Header() {
                 )
               })}
               
-              {/* 🆕 Admin access mobile */}
+              {/* Admin access mobile */}
               {user?.role === UserRole.ADMIN && (
                 <>
                   <div className="h-[3px] bg-black my-4" />

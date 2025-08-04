@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import toast from 'react-hot-toast' // ← AGREGAR IMPORT
 import { 
   X, 
   Mail, 
@@ -133,7 +134,7 @@ export function RegisterModal() {
 
     try {
       setError(null)
-      await register({
+      const result = await register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -141,22 +142,73 @@ export function RegisterModal() {
         role: formData.role
       })
       
-      // Success - modal will close automatically via store
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        password: '',
-        confirmPassword: '',
-        role: UserRole.BUYER,
-        acceptTerms: false,
-        acceptMarketing: false
-      })
-      setValidationErrors({})
+      if (result?.success !== false) { // Asumiendo que register devuelve success como login
+        // ✅ SUCCESS FEEDBACK
+        const userName = formData.firstName
+        const roleText = formData.role === UserRole.SELLER ? 'vendedor' : 'comprador'
+        
+        toast.success(`¡Cuenta creada exitosamente! Bienvenido ${userName} 🎉`, {
+          duration: 5000,
+          icon: '🚀',
+          style: {
+            background: '#10b981',
+            color: '#ffffff',
+            border: '3px solid #000000',
+            fontWeight: '700',
+            fontSize: '16px',
+            maxWidth: '500px',
+          }
+        })
+        
+        // Toast adicional con información del rol
+        setTimeout(() => {
+          toast(`Tu cuenta de ${roleText} está lista para usar`, {
+            duration: 4000,
+            icon: formData.role === UserRole.SELLER ? '🏪' : '🛒',
+            style: {
+              background: '#3b82f6',
+              color: '#ffffff',
+              border: '3px solid #000000',
+              fontWeight: '600',
+            }
+          })
+        }, 500)
+        
+        // Clear form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          password: '',
+          confirmPassword: '',
+          role: UserRole.BUYER,
+          acceptTerms: false,
+          acceptMarketing: false
+        })
+        setValidationErrors({})
+        
+        // Modal se cierra automáticamente via store
+        
+      } else {
+        // Handle error from store
+        const errorMessage = result?.error || 'Error al crear la cuenta'
+        setError(errorMessage)
+        
+        toast.error(errorMessage, {
+          duration: 4000,
+          icon: '❌'
+        })
+      }
       
     } catch (err: any) {
-      setError(err.message || 'Error al crear la cuenta')
+      const errorMessage = err.message || 'Error al crear la cuenta'
+      setError(errorMessage)
+      
+      toast.error(errorMessage, {
+        duration: 4000,
+        icon: '❌'
+      })
     }
   }
 

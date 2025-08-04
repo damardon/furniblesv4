@@ -2,32 +2,75 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { User, UserRole } from '@/types'
 import { ApiResponse } from '@/types/additional'
-import { registerStore } from './store-manager'
-import { storeManager} from './store-manager'
+
+// ✅ SIN IMPORTACIONES DE STORE-MANAGER
+
+// ✅ FUNCIONES DE COOKIES CORREGIDAS
+const setCookie = (name: string, value: string, days: number = 7) => {
+  if (typeof window === 'undefined') return
+  
+  try {
+    const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString()
+    document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
+    console.log('✅ Cookie set:', name)
+  } catch (error) {
+    console.error('❌ Cookie error:', error)
+  }
+}
+
+const deleteCookie = (name: string) => {
+  if (typeof window === 'undefined') return
+  
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`
+  console.log('🗑️ Cookie deleted:', name)
+}
+
+// ✅ FUNCIÓN CORREGIDA - CREAR LA MISMA ESTRUCTURA QUE LOCALSTORAGE
+const syncStateToCookie = (state: any) => {
+  if (typeof window === 'undefined') return
+  
+  try {
+    // ✅ ESTRUCTURA CORREGIDA: Igual que localStorage
+    const cookieData = {
+      state: {
+        user: state.user,
+        token: state.token,
+        refreshToken: state.refreshToken,
+        tokenExpiry: state.tokenExpiry,
+        isAuthenticated: state.isAuthenticated,
+      },
+      version: 0
+    }
+    
+    setCookie('furnibles-auth-storage', JSON.stringify(cookieData))
+    
+    console.log('🔄 State synced to cookie with correct structure')
+    console.log('🔍 Cookie data preview:', {
+      hasState: !!cookieData.state,
+      isAuthenticated: cookieData.state.isAuthenticated,
+      hasUser: !!cookieData.state.user,
+      userRole: cookieData.state.user?.role
+    })
+  } catch (error) {
+    console.error('❌ Sync error:', error)
+  }
+}
 
 // AUTH STATE INTERFACE
 interface AuthState {
-  // Estado de autenticación
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  
-  // Token y sesión
   token: string | null
   refreshToken: string | null
   tokenExpiry: number | null
-  
-  // Estado de UI
   loginModalOpen: boolean
   registerModalOpen: boolean
-  
-  // Datos temporales de registro
   tempRegistrationData: Partial<User> | null
 }
 
 // AUTH ACTIONS INTERFACE
 interface AuthActions {
-  // Acciones de autenticación
   login: (email: string, password: string) => Promise<ApiResponse<{ user: User; token: string }>>
   logout: () => void
   register: (userData: {
@@ -37,30 +80,18 @@ interface AuthActions {
     lastName: string
     role: UserRole
   }) => Promise<ApiResponse<{ user: User; token: string }>>
-  
-  // Gestión de tokens
   setToken: (token: string, refreshToken?: string, expiresIn?: number) => void
   clearTokens: () => void
   refreshAccessToken: () => Promise<boolean>
-  
-  // Gestión de usuario
   setUser: (user: User) => void
   updateUser: (updates: Partial<User>) => void
   clearUser: () => void
-  
-  // Verificación de email
   verifyEmail: (token: string) => Promise<ApiResponse>
   resendVerification: (email: string) => Promise<ApiResponse>
-  
-  // Recuperación de contraseña
   forgotPassword: (email: string) => Promise<ApiResponse>
   resetPassword: (token: string, newPassword: string) => Promise<ApiResponse>
-  
-  // Estado de UI
   setLoginModalOpen: (open: boolean) => void
   setRegisterModalOpen: (open: boolean) => void
-  
-  // Utilidades
   checkAuthStatus: () => Promise<void>
   isTokenValid: () => boolean
   hasRole: (role: UserRole) => boolean
@@ -68,7 +99,6 @@ interface AuthActions {
   canAccessAdminFeatures: () => boolean
 }
 
-// INITIAL STATE
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
@@ -81,14 +111,12 @@ const initialState: AuthState = {
   tempRegistrationData: null,
 }
 
-// AUTH STORE
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
     (set, get) => ({
-      // ESTADO INICIAL
       ...initialState,
 
-      // ACCIONES DE AUTENTICACIÓN
+      // ✅ LOGIN CON SINCRONIZACIÓN DE COOKIES
       login: async (email: string, password: string) => {
         set({ isLoading: true })
         
@@ -105,11 +133,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
           if (result.success && result.data) {
             const { user, token, refreshToken, expiresIn } = result.data
-            
-            // Calcular tiempo de expiración
             const tokenExpiry = Date.now() + (expiresIn * 1000)
             
-            set({
+            const newState = {
               user,
               token,
               refreshToken,
@@ -117,7 +143,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               isAuthenticated: true,
               isLoading: false,
               loginModalOpen: false,
-            })
+            }
+            
+            set(newState)
+            
+            // ✅ SINCRONIZAR CON COOKIES
+            syncStateToCookie({ ...get(), ...newState })
 
             return { success: true, data: { user, token } }
           } else {
@@ -131,8 +162,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
+      // ✅ LOGOUT CON LIMPIEZA DE COOKIES
       logout: () => {
-        // Invalidar token en el servidor si es posible
         const { token } = get()
         if (token) {
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
@@ -143,12 +174,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           }).catch(console.error)
         }
 
-        // Limpiar estado local
-        set({
-          ...initialState,
-        })
+        set({ ...initialState })
+        deleteCookie('furnibles-auth-storage')
       },
 
+      // ✅ REGISTER CON SINCRONIZACIÓN DE COOKIES
       register: async (userData) => {
         set({ isLoading: true })
         
@@ -167,7 +197,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             const { user, token, refreshToken, expiresIn } = result.data
             const tokenExpiry = Date.now() + (expiresIn * 1000)
             
-            set({
+            const newState = {
               user,
               token,
               refreshToken,
@@ -176,7 +206,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               isLoading: false,
               registerModalOpen: false,
               tempRegistrationData: null,
-            })
+            }
+            
+            set(newState)
+            syncStateToCookie({ ...get(), ...newState })
 
             return { success: true, data: { user, token } }
           } else {
@@ -190,15 +223,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      // GESTIÓN DE TOKENS
       setToken: (token: string, refreshToken?: string, expiresIn?: number) => {
         const tokenExpiry = expiresIn ? Date.now() + (expiresIn * 1000) : null
-        set({ 
+        const newState = { 
           token, 
           refreshToken: refreshToken || get().refreshToken,
           tokenExpiry,
           isAuthenticated: true 
-        })
+        }
+        
+        set(newState)
+        syncStateToCookie({ ...get(), ...newState })
       },
 
       clearTokens: () => {
@@ -208,6 +243,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           tokenExpiry: null,
           isAuthenticated: false 
         })
+        deleteCookie('furnibles-auth-storage')
       },
 
       refreshAccessToken: async () => {
@@ -240,23 +276,26 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      // GESTIÓN DE USUARIO
       setUser: (user: User) => {
-        set({ user, isAuthenticated: true })
+        const newState = { user, isAuthenticated: true }
+        set(newState)
+        syncStateToCookie({ ...get(), ...newState })
       },
 
       updateUser: (updates: Partial<User>) => {
         const { user } = get()
         if (user) {
-          set({ user: { ...user, ...updates } })
+          const newState = { user: { ...user, ...updates } }
+          set(newState)
+          syncStateToCookie({ ...get(), ...newState })
         }
       },
 
       clearUser: () => {
         set({ user: null, isAuthenticated: false })
+        deleteCookie('furnibles-auth-storage')
       },
 
-      // VERIFICACIÓN DE EMAIL
       verifyEmail: async (token: string) => {
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`, {
@@ -270,7 +309,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const result: ApiResponse = await response.json()
           
           if (result.success) {
-            // Actualizar usuario como verificado
             const { user } = get()
             if (user) {
               get().updateUser({ emailVerified: true })
@@ -301,7 +339,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      // RECUPERACIÓN DE CONTRASEÑA
       forgotPassword: async (email: string) => {
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`, {
@@ -336,7 +373,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      // ESTADO DE UI
       setLoginModalOpen: (open: boolean) => {
         set({ loginModalOpen: open })
       },
@@ -345,7 +381,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ registerModalOpen: open })
       },
 
-      // UTILIDADES
       checkAuthStatus: async () => {
         const { token, isTokenValid, refreshAccessToken } = get()
         
@@ -362,7 +397,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           }
         }
 
-        // Verificar con el servidor
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
             headers: {
@@ -387,7 +421,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       isTokenValid: () => {
         const { tokenExpiry } = get()
         if (!tokenExpiry) return false
-        return Date.now() < tokenExpiry - 60000 // 1 minuto de margen
+        return Date.now() < tokenExpiry - 60000
       },
 
       hasRole: (role: UserRole) => {
@@ -420,7 +454,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Verificar si el token ha expirado al hidratar
+          syncStateToCookie(state)
+          
           if (!state.isTokenValid()) {
             state.logout()
           }
@@ -430,7 +465,4 @@ export const useAuthStore = create<AuthState & AuthActions>()(
   )
 )
 
-// Registrar el store en el manager
-if (typeof window !== 'undefined') {
-  registerStore('auth', useAuthStore)
-}
+// ✅ SIN REGISTRO EN STORE-MANAGER

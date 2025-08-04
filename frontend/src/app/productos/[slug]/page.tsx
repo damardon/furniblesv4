@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -23,86 +23,234 @@ import {
   ZoomInIcon,
   UserIcon,
   CalendarIcon,
-  EyeIcon
+  EyeIcon,
+  StoreIcon
 } from 'lucide-react'
-import { Product, Difficulty, ProductCategory } from '@/types'
-import { useCartStore } from '@/lib/stores/cart-store'
-import { useAuthStore } from '@/lib/stores/auth-store'
-import { getProductBySlug, mockProducts } from '@/data/mockProducts'
-import { ProductCard } from '@/components/products/product-card'
 
+// ✅ Types basados en tu API real
+interface Product {
+  id: string
+  title: string
+  description: string
+  slug: string
+  price: number
+  category: string
+  difficulty: string
+  status: string
+  imageFileIds: string
+  thumbnailFileIds: string
+  tags: string
+  estimatedTime: string
+  toolsRequired: string
+  materials: string
+  dimensions: string
+  specifications: any
+  rating: number
+  reviewCount: number
+  viewCount: number
+  downloadCount: number
+  favoriteCount: number
+  featured: boolean
+  createdAt: string
+  publishedAt: string
+  sellerId: string
+  seller: {
+    id: string
+    firstName: string
+    avatar?: string | null
+    createdAt: string
+    lastName: string
+    email: string
+    sellerProfile: {
+      id: string
+      storeName: string
+      slug: string
+      description: string
+      avatar?: string | null
+      isVerified: boolean
+      createdAt: string
+    }
+  }
+}
+
+// ✅ Updated interface for Next.js 15+ params
 interface ProductDetailPageProps {
-  params: {
+  params: Promise<{
     slug: string
+  }>
+}
+
+// ✅ Función para obtener producto desde API real
+async function getProductBySlug(slug: string): Promise<Product | null> {
+  try {
+    console.log('🔍 [FRONTEND] Fetching product:', slug)
+    
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/slug/${slug}`, {
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+
+    console.log('🔍 [FRONTEND] Product response status:', response.status)
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null
+      }
+      throw new Error(`Error ${response.status}: ${response.statusText}`)
+    }
+
+    const product = await response.json()
+    console.log('✅ [FRONTEND] Product data received:', product)
+    
+    // ✅ Obtener información completa del seller
+    if (product.sellerId && !product.seller?.storeName) {
+      try {
+        const sellerResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sellers/id/${product.sellerId}`, {
+          cache: 'no-store',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (sellerResponse.ok) {
+          const sellerData = await sellerResponse.json()
+          product.seller = { ...product.seller, ...sellerData }
+          console.log('✅ [FRONTEND] Seller data added:', sellerData)
+        }
+      } catch (sellerError) {
+        console.warn('⚠️ [FRONTEND] Could not fetch seller data:', sellerError)
+      }
+    }
+    
+    return product
+  } catch (error) {
+    console.error('❌ [FRONTEND] Error fetching product:', error)
+    return null
   }
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
+  // ✅ Unwrap the params Promise using React.use()
+  const resolvedParams = use(params)
+  
   const t = useTranslations('product_detail')
   const tCommon = useTranslations('common')
   const tProducts = useTranslations('products')
+  
   const [product, setProduct] = useState<Product | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFavorite, setIsFavorite] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
-  
-  // Stores
-  const { addItem } = useCartStore()
-  const { isAuthenticated, setLoginModalOpen } = useAuthStore()
 
-  useEffect(() => {
-    const foundProduct = getProductBySlug(params.slug)
-    if (!foundProduct) {
-      notFound()
+    useEffect(() => {
+    const loadProduct = async () => {
+      setIsLoading(true)
+      setError(null)
+      
+      try {
+        console.log('🔍 [FRONTEND] Fetching product:', resolvedParams.slug)
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/slug/${resolvedParams.slug}`, {
+          cache: 'no-store',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            notFound()
+            return
+          }
+          throw new Error(`Error ${response.status}: ${response.statusText}`)
+        }
+
+        const product = await response.json()
+        console.log('✅ [FRONTEND] Product data received:', product)
+        setProduct(product)
+      } catch (err) {
+        console.error('Error loading product:', err)
+        setError(err instanceof Error ? err.message : 'Error loading product')
+      } finally {
+        setIsLoading(false)
+      }
     }
-    setProduct(foundProduct)
 
-    // Productos relacionados (misma categoría, excluyendo el actual)
-    const related = mockProducts
-      .filter(p => p.category === foundProduct.category && p.id !== foundProduct.id)
-      .slice(0, 3)
-    setRelatedProducts(related)
-  }, [params.slug])
+    loadProduct()
+  }, [resolvedParams.slug])
 
-  if (!product) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">🪵</div>
-          <p className="text-black font-black text-xl uppercase">{t('loading')}</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-black font-black text-xl uppercase">Cargando producto...</p>
         </div>
       </div>
     )
   }
 
-  const getDifficultyBadge = (difficulty: Difficulty) => {
-    switch (difficulty) {
-      case Difficulty.EASY:
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <p className="text-red-600 font-black text-xl uppercase mb-4">Error: {error}</p>
+          <Link 
+            href="/productos"
+            className="bg-orange-500 border-4 border-black text-black font-black py-2 px-4 uppercase hover:bg-yellow-400 transition-all"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            Volver al catálogo
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return notFound()
+  }
+
+  const getDifficultyBadge = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
         return 'bg-green-500 text-black border-4 border-black'
-      case Difficulty.INTERMEDIATE:
+      case 'intermediate':
         return 'bg-yellow-400 text-black border-4 border-black'
-      case Difficulty.ADVANCED:
+      case 'advanced':
         return 'bg-orange-500 text-black border-4 border-black'
+      case 'expert':
+        return 'bg-red-500 text-black border-4 border-black'
       default:
         return 'bg-gray-400 text-black border-4 border-black'
     }
   }
 
-  const getCategoryBadge = (category: ProductCategory) => {
-    const colors = {
-      [ProductCategory.TABLES]: 'bg-blue-400',
-      [ProductCategory.CHAIRS]: 'bg-purple-400', 
-      [ProductCategory.BEDS]: 'bg-pink-400',
-      [ProductCategory.SHELVES]: 'bg-green-400',
-      [ProductCategory.STORAGE]: 'bg-yellow-400',
-      [ProductCategory.DESKS]: 'bg-orange-400',
-      [ProductCategory.OUTDOOR]: 'bg-cyan-400',
-      [ProductCategory.DECORATIVE]: 'bg-red-400',
+  const getCategoryBadge = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'LIVING_DINING': 'bg-blue-400',
+      'BEDROOM': 'bg-purple-400', 
+      'OUTDOOR': 'bg-green-400',
+      'STORAGE': 'bg-yellow-400',
+      'NORDIC': 'bg-cyan-400',
+      'DECORATIVE': 'bg-pink-400',
+      'FURNITURE': 'bg-orange-400',
+      'BEDS': 'bg-red-400',
+      'OFFICE': 'bg-indigo-400',
+      'BATHROOM': 'bg-teal-400',
+      'KITCHEN': 'bg-lime-400',
     }
     
-    return `${colors[category]} text-black border-4 border-black`
+    return `${colors[category] || 'bg-gray-400'} text-black border-4 border-black`
   }
 
   const formatPrice = (price: number) => {
@@ -128,33 +276,24 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     })
   }
 
-  const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      setLoginModalOpen(true)
-      return
-    }
-
-    setIsAddingToCart(true)
+  const parseJsonField = (field: string): any[] => {
     try {
-      await addItem(product, 1)
-      // TODO: Mostrar toast de éxito
-    } catch (error) {
-      console.error('Error adding to cart:', error)
-      // TODO: Mostrar toast de error
-    } finally {
-      setIsAddingToCart(false)
+      return JSON.parse(field || '[]')
+    } catch {
+      return []
     }
   }
 
-  const handleImageNavigation = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setCurrentImageIndex(prev => 
-        prev === 0 ? product.previewImages.length - 1 : prev - 1
-      )
-    } else {
-      setCurrentImageIndex(prev => 
-        prev === product.previewImages.length - 1 ? 0 : prev + 1
-      )
+  const handleAddToCart = async () => {
+    setIsAddingToCart(true)
+    try {
+      // TODO: Implementar lógica de carrito real
+      console.log('Adding to cart:', product.id)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Simular API call
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+    } finally {
+      setIsAddingToCart(false)
     }
   }
 
@@ -166,32 +305,37 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         url: window.location.href,
       })
     } else {
-      // Fallback: copiar al clipboard
       navigator.clipboard.writeText(window.location.href)
-      // TODO: Mostrar toast de copiado
     }
   }
 
+  // Parsear arrays de JSON
+  const tags = parseJsonField(product.tags)
+  const tools = parseJsonField(product.toolsRequired)
+  const materials = parseJsonField(product.materials)
+  const images = parseJsonField(product.imageFileIds)
+  const thumbnails = parseJsonField(product.thumbnailFileIds)
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
       <div className="bg-yellow-400 border-b-4 border-black p-4">
-        <div className="container mx-auto">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              {tCommon('navigation.home')}
+              Inicio
             </Link>
             <span>/</span>
             <Link href="/productos" className="hover:text-orange-500 transition-colors">
-              {tProducts('title')}
+              Productos
             </Link>
             <span>/</span>
-            <span className="text-orange-500">{product.title}</span>
+            <span className="text-orange-500 truncate">{product.title}</span>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Botón volver */}
         <div className="mb-6">
           <Link 
@@ -200,7 +344,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             style={{ boxShadow: '4px 4px 0 #000000' }}
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            {t('navigation.back_to_catalog')}
+            Volver al catálogo
           </Link>
         </div>
 
@@ -208,49 +352,24 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           {/* Galería de Imágenes */}
           <div className="space-y-4">
             {/* Imagen Principal */}
-            <div className="relative aspect-square border-6 border-black overflow-hidden bg-gradient-to-br from-orange-200 to-yellow-200">
-              {product.previewImages.length > 0 ? (
-                <Image
-                  src={product.previewImages[currentImageIndex]}
+            <div 
+              className="relative aspect-square border-6 border-black overflow-hidden bg-gradient-to-br from-orange-200 to-yellow-200 hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+              style={{ boxShadow: '8px 8px 0 #000000' }}
+            >
+              {thumbnails.length > 0 ? (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/image/${thumbnails[currentImageIndex]}`}
                   alt={product.title}
-                  fill
-                  className="object-cover"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-8xl mb-4">🪵</div>
-                    <p className="text-black font-black text-xl uppercase">{t('gallery.no_image')}</p>
+                    <p className="text-black font-black text-xl uppercase">Sin imagen</p>
                   </div>
                 </div>
               )}
-
-              {/* Navegación de imágenes */}
-              {product.previewImages.length > 1 && (
-                <>
-                  <button
-                    onClick={() => handleImageNavigation('prev')}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/70 text-white p-2 hover:bg-black transition-all"
-                  >
-                    <ChevronLeftIcon className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={() => handleImageNavigation('next')}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/70 text-white p-2 hover:bg-black transition-all"
-                  >
-                    <ChevronRightIcon className="w-6 h-6" />
-                  </button>
-                </>
-              )}
-
-              {/* Botón zoom */}
-              <button
-                onClick={() => setShowImageModal(true)}
-                className="absolute top-4 right-4 bg-white border-2 border-black p-2 hover:bg-yellow-400 transition-all"
-                style={{ boxShadow: '3px 3px 0 #000000' }}
-              >
-                <ZoomInIcon className="w-5 h-5 text-black" />
-              </button>
 
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -259,7 +378,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     className="bg-orange-500 text-black text-xs font-black px-3 py-1 border-2 border-black uppercase"
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    {t('badges.featured')}
+                    Destacado
                   </span>
                 )}
                 {(() => {
@@ -270,59 +389,31 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       className="bg-green-500 text-black text-xs font-black px-3 py-1 border-2 border-black uppercase"
                       style={{ boxShadow: '2px 2px 0 #000000' }}
                     >
-                      {t('badges.new')}
+                      Nuevo
                     </span>
                   ) : null
                 })()}
               </div>
 
-              {/* Indicador de imágenes */}
-              {product.previewImages.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                  {product.previewImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-3 h-3 border-2 border-black transition-all ${
-                        index === currentImageIndex ? 'bg-orange-500' : 'bg-white'
-                      }`}
-                    />
-                  ))}
+              {/* Stats overlay */}
+              <div className="absolute bottom-4 right-4 flex gap-2">
+                <div className="bg-black/70 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                  <EyeIcon className="w-3 h-3" />
+                  {formatNumber(product.viewCount)}
                 </div>
-              )}
-            </div>
-
-            {/* Miniaturas */}
-            {product.previewImages.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {product.previewImages.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`aspect-square border-4 overflow-hidden transition-all ${
-                      index === currentImageIndex 
-                        ? 'border-orange-500' 
-                        : 'border-black hover:border-yellow-400'
-                    }`}
-                  >
-                    <Image
-                      src={image}
-                      alt={t('gallery.image_alt', { title: product.title, number: index + 1 })}
-                      width={100}
-                      height={100}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+                <div className="bg-black/70 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                  <DownloadIcon className="w-3 h-3" />
+                  {formatNumber(product.downloadCount)}
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Información del Producto */}
           <div className="space-y-6">
             {/* Título y Rating */}
             <div>
-              <h1 className="text-3xl lg:text-4xl font-black text-black mb-4 uppercase">
+              <h1 className="text-3xl lg:text-4xl font-black text-black mb-4 uppercase leading-tight">
                 {product.title}
               </h1>
               
@@ -333,291 +424,264 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     {product.rating.toFixed(1)}
                   </span>
                   <span className="text-gray-600 font-bold">
-                    ({product.reviewCount} {t('info.reviews')})
+                    ({product.reviewCount} reseñas)
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <EyeIcon className="w-4 h-4" />
-                    <span className="font-bold">{formatNumber(product.viewCount)} {t('info.views')}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <DownloadIcon className="w-4 h-4" />
-                    <span className="font-bold">{formatNumber(product.downloadCount)} {t('info.downloads')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Precio */}
-              <div className="flex items-center justify-between mb-6">
-                <div 
-                  className="bg-yellow-400 border-4 border-black px-6 py-3"
-                  style={{ boxShadow: '6px 6px 0 #000000' }}
-                >
-                  <span className="text-3xl font-black text-black">
-                    {formatPrice(product.price)}
-                  </span>
-                </div>
-                
-                {/* Botones de acción */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4 ml-auto">
                   <button
                     onClick={() => setIsFavorite(!isFavorite)}
-                    className="p-3 bg-white border-4 border-black hover:bg-yellow-400 transition-all"
-                    style={{ boxShadow: '4px 4px 0 #000000' }}
+                    className={`p-2 border-2 border-black transition-all ${
+                      isFavorite ? 'bg-red-500 text-white' : 'bg-white text-black hover:bg-yellow-400'
+                    }`}
+                    style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    <HeartIcon 
-                      className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-black'}`} 
-                    />
+                    <HeartIcon className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                   </button>
                   
                   <button
                     onClick={handleShare}
-                    className="p-3 bg-white border-4 border-black hover:bg-yellow-400 transition-all"
-                    style={{ boxShadow: '4px 4px 0 #000000' }}
+                    className="p-2 border-2 border-black bg-white text-black hover:bg-yellow-400 transition-all"
+                    style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    <ShareIcon className="w-5 h-5 text-black" />
+                    <ShareIcon className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-            </div>
 
-            {/* Metadatos */}
-            <div className="flex flex-wrap gap-3">
-              <span 
-                className={`${getDifficultyBadge(product.difficulty)} text-sm font-black px-3 py-2 uppercase`}
-                style={{ boxShadow: '3px 3px 0 #000000' }}
-              >
-                <WrenchIcon className="w-4 h-4 inline mr-1" />
-                {product.difficulty}
-              </span>
-              
-              <span 
-                className={`${getCategoryBadge(product.category)} text-sm font-black px-3 py-2 uppercase`}
-                style={{ boxShadow: '3px 3px 0 #000000' }}
-              >
-                <TagIcon className="w-4 h-4 inline mr-1" />
-                {product.category}
-              </span>
-              
-              {product.estimatedTime && (
+              {/* Badges de categoría y dificultad */}
+              <div className="flex gap-3 mb-6">
                 <span 
-                  className="bg-blue-400 text-black border-4 border-black text-sm font-black px-3 py-2 uppercase"
-                  style={{ boxShadow: '3px 3px 0 #000000' }}
+                  className={`text-sm font-black px-3 py-1 uppercase ${getCategoryBadge(product.category)}`}
+                  style={{ boxShadow: '2px 2px 0 #000000' }}
                 >
-                  <ClockIcon className="w-4 h-4 inline mr-1" />
-                  {product.estimatedTime}
+                  {product.category}
                 </span>
-              )}
-            </div>
-
-            {/* Descripción */}
-            <div 
-              className="bg-gray-100 border-4 border-black p-6"
-              style={{ boxShadow: '4px 4px 0 #000000' }}
-            >
-              <h3 className="text-xl font-black text-black mb-3 uppercase">{t('sections.description')}</h3>
-              <p className="text-black leading-relaxed font-medium">
-                {product.description}
-              </p>
-            </div>
-
-            {/* Información del Vendedor */}
-            <div 
-              className="bg-orange-100 border-4 border-black p-6"
-              style={{ boxShadow: '4px 4px 0 #000000' }}
-            >
-              <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
-                <UserIcon className="w-5 h-5" />
-                {t('sections.seller')}
-              </h3>
-              
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-orange-500 border-4 border-black flex items-center justify-center text-black text-xl font-black">
-                  {product.seller.firstName?.charAt(0) || 'U'}
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="text-lg font-black text-black uppercase">
-                      {product.seller.sellerProfile?.storeName || `${product.seller.firstName} ${product.seller.lastName}`}
-                    </h4>
-                    {product.seller.sellerProfile?.isVerified && (
-                      <CheckCircleIcon className="w-5 h-5 text-blue-500" />
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="flex items-center gap-1">
-                      <StarIcon className="w-4 h-4 fill-orange-500 text-orange-500" />
-                      <span className="text-sm font-black text-black">
-                        {product.seller.sellerProfile?.rating.toFixed(1) || '0.0'}
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-600 font-bold">
-                      {product.seller.sellerProfile?.totalSales || 0} {t('seller.sales')}
-                    </span>
-                  </div>
-                  
-                  {product.seller.sellerProfile?.description && (
-                    <p className="text-sm text-black font-medium">
-                      {product.seller.sellerProfile.description}
-                    </p>
-                  )}
-                  
-                  {product.seller.sellerProfile?.website && (
-                    <a 
-                      href={product.seller.sellerProfile.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 font-bold hover:text-blue-800 transition-colors"
-                    >
-                      {t('seller.visit_store')} →
-                    </a>
-                  )}
-                </div>
+                <span 
+                  className={`text-sm font-black px-3 py-1 uppercase ${getDifficultyBadge(product.difficulty)}`}
+                  style={{ boxShadow: '2px 2px 0 #000000' }}
+                >
+                  {product.difficulty}
+                </span>
               </div>
             </div>
 
-            {/* Botón de Compra Principal */}
-            <button 
-              onClick={handleAddToCart}
-              disabled={isAddingToCart}
-              className="w-full bg-green-500 border-6 border-black font-black text-black text-xl uppercase py-4 hover:bg-yellow-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ boxShadow: '6px 6px 0 #000000' }}
-            >
-              <ShoppingCartIcon className="w-6 h-6 inline mr-3" />
-              {isAddingToCart ? t('actions.adding') : t('actions.add_to_cart')}
-            </button>
+            {/* Precio */}
+            <div className="bg-white border-4 border-black p-6" style={{ boxShadow: '4px 4px 0 #000000' }}>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-4xl font-black text-green-600">
+                  {formatPrice(product.price)}
+                </span>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600 font-bold">Descarga instantánea</p>
+                  <p className="text-xs text-gray-500">Archivos digitales</p>
+                </div>
+              </div>
 
-            {/* Fecha de publicación */}
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CalendarIcon className="w-4 h-4" />
-              <span className="font-bold">
-                {t('info.published_on', { date: formatDate(product.publishedAt || product.createdAt) })}
-              </span>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                  className="bg-orange-500 border-4 border-black text-black font-black py-3 px-4 uppercase hover:bg-yellow-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ boxShadow: '4px 4px 0 #000000' }}
+                >
+                  {isAddingToCart ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                      Agregando...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCartIcon className="w-5 h-5" />
+                      Agregar al carrito
+                    </>
+                  )}
+                </button>
+                
+                <button className="bg-blue-500 border-4 border-black text-black font-black py-3 px-4 uppercase hover:bg-cyan-400 transition-all flex items-center justify-center gap-2"
+                  style={{ boxShadow: '4px 4px 0 #000000' }}
+                >
+                  <DownloadIcon className="w-5 h-5" />
+                  Comprar ahora
+                </button>
+              </div>
+            </div>
+
+            {/* ✅ Info del vendedor - CON ENLACE AL FRONTSTORE */}
+            <div className="bg-gradient-to-br from-blue-100 to-cyan-100 border-4 border-black p-6 hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300" style={{ boxShadow: '6px 6px 0 #000000' }}>
+  <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
+    <StoreIcon className="w-5 h-5" />
+    Información del vendedor
+  </h3>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-4">
+      <div className="w-16 h-16 bg-orange-500 border-3 border-black flex items-center justify-center" style={{ boxShadow: '3px 3px 0 #000000' }}>
+        {product.seller?.sellerProfile?.avatar ? (
+          <img
+            src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/image/${product.seller.sellerProfile.avatar}`}
+            alt="Vendedor"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <UserIcon className="w-8 h-8 text-black" />
+        )}
+      </div>
+      <div>
+        <p className="font-black text-black text-xl mb-1">
+          {product.seller?.sellerProfile?.storeName || 
+           `${product.seller?.firstName || ''} ${product.seller?.lastName || ''}`.trim() || 
+           'Vendedor'}
+        </p>
+        <p className="text-sm text-gray-600 font-bold mb-2">
+          📅 Publicado el {formatDate(product.publishedAt || product.createdAt)}
+        </p>
+        {product.seller?.sellerProfile?.description && (
+          <p className="text-sm text-gray-700 max-w-md">
+            {product.seller.sellerProfile.description}
+          </p>
+        )}
+        {product.seller?.sellerProfile?.isVerified && (
+          <div className="flex items-center gap-1 mt-2">
+            <CheckCircleIcon className="w-4 h-4 text-green-500" />
+            <span className="text-xs text-green-600 font-bold uppercase">Verificado</span>
+          </div>
+        )}
+      </div>
+    </div>
+    
+    {/* ✅ ENLACE AL FRONTSTORE DEL VENDEDOR */}
+    {product.seller?.sellerProfile?.slug && (
+      <Link href={`/vendedores/${product.seller.sellerProfile.slug}`}>
+        <button
+          className="bg-orange-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-yellow-400 transition-all flex items-center gap-2"
+          style={{ boxShadow: '4px 4px 0 #000000' }}
+        >
+          <StoreIcon className="w-5 h-5" />
+          Ver Tienda
+        </button>
+      </Link>
+    )}
+  </div>
+            </div>
+
+            {/* Especificaciones técnicas */}
+            <div className="bg-white border-4 border-black p-6" style={{ boxShadow: '4px 4px 0 #000000' }}>
+              <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
+                <RulerIcon className="w-5 h-5" />
+                Especificaciones técnicas
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <ClockIcon className="w-5 h-5 text-orange-500" />
+                  <div>
+                    <p className="font-black text-black text-sm uppercase">Tiempo estimado</p>
+                    <p className="text-gray-600 font-bold">{product.estimatedTime}</p>
+                  </div>
+                </div>
+                
+                {product.dimensions && (
+                  <div className="flex items-center gap-3">
+                    <RulerIcon className="w-5 h-5 text-blue-500" />
+                    <div>
+                      <p className="font-black text-black text-sm uppercase">Dimensiones</p>
+                      <p className="text-gray-600 font-bold">{product.dimensions}</p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-3">
+                  <EyeIcon className="w-5 h-5 text-green-500" />
+                  <div>
+                    <p className="font-black text-black text-sm uppercase">Visualizaciones</p>
+                    <p className="text-gray-600 font-bold">{formatNumber(product.viewCount)}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <DownloadIcon className="w-5 h-5 text-purple-500" />
+                  <div>
+                    <p className="font-black text-black text-sm uppercase">Descargas</p>
+                    <p className="text-gray-600 font-bold">{formatNumber(product.downloadCount)}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Información Técnica */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {/* Herramientas Requeridas */}
-          <div 
-            className="bg-blue-100 border-4 border-black p-6"
-            style={{ boxShadow: '4px 4px 0 #000000' }}
-          >
-            <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
-              <WrenchIcon className="w-5 h-5" />
-              {t('technical.tools')}
-            </h3>
-            <ul className="space-y-2">
-              {product.toolsRequired.map((tool, index) => (
-                <li key={index} className="flex items-center gap-2 text-black font-medium">
-                  <span className="w-2 h-2 bg-black"></span>
-                  {tool}
-                </li>
-              ))}
-            </ul>
+        {/* Descripción completa */}
+        <div className="bg-white border-4 border-black p-8 mb-8" style={{ boxShadow: '4px 4px 0 #000000' }}>
+          <h2 className="text-2xl font-black text-black mb-6 uppercase">
+            Descripción del producto
+          </h2>
+          <div className="prose prose-lg max-w-none">
+            <p className="text-gray-700 font-medium leading-relaxed text-lg">
+              {product.description}
+            </p>
           </div>
+        </div>
 
-          {/* Materiales */}
-          <div 
-            className="bg-green-100 border-4 border-black p-6"
-            style={{ boxShadow: '4px 4px 0 #000000' }}
-          >
-            <h3 className="text-xl font-black text-black mb-4 uppercase flex items-center gap-2">
-              <PackageIcon className="w-5 h-5" />
-              {t('technical.materials')}
-            </h3>
-            <ul className="space-y-2">
-              {product.materials.map((material, index) => (
-                <li key={index} className="flex items-center gap-2 text-black font-medium">
-                  <span className="w-2 h-2 bg-black"></span>
-                  {material}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Dimensiones y Tags */}
-          <div className="space-y-6">
-            {/* Dimensiones */}
-            {product.dimensions && (
-              <div 
-                className="bg-yellow-100 border-4 border-black p-6"
-                style={{ boxShadow: '4px 4px 0 #000000' }}
-              >
-                <h3 className="text-xl font-black text-black mb-3 uppercase flex items-center gap-2">
-                  <RulerIcon className="w-5 h-5" />
-                  {t('technical.dimensions')}
-                </h3>
-                <p className="text-black font-bold text-lg">
-                  {product.dimensions}
-                </p>
-              </div>
-            )}
-
-            {/* Tags */}
-            <div 
-              className="bg-purple-100 border-4 border-black p-6"
-              style={{ boxShadow: '4px 4px 0 #000000' }}
-            >
-              <h3 className="text-xl font-black text-black mb-3 uppercase">{t('technical.tags')}</h3>
+        {/* Tags, herramientas y materiales */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Tags */}
+          {tags.length > 0 && (
+            <div className="bg-white border-4 border-black p-6" style={{ boxShadow: '4px 4px 0 #000000' }}>
+              <h3 className="text-lg font-black text-black mb-4 uppercase flex items-center gap-2">
+                <TagIcon className="w-5 h-5" />
+                Etiquetas
+              </h3>
               <div className="flex flex-wrap gap-2">
-                {product.tags.map((tag, index) => (
-                  <span
+                {tags.map((tag, index) => (
+                  <span 
                     key={index}
-                    className="bg-white text-black text-sm font-bold px-3 py-1 border-2 border-black"
+                    className="bg-yellow-400 text-black text-xs font-black px-2 py-1 border-2 border-black uppercase"
                     style={{ boxShadow: '2px 2px 0 #000000' }}
                   >
-                    #{tag}
+                    {tag}
                   </span>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Productos Relacionados */}
-        {relatedProducts.length > 0 && (
-          <div>
-            <h2 className="text-3xl font-black text-black mb-8 uppercase text-center">
-              {t('related.title')}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {relatedProducts.map((relatedProduct) => (
-                <ProductCard key={relatedProduct.id} product={relatedProduct} />
-              ))}
+          {/* Herramientas */}
+          {tools.length > 0 && (
+            <div className="bg-white border-4 border-black p-6" style={{ boxShadow: '4px 4px 0 #000000' }}>
+              <h3 className="text-lg font-black text-black mb-4 uppercase flex items-center gap-2">
+                <WrenchIcon className="w-5 h-5" />
+                Herramientas
+              </h3>
+              <ul className="space-y-2">
+                {tools.map((tool, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                    <span className="text-gray-700 font-medium">{tool}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* Modal de Imagen Ampliada */}
-      {showImageModal && (
-        <div 
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowImageModal(false)}
-        >
-          <div className="relative max-w-4xl max-h-full">
-            <Image
-              src={product.previewImages[currentImageIndex]}
-              alt={product.title}
-              width={800}
-              height={600}
-              className="object-contain max-h-full"
-            />
-            <button
-              onClick={() => setShowImageModal(false)}
-              className="absolute top-4 right-4 bg-white text-black p-2 font-black text-xl"
-            >
-              ✕
-            </button>
-          </div>
+          {/* Materiales */}
+          {materials.length > 0 && (
+            <div className="bg-white border-4 border-black p-6" style={{ boxShadow: '4px 4px 0 #000000' }}>
+              <h3 className="text-lg font-black text-black mb-4 uppercase flex items-center gap-2">
+                <PackageIcon className="w-5 h-5" />
+                Materiales
+              </h3>
+              <ul className="space-y-2">
+                {materials.map((material, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <CheckCircleIcon className="w-4 h-4 text-blue-500" />
+                    <span className="text-gray-700 font-medium">{material}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

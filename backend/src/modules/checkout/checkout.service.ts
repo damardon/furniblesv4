@@ -153,7 +153,7 @@ export class CheckoutService {
   }
 
   /**
-   * Obtener detalles de checkout para una orden
+   * Obtener detalles de checkout para una orden - CORREGIDO
    */
   async getCheckoutDetails(orderId: string, userId: string) {
     const order = await this.prisma.order.findFirst({
@@ -170,11 +170,7 @@ export class CheckoutService {
                 title: true,
                 slug: true,
                 category: true,
-                imageFiles: {
-                  where: { type: 'IMAGE' },
-                  take: 1,
-                  select: { url: true }
-                }
+                imageFileIds: true // Obtener los IDs de imágenes desde JSON
               }
             }
           }
@@ -186,6 +182,51 @@ export class CheckoutService {
       throw new BadRequestException('Orden no encontrada');
     }
 
+    // Helper function para obtener imagen del producto
+    const getProductImageUrl = async (product: any): Promise<string | null> => {
+      try {
+        if (product.imageFileIds) {
+          const imageIds = JSON.parse(product.imageFileIds);
+          if (Array.isArray(imageIds) && imageIds.length > 0) {
+            const imageFile = await this.prisma.file.findFirst({
+              where: { 
+                id: { in: imageIds },
+                type: 'IMAGE',
+                status: 'ACTIVE'
+              },
+              select: { url: true }
+            });
+            return imageFile?.url || null;
+          }
+        }
+      } catch (error) {
+        console.warn('Error parsing imageFileIds:', error);
+      }
+      return null;
+    };
+
+    // Procesar items con imágenes
+    const itemsWithImages = await Promise.all(
+      order.items.map(async (item) => {
+        const imageUrl = await getProductImageUrl(item.product);
+        
+        return {
+          id: item.id,
+          productId: item.productId,
+          productTitle: item.productTitle,
+          price: item.price, // Cambiar priceSnapshot por price
+          quantity: item.quantity,
+          product: {
+            id: item.product.id,
+            title: item.product.title,
+            slug: item.product.slug,
+            category: item.product.category,
+            imageUrl
+          }
+        };
+      })
+    );
+
     return {
       orderId: order.id,
       orderNumber: order.orderNumber,
@@ -194,20 +235,7 @@ export class CheckoutService {
       platformFee: order.platformFee,
       subtotal: order.subtotal,
       buyerEmail: order.buyerEmail,
-      items: order.items.map(item => ({
-        id: item.id,
-        productId: item.productId,
-        productTitle: item.productTitle,
-        price: item.price,
-        quantity: item.quantity,
-        product: {
-          id: item.product.id,
-          title: item.product.title,
-          slug: item.product.slug,
-          category: item.product.category,
-          imageUrl: item.product.imageFiles[0]?.url || null
-        }
-      })),
+      items: itemsWithImages,
       createdAt: order.createdAt,
       paymentIntentId: order.paymentIntentId
     };

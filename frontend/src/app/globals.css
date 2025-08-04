@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== FUENTE MONTSERRAT DESDE GOOGLE FONTS ===== */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 /* ===== VARIABLES SABDA ===== */
 :root {
   /* Colores principales */
@@ -53,6 +56,23 @@ body {
   background-color: var(--sabda-white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== CLASES ESPECÍFICAS PARA LOGO FURNIBLES ===== */
+.furnibles-logo-text {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800; /* Extra Bold */
+  text-transform: uppercase;
+  letter-spacing: -0.02em; /* Letras más pegadas */
+  line-height: 1;
+}
+
+.furnibles-tagline {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600; /* Semi Bold */
+  text-transform: uppercase;
+  letter-spacing: 0.15em; /* Espaciado amplio para legibilidad */
+  line-height: 1;
 }
 
 /* ===== TIPOGRAFÍA SABDA ===== */

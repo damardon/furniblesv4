@@ -1,3 +1,4 @@
+// frontend/src/app/layout.tsx
 import type { Metadata, Viewport } from 'next'
 import { Montserrat } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
@@ -10,6 +11,9 @@ import { LoginModal } from '@/components/auth/login-modal'
 import { RegisterModal } from '@/components/auth/register-modal'
 import { NotificationPanel } from '@/components/notifications/notification-panel'
 import { Footer } from '@/components/layout/footer'
+import { CartProvider } from '@/contexts/cart-context'
+import { PaymentProvider } from '@/contexts/payment-context'
+import { AuthProvider } from '@/contexts/auth-context'
 import './globals.css'
 
 const montserrat = Montserrat({ 
@@ -79,7 +83,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: {
-  children: any
+  children: React.ReactNode
 }) {
   const locale = await getLocale()
   const messages = await getMessages()
@@ -104,70 +108,76 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages}>
-          <Providers>
-            <div id="root" className="relative flex min-h-screen flex-col">
-              <a
-                href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-orange-500 text-black rounded-none border-2 border-black font-black"
-              >
-                Saltar al contenido principal
-              </a>
-              
-              {/* Header completo con funcionalidad */}
-              <Header />
-              
-              {/* Main Content */}
-              <main id="main-content" className="flex-1">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                  {children}
-                </div>
-              </main>
-              
-              {/* Footer i18n Component */}
-              <Footer />
+          {/* ✅ CORREGIDO: Solo un AuthProvider, anidando CartProvider dentro */}
+          <AuthProvider>
+            <CartProvider>
+              <PaymentProvider>
+              <div id="root" className="relative flex min-h-screen flex-col w-full">
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-orange-500 text-black rounded-none border-2 border-black font-black"
+                >
+                  Saltar al contenido principal
+                </a>
+                
+                {/* Header completo con funcionalidad */}
+                <Header />
+                
+                {/* Main Content - ANCHO COMPLETO Y RESPONSIVO */}
+                <main id="main-content" className="flex-1 w-full">
+                  <div className="w-full min-h-full px-4 sm:px-6 lg:px-8 py-8">
+                    {children}
+                  </div>
+                </main>
+                
+                {/* Footer i18n Component */}
+                <Footer />
 
-              {/* Modales y overlays globales */}
-              <CartModal />
-              <LoginModal />
-              <RegisterModal />
-              <NotificationPanel />
-            </div>
-            
-            {/* Toast Notifications SABDA Style */}
-            <Toaster
-              position="top-right"
-              reverseOrder={false}
-              gutter={8}
-              toastOptions={{
-                duration: 5000,
-                style: {
-                  background: '#ffffff',
-                  color: '#000000',
-                  border: '3px solid #000000',
-                  borderRadius: '0',
-                  padding: '16px',
-                  fontSize: '16px',
-                  fontFamily: 'var(--font-montserrat)',
-                  fontWeight: '700',
-                  boxShadow: '5px 5px 0 #000000',
-                },
-                success: {
+                {/* Modales y overlays globales */}
+                <CartModal />
+                <LoginModal />
+                <RegisterModal />
+                <NotificationPanel />
+              </div>
+              
+              {/* Toast Notifications SABDA Style */}
+              <Toaster
+                position="top-right"
+                reverseOrder={false}
+                gutter={8}
+                toastOptions={{
+                  duration: 5000,
                   style: {
-                    background: '#FFBF11',
+                    background: '#ffffff',
                     color: '#000000',
                     border: '3px solid #000000',
+                    borderRadius: '0',
+                    padding: '16px',
+                    fontSize: '16px',
+                    fontFamily: 'var(--font-montserrat)',
+                    fontWeight: '700',
+                    boxShadow: '5px 5px 0 #000000',
                   },
-                },
-                error: {
-                  style: {
-                    background: '#e8626d',
-                    color: '#ffffff',
-                    border: '3px solid #000000',
+                  success: {
+                    style: {
+                      background: '#FFBF11',
+                      color: '#000000',
+                      border: '3px solid #000000',
+                    },
                   },
-                },
-              }}
-            />
-          </Providers>
+                  error: {
+                    style: {
+                      background: '#e8626d',
+                      color: '#ffffff',
+                      border: '3px solid #000000',
+                    },
+                  },
+                }}
+              />
+              </PaymentProvider>
+            </CartProvider>
+          </AuthProvider>
+          {/* ✅ ELIMINADO: AuthProvider duplicado que estaba aquí */}
         </NextIntlClientProvider>
       </body>
     </html>

@@ -1,6 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, UnauthorizedException } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express'; // ← AGREGAR ESTA LÍNEA
 import { TokenBlacklistService } from '../token-blacklist.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
@@ -12,6 +13,13 @@ export class TokenBlacklistInterceptor implements NestInterceptor {
   ) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+    const request = context.switchToHttp().getRequest<Request>(); // ← MOVER Y TIPAR
+    
+    // ✅ AGREGAR - Permitir peticiones OPTIONS (preflight CORS)
+    if (request.method === 'OPTIONS') {
+      return next.handle();
+    }
+    
     // Verificar si la ruta es pública
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
@@ -22,8 +30,7 @@ export class TokenBlacklistInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
+    const authHeader = request.headers.authorization; // ← USAR request tipado
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.replace('Bearer ', '');

@@ -35,48 +35,49 @@ export class ProductsService {
   }
 
   // Crear producto
-  async create(sellerId: string, createProductDto: CreateProductDto) {
-    // Verificar límite de productos por seller (50)
-    const sellerProductCount = await this.prisma.product.count({
-      where: { sellerId, status: { not: 'REJECTED' } },
-    });
+    async create(sellerId: string, createProductDto: CreateProductDto) {
+      // Verificar límite de productos por seller (50)
+      const sellerProductCount = await this.prisma.product.count({
+        where: { sellerId, status: { not: 'REJECTED' } },
+      });
 
-    if (sellerProductCount >= 50) {
-      throw new BadRequestException('Maximum products limit reached (50)');
-    }
+      if (sellerProductCount >= 50) {
+        throw new BadRequestException('Maximum products limit reached (50)');
+      }
 
-    // Generar slug único
-    const slug = await this.generateUniqueSlug(createProductDto.title);
+      // Generar slug único
+      const slug = await this.generateUniqueSlug(createProductDto.title);
 
-    // Crear producto con datos seguros para SQLite
-    const product = await this.prisma.product.create({
-      data: {
-        title: createProductDto.title,
-        description: createProductDto.description,
-        slug,
-        price: createProductDto.price,
-        category: createProductDto.category,
-        difficulty: createProductDto.difficulty,
-        status: ProductStatus.DRAFT,
-        sellerId,
-        // Campos opcionales del DTO
-        estimatedTime: createProductDto.estimatedTime || null,
-        dimensions: createProductDto.dimensions || null,
-        specifications: createProductDto.specifications || null,
-        ...this.prepareArrayFields(createProductDto),
-      },
-      include: {
-        seller: {
-          select: {
-            id: true,
-            email: true,
+      // Crear producto con datos seguros para SQLite
+      const product = await this.prisma.product.create({
+        data: {
+          title: createProductDto.title,
+          description: createProductDto.description,
+          slug,
+          price: createProductDto.price,
+          category: createProductDto.category,
+          difficulty: createProductDto.difficulty,
+          status: ProductStatus.DRAFT,
+          sellerId,
+          // Campos opcionales del DTO
+          estimatedTime: createProductDto.estimatedTime || null,
+          dimensions: createProductDto.dimensions || null,
+          specifications: createProductDto.specifications || null,
+          ...this.prepareArrayFields(createProductDto),
+        },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              avatar: true,
+              createdAt: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return product;
-  }
+      return product;
+    }
 
   // Listar productos públicos (solo APPROVED)
   async findAll(filters: ProductFiltersDto): Promise<PaginatedProductsDto> {
@@ -122,7 +123,7 @@ export class ProductsService {
     }
 
     // Ordenamiento
-    const orderBy = this.buildOrderBy(sortBy);
+    const orderBy = this.buildOrderBy(filters.sortBy, filters.sortOrder);
 
     // Paginación
     const skip = (page - 1) * limit;
@@ -135,7 +136,19 @@ export class ProductsService {
           seller: {
             select: {
               id: true,
-              avatar: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              sellerProfile: {  // <- Ahora accedemos al SellerProfile
+                select: {
+                  id: true,
+                  storeName: true,
+                  slug: true,
+                  description: true,
+                  avatar: true,
+                  createdAt: true,
+                },
+              },
             },
           },
         },
@@ -166,10 +179,24 @@ export class ProductsService {
       include: {
         seller: {
           select: {
-            id: true,
-            avatar: true,
-            createdAt: true,
+          id: true,
+          avatar: true,
+          createdAt: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          sellerProfile: {
+            select: {
+              id: true,
+              storeName: true,
+              slug: true,
+              description: true,
+              avatar: true,
+              isVerified: true,
+              createdAt: true,
+            },
           },
+        },
         },
       },
     });
@@ -220,11 +247,21 @@ export class ProductsService {
           seller: {
             select: {
               id: true,
-              avatar: true,
+              firstName: true,
+              lastName: true,
+              sellerProfile: {
+                select: {
+                  id: true,
+                  storeName: true,
+                  slug: true,
+                  description: true,
+                  avatar: true,
+                },
+              },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: this.buildOrderBy(filters.sortBy, filters.sortOrder),
         skip,
         take: limit,
       }),
@@ -254,6 +291,20 @@ export class ProductsService {
             id: true,
             avatar: true,
             createdAt: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            sellerProfile: {
+              select: {
+                id: true,
+                storeName: true,
+                slug: true,
+                description: true,
+                avatar: true,
+                isVerified: true,
+                createdAt: true,
+              },
+            },
           },
         },
       },
@@ -409,7 +460,6 @@ export class ProductsService {
         seller: {
           select: {
             id: true,
-            email: true,
           },
         },
       },
@@ -547,21 +597,47 @@ export class ProductsService {
   }
 
   // Construir orderBy según el tipo de ordenamiento
-  private buildOrderBy(sortBy: string): Prisma.ProductOrderByWithRelationInput[] {
-    switch (sortBy) {
-      case 'oldest':
-        return [{ createdAt: 'asc' }];
-      case 'popular':
-        return [{ viewCount: 'desc' }, { createdAt: 'desc' }];
-      case 'rating':
-        return [{ rating: 'desc' }, { reviewCount: 'desc' }];
-      case 'price_asc':
-        return [{ price: 'asc' }, { createdAt: 'desc' }];
-      case 'price_desc':
-        return [{ price: 'desc' }, { createdAt: 'desc' }];
-      case 'newest':
-      default:
-        return [{ createdAt: 'desc' }];
-    }
+  private buildOrderBy(sortBy?: string, sortOrder?: string): Prisma.ProductOrderByWithRelationInput {
+  const order = (sortOrder === 'asc') ? 'asc' as const : 'desc' as const;
+  
+  switch (sortBy) {
+    // ✅ Campos que SÍ existen en el modelo Product
+    case 'createdAt':
+      return { createdAt: order };
+    case 'updatedAt':
+      return { updatedAt: order };
+    case 'price':
+      return { price: order };
+    case 'rating':
+      return { rating: order };
+    case 'viewCount':
+      return { viewCount: order };
+    case 'downloadCount':  // ✅ CAMBIAR salesCount por downloadCount
+      return { downloadCount: order };
+    case 'favoriteCount':
+      return { favoriteCount: order };
+    case 'reviewCount':
+      return { reviewCount: order };
+    case 'title':
+      return { title: order };
+    
+    // ✅ Mantener compatibilidad con valores anteriores
+    case 'newest':
+      return { createdAt: 'desc' };
+    case 'oldest':
+      return { createdAt: 'asc' };
+    case 'popular':
+      return { viewCount: 'desc' };
+    case 'rating':
+      return { rating: 'desc' };
+    case 'price_asc':
+      return { price: 'asc' };
+    case 'price_desc':
+      return { price: 'desc' };
+    
+    // ✅ Default
+    default:
+      return { createdAt: 'desc' };
   }
+}
 }

@@ -45,7 +45,6 @@ export class FilesService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
-    // I18nService removido temporalmente
   ) {
     this.uploadPath = this.config.get('UPLOAD_PATH', './uploads');
     this.maxFileSize = parseInt(this.config.get('MAX_FILE_SIZE', '10485760')); // 10MB
@@ -85,6 +84,69 @@ export class FilesService {
     // Validar que es realmente el tipo de archivo (verificación binaria)
     this.validateFileSignature(file.buffer, file.mimetype);
   }
+  /**
+ * Obtener estadísticas de almacenamiento (para admin)
+ */
+async getStorageStats() {
+  const [
+    totalFiles,
+    totalSize,
+    filesByType,
+    recentUploads
+  ] = await Promise.all([
+    // Total de archivos activos
+    this.prisma.file.count({
+      where: { status: FileStatus.ACTIVE }
+    }),
+    
+    // Tamaño total
+    this.prisma.file.aggregate({
+      where: { status: FileStatus.ACTIVE },
+      _sum: { size: true }
+    }),
+    
+    // Archivos por tipo
+    this.prisma.file.groupBy({
+      by: ['type'],
+      where: { status: FileStatus.ACTIVE },
+      _count: { type: true },
+      _sum: { size: true }
+    }),
+    
+    // Uploads recientes (últimos 30 días)
+    this.prisma.file.count({
+      where: {
+        status: FileStatus.ACTIVE,
+        createdAt: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        }
+      }
+    })
+  ]);
+
+  return {
+    total: {
+      files: totalFiles,
+      size: totalSize._sum.size || 0,
+      sizeFormatted: this.formatFileSize(totalSize._sum.size || 0)
+    },
+    byType: filesByType.map(type => ({
+      type: type.type,
+      count: type._count.type,
+      size: type._sum.size || 0,
+      sizeFormatted: this.formatFileSize(type._sum.size || 0)
+    })),
+    recent: {
+      uploadsLast30Days: recentUploads
+    },
+    storage: {
+      maxFileSize: this.maxFileSize,
+      maxFileSizeFormatted: this.formatFileSize(this.maxFileSize),
+      allowedTypes: this.allowedMimeTypes,
+      uploadPath: this.uploadPath
+    }
+  };
+}
 
   // Subir PDF
   async uploadPdf(file: UploadedFile, userId: string): Promise<ProcessedFile> {
@@ -348,7 +410,7 @@ export class FilesService {
       where: { id: fileId },
       include: {
         uploadedBy: {
-          select: { id: true,}
+          select: { id: true }
         }
       }
     });
@@ -380,29 +442,61 @@ export class FilesService {
     };
   }
 
-  // Limpiar archivos huérfanos
+  // Limpiar archivos huérfanos - CORREGIDO
   async cleanupOrphanedFiles(): Promise<{ deletedFiles: number; freedSpace: string }> {
-    // Encontrar archivos que no están referenciados por ningún producto
+    // Obtener todos los IDs de archivos que están siendo usados por productos
+    const usedFileIds = new Set<string>();
+
+    // Archivos PDF usados
+    const productsWithPdf = await this.prisma.product.findMany({
+      where: { pdfFileId: { not: null } },
+      select: { pdfFileId: true }
+    });
+    productsWithPdf.forEach(p => {
+      if (p.pdfFileId) usedFileIds.add(p.pdfFileId);
+    });
+
+    // Archivos de imágenes usados
+    const productsWithImages = await this.prisma.product.findMany({
+      where: { imageFileIds: { not: null } },
+      select: { imageFileIds: true }
+    });
+    productsWithImages.forEach(p => {
+      try {
+        if (p.imageFileIds) {
+          const imageIds = JSON.parse(p.imageFileIds);
+          if (Array.isArray(imageIds)) {
+            imageIds.forEach(id => usedFileIds.add(id));
+          }
+        }
+      } catch (error) {
+        console.warn('Error parsing imageFileIds:', error);
+      }
+    });
+
+    // Archivos de thumbnails usados
+    const productsWithThumbnails = await this.prisma.product.findMany({
+      where: { thumbnailFileIds: { not: null } },
+      select: { thumbnailFileIds: true }
+    });
+    productsWithThumbnails.forEach(p => {
+      try {
+        if (p.thumbnailFileIds) {
+          const thumbnailIds = JSON.parse(p.thumbnailFileIds);
+          if (Array.isArray(thumbnailIds)) {
+            thumbnailIds.forEach(id => usedFileIds.add(id));
+          }
+        }
+      } catch (error) {
+        console.warn('Error parsing thumbnailFileIds:', error);
+      }
+    });
+
+    // Encontrar archivos huérfanos
     const orphanedFiles = await this.prisma.file.findMany({
       where: {
         status: FileStatus.ACTIVE,
-        AND: [
-          {
-            productPdfs: {
-              none: {}
-            }
-          },
-          {
-            productImages: {
-              none: {}
-            }
-          },
-          {
-            productThumbs: {
-              none: {}
-            }
-          }
-        ],
+        id: { notIn: Array.from(usedFileIds) },
         // Solo archivos más antiguos de 7 días
         createdAt: {
           lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -433,13 +527,24 @@ export class FilesService {
           case FileType.THUMBNAIL:
             filePath = path.join(this.uploadPath, 'thumbnails', file.key);
             break;
+          default:
+            continue;
         }
 
-        await fs.unlink(filePath);
-        totalSize += file.size;
-        deletedCount++;
+        try {
+          await fs.unlink(filePath);
+          totalSize += file.size;
+          deletedCount++;
+        } catch (error) {
+          console.error(`Error deleting file ${filePath}:`, error);
+          // Revertir el estado si no se pudo eliminar físicamente
+          await this.prisma.file.update({
+            where: { id: file.id },
+            data: { status: FileStatus.ACTIVE }
+          });
+        }
       } catch (error) {
-        console.error(`Error deleting orphaned file ${file.id}:`, error);
+        console.error(`Error processing orphaned file ${file.id}:`, error);
       }
     }
 
@@ -449,79 +554,14 @@ export class FilesService {
     };
   }
 
-  // Estadísticas de almacenamiento
-  async getStorageStats(): Promise<any> {
-    const stats = await this.prisma.file.groupBy({
-      by: ['type', 'status'],
-      _count: {
-        id: true
-      },
-      _sum: {
-        size: true
-      }
-    });
-
-    const activeFiles = await this.prisma.file.findMany({
-      where: { status: FileStatus.ACTIVE },
-      select: { type: true, size: true }
-    });
-
-    const totalFiles = activeFiles.length;
-    const totalSize = activeFiles.reduce((sum, file) => sum + file.size, 0);
-
-    const filesByType = activeFiles.reduce((acc, file) => {
-      acc[file.type] = (acc[file.type] || 0) + 1;
-      return acc;
-    }, {});
-
-    const sizeByType = activeFiles.reduce((acc, file) => {
-      acc[file.type] = (acc[file.type] || 0) + file.size;
-      return acc;
-    }, {});
-
-    // Formatear tamaños
-    const formattedSizeByType = Object.entries(sizeByType).reduce((acc, [type, size]) => {
-      acc[type] = this.formatFileSize(size as number);
-      return acc;
-    }, {});
-
-    return {
-      totalFiles,
-      totalSize: this.formatFileSize(totalSize),
-      filesByType,
-      sizeByType: formattedSizeByType,
-      storageUsage: {
-        used: this.formatFileSize(totalSize),
-        // Calcular espacio disponible basado en configuración
-        limit: this.formatFileSize(1024 * 1024 * 1024), // 1GB ejemplo
-        percentage: Math.round((totalSize / (1024 * 1024 * 1024)) * 100)
-      },
-      rawStats: stats
-    };
-  }
-
-  // Verificar si usuario es admin
-  private async isAdmin(userId: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true }
-    });
-    
-    return user?.role === 'ADMIN';
-  }
-
-  // Obtener archivos por producto (para uso interno)
-  async getProductFiles(productId: string): Promise<{
-    pdf?: FileResponseDto;
-    images: FileResponseDto[];
-    thumbnails: FileResponseDto[];
-  }> {
+  // Obtener archivos de un producto específico - CORREGIDO
+  async getProductFiles(productId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      include: {
-        pdfFile: true,
-        imageFiles: true,
-        thumbnailFiles: true
+      select: {
+        pdfFileId: true,
+        imageFileIds: true,
+        thumbnailFileIds: true
       }
     });
 
@@ -529,15 +569,68 @@ export class FilesService {
       throw new NotFoundException('Product not found');
     }
 
-    return {
-      pdf: product.pdfFile ? this.mapFileToResponse(product.pdfFile) : undefined,
-      images: product.imageFiles.map(this.mapFileToResponse),
-      thumbnails: product.thumbnailFiles.map(this.mapFileToResponse)
+    const fileInfo = {
+      pdf: null as any,
+      images: [] as any[],
+      thumbnails: [] as any[]
     };
+
+    // Obtener archivo PDF
+    if (product.pdfFileId) {
+      const pdfFile = await this.prisma.file.findUnique({
+        where: { 
+          id: product.pdfFileId,
+          status: FileStatus.ACTIVE 
+        }
+      });
+      if (pdfFile) {
+        fileInfo.pdf = this.mapFileToResponse(pdfFile);
+      }
+    }
+
+    // Obtener archivos de imágenes
+    if (product.imageFileIds) {
+      try {
+        const imageIds = JSON.parse(product.imageFileIds);
+        if (Array.isArray(imageIds) && imageIds.length > 0) {
+          const imageFiles = await this.prisma.file.findMany({
+            where: { 
+              id: { in: imageIds },
+              status: FileStatus.ACTIVE,
+              type: FileType.IMAGE
+            }
+          });
+          fileInfo.images = imageFiles.map(this.mapFileToResponse);
+        }
+      } catch (error) {
+        console.warn('Error parsing imageFileIds:', error);
+      }
+    }
+
+    // Obtener archivos de thumbnails
+    if (product.thumbnailFileIds) {
+      try {
+        const thumbnailIds = JSON.parse(product.thumbnailFileIds);
+        if (Array.isArray(thumbnailIds) && thumbnailIds.length > 0) {
+          const thumbnailFiles = await this.prisma.file.findMany({
+            where: { 
+              id: { in: thumbnailIds },
+              status: FileStatus.ACTIVE,
+              type: FileType.THUMBNAIL
+            }
+          });
+          fileInfo.thumbnails = thumbnailFiles.map(this.mapFileToResponse);
+        }
+      } catch (error) {
+        console.warn('Error parsing thumbnailFileIds:', error);
+      }
+    }
+
+    return fileInfo;
   }
 
-  // Mapper helper
-  private mapFileToResponse(file: any): FileResponseDto {
+  // Helper function para mapear archivo a respuesta
+  private mapFileToResponse = (file: any): FileResponseDto => {
     return {
       id: file.id,
       filename: file.filename,
@@ -548,103 +641,82 @@ export class FilesService {
       mimeType: file.mimeType,
       width: file.width,
       height: file.height,
-      createdAt: file.createdAt
+      createdAt: file.createdAt,
     };
+  };
+
+  // HELPER METHODS (implementaciones faltantes)
+  
+  private async ensureUploadDirectory(): Promise<void> {
+    try {
+      await fs.mkdir(this.uploadPath, { recursive: true });
+      await fs.mkdir(path.join(this.uploadPath, 'pdfs'), { recursive: true });
+      await fs.mkdir(path.join(this.uploadPath, 'images'), { recursive: true });
+      await fs.mkdir(path.join(this.uploadPath, 'thumbnails'), { recursive: true });
+    } catch (error) {
+      console.error('Error creating upload directories:', error);
+    }
   }
 
-  // Validar que archivos pertenecen al usuario
-  async validateFileOwnership(fileIds: string[], userId: string): Promise<boolean> {
-    if (!fileIds.length) return true;
-
-    const files = await this.prisma.file.findMany({
-      where: {
-        id: { in: fileIds },
-        uploadedById: userId,
-        status: FileStatus.ACTIVE
-      }
-    });
-
-    return files.length === fileIds.length;
+  private async ensureDirectoryExists(dirPath: string): Promise<void> {
+    try {
+      await fs.mkdir(dirPath, { recursive: true });
+    } catch (error) {
+      console.error('Error creating directory:', error);
+    }
   }
 
-  // Utilidades privadas
-  private generateFileKey(originalName: string, type: string): string {
+  private generateFileKey(originalname: string, prefix: string): string {
     const timestamp = Date.now();
-    const random = uuidv4().split('-')[0];
-    const extension = this.getFileExtension(originalName);
-    return `${type}_${timestamp}_${random}.${extension}`;
-  }
-
-  private getFileExtension(filename: string): string {
-    return filename.split('.').pop()?.toLowerCase() || '';
+    const random = Math.random().toString(36).substring(2);
+    const extension = path.extname(originalname);
+    return `${prefix}_${timestamp}_${random}${extension}`;
   }
 
   private calculateChecksum(buffer: Buffer): string {
     return crypto.createHash('sha256').update(buffer).digest('hex');
   }
 
+  private getFileExtension(filename: string): string {
+    return path.extname(filename).toLowerCase().substring(1);
+  }
+
   private formatFileSize(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(1)}${units[unitIndex]}`;
-  }
-
-  private async ensureUploadDirectory(): Promise<void> {
-    const directories = ['pdfs', 'images', 'thumbnails'];
-    
-    for (const dir of directories) {
-      const fullPath = path.join(this.uploadPath, dir);
-      await this.ensureDirectoryExists(fullPath);
-    }
-  }
-
-  private async ensureDirectoryExists(dirPath: string): Promise<void> {
-    try {
-      await fs.access(dirPath);
-    } catch {
-      await fs.mkdir(dirPath, { recursive: true });
-    }
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return '0 Bytes';
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   }
 
   private validateFileSignature(buffer: Buffer, mimeType: string): void {
-    const signatures = {
+    // Implementación básica de validación de firma de archivo
+    const signatures: Record<string, number[]> = {
       'application/pdf': [0x25, 0x50, 0x44, 0x46], // %PDF
       'image/jpeg': [0xFF, 0xD8, 0xFF],
       'image/png': [0x89, 0x50, 0x4E, 0x47],
-      'image/webp': [0x52, 0x49, 0x46, 0x46], // RIFF
+      'image/webp': [0x52, 0x49, 0x46, 0x46]
     };
 
     const signature = signatures[mimeType];
-    if (!signature) return;
-
-    const fileHeader = Array.from(buffer.slice(0, signature.length));
-    const isValid = signature.every((byte, index) => fileHeader[index] === byte);
-
-    if (!isValid) {
-      throw new BadRequestException('Corrupted or invalid file');
+    if (signature) {
+      for (let i = 0; i < signature.length; i++) {
+        if (buffer[i] !== signature[i]) {
+          throw new BadRequestException('File signature does not match MIME type');
+        }
+      }
     }
   }
 
   private async extractPdfMetadata(buffer: Buffer): Promise<any> {
-    // Implementación básica - se puede mejorar con librerías como pdf-parse
-    try {
-      const text = buffer.toString('binary');
-      const pages = (text.match(/\/Type\s*\/Page[^s]/g) || []).length;
-      
-      return {
-        pages,
-        size: buffer.length,
-        extracted_at: new Date().toISOString(),
-      };
-    } catch {
-      return { pages: 0, error: 'Could not extract metadata' };
-    }
+    // Implementación básica - en producción usarías una librería como pdf-parse
+    return {
+      extractedAt: new Date().toISOString(),
+      size: buffer.length
+    };
+  }
+
+  private isAdmin(userId: string): boolean {
+    // Implementación básica - en producción consultarías la base de datos
+    return false; // Por defecto false, implementar según necesidades
   }
 }

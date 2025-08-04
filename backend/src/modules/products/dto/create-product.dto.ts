@@ -51,7 +51,7 @@ export class CreateProductDto {
   @ApiProperty({
     description: 'Categoría del producto',
     enum: ProductCategory,
-    example: ProductCategory.TABLES,
+    example: ProductCategory.LIVING_DINING,
   })
   @IsEnum(ProductCategory, { message: 'auth.validation.invalid_category' })
   category: ProductCategory;

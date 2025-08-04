@@ -203,7 +203,8 @@ export const useCartStore = create<CartState & CartActions>()(
         set({ isLoading: false })
       },
 
-      // SINCRONIZACIÓN CON SERVIDOR
+
+        // SINCRONIZACIÓN CON SERVIDOR
       syncWithServer: async () => {
         // Solo sincronizar si hay token de autenticación
         const authToken = storeManager.getToken()
@@ -216,16 +217,32 @@ export const useCartStore = create<CartState & CartActions>()(
         set({ isSyncing: true })
 
         try {
-          const { items } = get()
+          const { items, lastSyncedAt } = get()
           
-          // Enviar items al servidor
+          // ✅ CORREGIR: Formatear datos según SyncCartDto que espera el backend
+          const syncData = {
+            items: items.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              localPrice: item.priceSnapshot // ← Precio local para comparación
+            })),
+            // ✅ FIX: Manejo correcto de lastSyncedAt que puede ser null
+            lastSync: lastSyncedAt ? new Date(lastSyncedAt).toISOString() : undefined,
+            metadata: {
+              sessionId: `cart-${Date.now()}`,
+              source: 'web-app'
+            }
+          }
+          
+          // Enviar datos al servidor en formato correcto
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/sync`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${authToken}`,
+              'Accept-Language': 'es', // ← Agregar header de idioma
             },
-            body: JSON.stringify({ items }),
+            body: JSON.stringify(syncData), // ← Usar syncData en lugar de { items }
           })
 
           if (response.ok) {
@@ -237,6 +254,16 @@ export const useCartStore = create<CartState & CartActions>()(
                 isSyncing: false 
               })
               get().calculateTotals()
+            }
+          } else {
+            // ✅ MEJORAR: Mejor manejo de errores
+            const errorText = await response.text()
+            console.error('Cart sync failed:', response.status, errorText)
+            
+            // Si es 403, puede ser que el usuario no esté autenticado correctamente
+            if (response.status === 403) {
+              console.warn('🚨 Cart sync: Usuario no autorizado o token inválido')
+              // Optionally, could redirect to login or refresh token here
             }
           }
         } catch (error) {

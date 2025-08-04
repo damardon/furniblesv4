@@ -179,28 +179,28 @@ export function AdvancedSearch({
   // ✅ CORRIGIENDO LOS PRESETS - tipos exactos
   const presetSearches: Array<{ name: string; filters: AdvancedSearchState }> = [
     {
-      name: t('presets.beginner_furniture'),
+      name: t('presets.easy_furniture'),
       filters: { 
         ...defaultFilters, 
-        difficulty: Difficulty.BEGINNER, 
-        category: ProductCategory.FURNITURE, 
+        difficulty: Difficulty.EASY, 
+        category: ProductCategory.OFFICE, 
         priceRange: { min: 0, max: 50 }
       }
     },
     {
-      name: t('presets.popular_chairs'),
+      name: t('presets.popular_living_dining'),
       filters: { 
         ...defaultFilters, 
-        category: ProductCategory.CHAIRS, 
+        category: ProductCategory.LIVING_DINING, 
         sortBy: 'popular', 
         minRating: 4 
       }
     },
     {
-      name: t('presets.recent_tables'),
+      name: t('presets.recent_living_dining'),
       filters: { 
         ...defaultFilters, 
-        category: ProductCategory.TABLES, 
+        category: ProductCategory.LIVING_DINING, 
         dateRange: '30d', 
         sortBy: 'recent'
       }
@@ -449,9 +449,9 @@ export function AdvancedSearch({
             style={{ boxShadow: '2px 2px 0 #000000' }}
           >
             <option value="ALL">{tProducts('categories.all')}</option>
-            <option value={ProductCategory.FURNITURE}>{tProducts('categories.furniture')}</option>
-            <option value={ProductCategory.CHAIRS}>{tProducts('categories.chairs')}</option>
-            <option value={ProductCategory.TABLES}>{tProducts('categories.tables')}</option>
+            <option value={ProductCategory.OFFICE}>{tProducts('categories.furniture')}</option>
+            <option value={ProductCategory.NORDIC}>{tProducts('categories.nordic')}</option>
+            <option value={ProductCategory.LIVING_DINING}>{tProducts('categories.living_dining')}</option>
             <option value={ProductCategory.STORAGE}>{tProducts('categories.storage')}</option>
           </select>
 
@@ -462,10 +462,9 @@ export function AdvancedSearch({
             style={{ boxShadow: '2px 2px 0 #000000' }}
           >
             <option value="ALL">{t('difficulty.all')}</option>
-            <option value={Difficulty.BEGINNER}>{t('difficulty.beginner')}</option>
+            <option value={Difficulty.EASY}>{t('difficulty.easy')}</option>
             <option value={Difficulty.INTERMEDIATE}>{t('difficulty.intermediate')}</option>
             <option value={Difficulty.ADVANCED}>{t('difficulty.advanced')}</option>
-            <option value={Difficulty.EXPERT}>{t('difficulty.expert')}</option>
           </select>
 
           <select
