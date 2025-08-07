@@ -367,4 +367,50 @@ export class AdminService {
       };
     }
   }
+  // 📦 OBTENER PRODUCTO ESPECÍFICO PARA MODERACIÓN
+async getProductById(productId: string) {
+  try {
+    this.logger.log(`Getting product by ID: ${productId}`);
+
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        seller: {
+          include: {
+            sellerProfile: true
+          }
+        },
+        _count: {
+          select: {
+            reviews: true,
+            favorites: true,
+            orderItems: true
+          }
+        }
+      }
+    });
+
+    if (!product) {
+      return {
+        success: false,
+        message: 'Product not found',
+        statusCode: 404
+      };
+    }
+
+    // Enriquecer con información de archivos
+    const fileInfo = await this.getProductFileInfo(product);
+
+    return {
+      success: true,
+      product: {
+        ...product,
+        fileInfo
+      }
+    };
+  } catch (error) {
+    this.logger.error(`Error getting product by ID: ${error.message}`, error.stack);
+    throw error;
+  }
+}
 }

@@ -30,7 +30,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole, ProductStatus} from '@prisma/client';
 import { plainToClass } from 'class-transformer';
 
 interface JwtUser {
@@ -168,6 +168,7 @@ export class ProductsController {
       excludeExtraneousValues: false,
     });
   }
+  
 
   @Get('slug/:slug')
   @Public()
@@ -310,4 +311,147 @@ export class ProductsController {
   async getStats(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.getProductStats(id);
   }
+  // backend/src/modules/products/products.controller.ts
+// ✅ AGREGAR AL FINAL DE TU CLASE, antes del último }
+
+  /**
+   * 🆕 CRÍTICO: Productos destacados para homepage
+   */
+  @Get('featured')
+  @Public()
+  @ApiOperation({ summary: 'Obtener productos destacados para homepage' })
+  @ApiResponse({
+    status: 200,
+    description: 'Productos destacados obtenidos exitosamente',
+    type: PaginatedProductsDto,
+  })
+  async getFeaturedProducts() {
+    const filters: ProductFiltersDto = {
+      status: ProductStatus.APPROVED,
+      featured: true,
+      limit: 8,
+      page: 1,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    };
+    
+    const result = await this.productsService.findAll(filters);
+    return {
+      success: true,
+      ...result,
+      data: result.data.map(product =>
+        plainToClass(ProductResponseDto, product, {
+          excludeExtraneousValues: false,
+        }),
+      ),
+    };
+  }
+
+  /**
+   * 🆕 CRÍTICO: Productos más recientes para homepage
+   */
+  @Get('latest')
+  @Public()
+  @ApiOperation({ summary: 'Obtener productos más recientes para homepage' })
+  @ApiResponse({
+    status: 200,
+    description: 'Productos recientes obtenidos exitosamente',
+    type: PaginatedProductsDto,
+  })
+  async getLatestProducts() {
+    const filters: ProductFiltersDto = {
+      status: ProductStatus.APPROVED,
+      limit: 12,
+      page: 1,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    };
+    
+    const result = await this.productsService.findAll(filters);
+    return {
+      success: true,
+      ...result,
+      data: result.data.map(product =>
+        plainToClass(ProductResponseDto, product, {
+          excludeExtraneousValues: false,
+        }),
+      ),
+    };
+  }
+
+  /**
+   * 🆕 CRÍTICO: Estadísticas generales para homepage
+   */
+  @Get('general-stats')
+  @Public()
+  @ApiOperation({ summary: 'Obtener estadísticas generales para homepage' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estadísticas generales obtenidas exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: {
+          type: 'object',
+          properties: {
+            totalProducts: { type: 'number' },
+            totalSellers: { type: 'number' },
+            totalDownloads: { type: 'number' },
+            featuredProducts: { type: 'number' },
+            timestamp: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
+  async getGeneralStats() {
+    try {
+      const stats = await this.productsService.getGeneralStats();
+      return {
+        success: true,
+        data: stats,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: {
+          totalProducts: 0,
+          totalSellers: 0,
+          totalDownloads: 0,
+          featuredProducts: 0,
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+  }
+
+  /**
+   * 🆕 CRÍTICO: Categorías disponibles para homepage
+   */
+  @Get('categories')
+  @Public()
+  @ApiOperation({ summary: 'Obtener categorías disponibles' })
+  @ApiResponse({
+    status: 200,
+    description: 'Categorías obtenidas exitosamente',
+  })
+  async getCategories() {
+    try {
+      const categories = await this.productsService.getCategories();
+      return {
+        success: true,
+        data: categories,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: [],
+      };
+    }
+  }
+
+
 }

@@ -105,6 +105,24 @@ export class AdminController {
     return this.adminService.getPendingProducts(page, limit);
   }
 
+  @Get('products/:id')
+@ApiOperation({ 
+  summary: 'Obtener producto específico para moderación',
+  description: 'Retorna un producto específico con toda su información para moderación admin.'
+})
+@ApiParam({ name: 'id', description: 'ID del producto' })
+@ApiResponse({ 
+  status: 200, 
+  description: 'Producto obtenido exitosamente' 
+})
+@ApiResponse({ 
+  status: 404, 
+  description: 'Producto no encontrado' 
+})
+async getProductById(@Param('id') productId: string) {
+  return this.adminService.getProductById(productId);
+}
+
   @Put('products/:id/moderate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 

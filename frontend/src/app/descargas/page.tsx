@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { 
   DownloadIcon,
@@ -14,7 +13,6 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ArrowLeftIcon,
-  FilterIcon,
   SearchIcon,
   FolderIcon,
   HardDriveIcon,
@@ -23,41 +21,55 @@ import {
   ExternalLinkIcon,
   ShoppingCartIcon,
   EyeIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  User,
+  Store
 } from 'lucide-react'
+
+// ✅ Importar APIs reales en lugar de mock
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { 
-  getDownloadTokensByUserId, 
+  getUserDownloads, 
   getDownloadStats, 
-  simulateDownload,
-  DownloadToken 
-} from '@/data/mockDownloads'
+  downloadFile,
+  isDownloadAvailable,
+  formatTimeRemaining,
+  getDownloadStatus
+} from '@/lib/download-api'
+import type { Download, DownloadStats, DownloadFilters } from '@/lib/download-api'
 
 export default function DownloadsPage() {
   const t = useTranslations('downloads')
   const tCommon = useTranslations('common')
-  const tProducts = useTranslations('products')
   const router = useRouter()
   
   // Stores
   const { isAuthenticated, user, setLoginModalOpen } = useAuthStore()
 
   // States
-  const [downloadTokens, setDownloadTokens] = useState<DownloadToken[]>([])
-  const [filteredTokens, setFilteredTokens] = useState<DownloadToken[]>([])
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'EXPIRED' | 'EXHAUSTED'>('ALL')
+  const [downloads, setDownloads] = useState<Download[]>([])
+  const [filteredDownloads, setFilteredDownloads] = useState<Download[]>([])
+  const [filters, setFilters] = useState<DownloadFilters>({
+    page: 1,
+    limit: 20,
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  })
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<'date' | 'name' | 'downloads' | 'expiry'>('date')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expired' | 'exhausted'>('all')
+  const [sortBy, setSortBy] = useState<'createdAt' | 'lastDownloadAt' | 'expiresAt'>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [downloadingTokens, setDownloadingTokens] = useState<Set<string>>(new Set())
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    activeTokens: 0,
-    expiredTokens: 0,
+  const [stats, setStats] = useState<DownloadStats>({
     totalDownloads: 0,
-    downloadsThisMonth: 0,
-    totalFileSize: 0
+    activeDownloads: 0,
+    expiredDownloads: 0,
+    totalProducts: 0,
+    recentDownloads: [],
+    topProducts: []
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -68,70 +80,77 @@ export default function DownloadsPage() {
     }
   }, [isAuthenticated, setLoginModalOpen, router])
 
-  // Load user downloads
+  // Load user downloads and stats
   useEffect(() => {
-    if (user?.id) {
-      const userTokens = getDownloadTokensByUserId(user.id)
-      const userStats = getDownloadStats(user.id)
+    if (!isAuthenticated || !user) return
+
+    const loadDownloadsData = async () => {
+      setIsLoading(true)
+      setError(null)
       
-      setDownloadTokens(userTokens)
-      setFilteredTokens(userTokens)
-      setStats(userStats)
+      try {
+        console.log('🔍 [DOWNLOADS] Loading user downloads and stats')
+        
+        // Cargar descargas y estadísticas en paralelo
+        const [downloadsResponse, statsResponse] = await Promise.all([
+          getUserDownloads(filters),
+          getDownloadStats()
+        ])
+        
+        setDownloads(downloadsResponse.data)
+        setStats(statsResponse)
+        
+        console.log('✅ [DOWNLOADS] Data loaded:', {
+          downloads: downloadsResponse.data.length,
+          stats: statsResponse
+        })
+        
+      } catch (err) {
+        console.error('❌ [DOWNLOADS] Error loading data:', err)
+        setError(err instanceof Error ? err.message : 'Error cargando descargas')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [user?.id])
+
+    loadDownloadsData()
+  }, [isAuthenticated, user, filters])
 
   // Filter and search downloads
   useEffect(() => {
-    let filtered = [...downloadTokens]
+    let filtered = [...downloads]
 
     // Filter by status
-    switch (filterStatus) {
-      case 'ACTIVE':
-        filtered = filtered.filter(token => 
-          token.isActive && new Date(token.expiresAt) > new Date()
-        )
-        break
-      case 'EXPIRED':
-        filtered = filtered.filter(token => 
-          new Date(token.expiresAt) <= new Date()
-        )
-        break
-      case 'EXHAUSTED':
-        filtered = filtered.filter(token => 
-          token.downloadCount >= token.downloadLimit
-        )
-        break
-      // 'ALL' doesn't filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(download => {
+        const status = getDownloadStatus(download)
+        return status === statusFilter
+      })
     }
 
     // Search by product name or seller
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(token => 
-        token.productTitle.toLowerCase().includes(query) ||
-        token.sellerName.toLowerCase().includes(query) ||
-        token.storeName.toLowerCase().includes(query)
+      filtered = filtered.filter(download => 
+        download.product.title.toLowerCase().includes(query) ||
+        download.product.seller?.storeName?.toLowerCase().includes(query)
       )
     }
 
-    // Sort tokens
+    // Sort downloads
     filtered.sort((a, b) => {
       let aValue, bValue
       
       switch (sortBy) {
-        case 'date':
+        case 'createdAt':
           aValue = new Date(a.createdAt).getTime()
           bValue = new Date(b.createdAt).getTime()
           break
-        case 'name':
-          aValue = a.productTitle.toLowerCase()
-          bValue = b.productTitle.toLowerCase()
+        case 'lastDownloadAt':
+          aValue = a.lastDownloadAt ? new Date(a.lastDownloadAt).getTime() : 0
+          bValue = b.lastDownloadAt ? new Date(b.lastDownloadAt).getTime() : 0
           break
-        case 'downloads':
-          aValue = a.downloadCount
-          bValue = b.downloadCount
-          break
-        case 'expiry':
+        case 'expiresAt':
           aValue = new Date(a.expiresAt).getTime()
           bValue = new Date(b.expiresAt).getTime()
           break
@@ -147,43 +166,41 @@ export default function DownloadsPage() {
       }
     })
 
-    setFilteredTokens(filtered)
-  }, [downloadTokens, filterStatus, searchQuery, sortBy, sortOrder])
+    setFilteredDownloads(filtered)
+  }, [downloads, statusFilter, searchQuery, sortBy, sortOrder])
 
-  const getStatusBadge = (token: DownloadToken) => {
-    const now = new Date()
-    const expiryDate = new Date(token.expiresAt)
-    const isExpired = expiryDate <= now
-    const isExhausted = token.downloadCount >= token.downloadLimit
+  const handleFilterChange = (newFilters: Partial<DownloadFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }))
+  }
 
-    if (isExpired) {
-      return {
-        color: 'bg-red-400 text-black border-black',
-        icon: XCircleIcon,
-        text: t('status.expired')
-      }
-    }
+  const getStatusBadge = (download: Download) => {
+    const status = getDownloadStatus(download)
 
-    if (isExhausted) {
-      return {
-        color: 'bg-gray-400 text-black border-black',
-        icon: AlertCircleIcon,
-        text: t('status.exhausted')
-      }
-    }
-
-    if (token.isActive) {
-      return {
-        color: 'bg-green-500 text-white border-black',
-        icon: CheckCircleIcon,
-        text: t('status.active')
-      }
-    }
-
-    return {
-      color: 'bg-yellow-400 text-black border-black',
-      icon: ClockIcon,
-      text: t('status.inactive')
+    switch (status) {
+      case 'expired':
+        return {
+          color: 'bg-red-400 text-black border-black',
+          icon: XCircleIcon,
+          text: 'Expirado'
+        }
+      case 'exhausted':
+        return {
+          color: 'bg-gray-400 text-black border-black',
+          icon: AlertCircleIcon,
+          text: 'Sin descargas'
+        }
+      case 'active':
+        return {
+          color: 'bg-green-500 text-white border-black',
+          icon: CheckCircleIcon,
+          text: 'Activo'
+        }
+      default:
+        return {
+          color: 'bg-yellow-400 text-black border-black',
+          icon: ClockIcon,
+          text: 'Inactivo'
+        }
     }
   }
 
@@ -199,65 +216,67 @@ export default function DownloadsPage() {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     })
   }
 
-  const formatFileSize = (sizeInMB: number) => {
+  const formatFileSize = (sizeInBytes: number) => {
+    const sizeInMB = sizeInBytes / (1024 * 1024)
     if (sizeInMB < 1) {
       return `${Math.round(sizeInMB * 1000)} KB`
     }
     return `${sizeInMB.toFixed(1)} MB`
   }
 
-  const getDaysUntilExpiry = (expiresAt: string) => {
-    const now = new Date()
-    const expiry = new Date(expiresAt)
-    const diffTime = expiry.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
+  const handleDownload = async (download: Download) => {
+    if (downloadingTokens.has(download.id)) return
 
-  const handleDownload = async (token: DownloadToken) => {
-    if (downloadingTokens.has(token.id)) return
-
-    setDownloadingTokens(prev => new Set(prev).add(token.id))
+    setDownloadingTokens(prev => new Set(prev).add(download.id))
 
     try {
-      const result = await simulateDownload(token.id)
+      // Verificar disponibilidad primero
+      const availability = await isDownloadAvailable(download.downloadToken)
       
-      if (result.success && result.downloadUrl) {
+      if (!availability.available) {
+        alert(availability.reason || 'Descarga no disponible')
+        return
+      }
+
+      // Proceder con la descarga
+      const result = await downloadFile(download.downloadToken)
+      
+      if (result.success && result.data?.downloadUrl) {
         // Crear un link temporal para la descarga
         const link = document.createElement('a')
-        link.href = result.downloadUrl
-        link.download = `${token.productSlug}.pdf`
+        link.href = result.data.downloadUrl
+        link.download = `${download.product.title}.pdf`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
 
         // Actualizar el estado local
-        setDownloadTokens(prev => 
-          prev.map(t => t.id === token.id ? {
-            ...t,
-            downloadCount: t.downloadCount + 1,
+        setDownloads(prev => 
+          prev.map(d => d.id === download.id ? {
+            ...d,
+            downloadCount: d.downloadCount + 1,
             lastDownloadAt: new Date().toISOString(),
-            isActive: t.downloadCount + 1 < t.downloadLimit
-          } : t)
+            isActive: d.downloadCount + 1 < d.maxDownloads
+          } : d)
         )
 
-        // TODO: Mostrar toast de éxito
-        console.log(t('actions.download_started'), result.message)
+        console.log('✅ [DOWNLOADS] Download started successfully')
       } else {
-        // TODO: Mostrar toast de error
-        console.error(t('actions.download_error'), result.message)
+        alert(result.error || 'Error al descargar archivo')
       }
     } catch (error) {
-      console.error('Error downloading file:', error)
-      // TODO: Mostrar toast de error
+      console.error('❌ [DOWNLOADS] Download error:', error)
+      alert('Error al descargar archivo')
     } finally {
       setDownloadingTokens(prev => {
         const newSet = new Set(prev)
-        newSet.delete(token.id)
+        newSet.delete(download.id)
         return newSet
       })
     }
@@ -266,32 +285,47 @@ export default function DownloadsPage() {
   // Don't render if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
+          <p className="text-black font-black text-xl uppercase">Acceso restringido</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-black font-black text-xl uppercase">Cargando descargas...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Breadcrumb */}
       <div className="bg-yellow-400 border-b-4 border-black p-4">
-        <div className="container mx-auto">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              {tCommon('navigation.home')}
+              Inicio
             </Link>
             <span>/</span>
-            <span className="text-orange-500">{t('title')}</span>
+            <Link href="/pedidos" className="hover:text-orange-500 transition-colors">
+              Pedidos
+            </Link>
+            <span>/</span>
+            <span className="text-orange-500">Descargas</span>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Title */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-6">
             <Link 
@@ -300,81 +334,81 @@ export default function DownloadsPage() {
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ArrowLeftIcon className="w-4 h-4" />
-              {t('navigation.back_to_orders')}
+              Volver a pedidos
             </Link>
             
             <div>
               <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
-                <DownloadIcon className="w-8 h-8" />
-                {t('title')}
+                <DownloadIcon className="w-8 h-8 text-orange-500" />
+                Mis Descargas
               </h1>
               <p className="text-gray-600 font-bold mt-2">
-                {t('subtitle')}
+                Gestiona y descarga tus archivos PDF comprados
               </p>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
             <div 
-              className="bg-blue-100 border-4 border-black p-4 text-center"
+              className="bg-blue-100 border-4 border-black p-4 text-center hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <FolderIcon className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <div className="text-xl font-black text-black mb-1">{stats.totalProducts}</div>
-              <div className="text-xs font-black text-black uppercase">{t('stats.total_pdfs')}</div>
+              <div className="text-xs font-black text-black uppercase">Productos</div>
             </div>
             
             <div 
-              className="bg-green-100 border-4 border-black p-4 text-center"
+              className="bg-green-100 border-4 border-black p-4 text-center hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <CheckCircleIcon className="w-6 h-6 mx-auto mb-2 text-green-600" />
-              <div className="text-xl font-black text-black mb-1">{stats.activeTokens}</div>
-              <div className="text-xs font-black text-black uppercase">{t('stats.active')}</div>
+              <div className="text-xl font-black text-black mb-1">{stats.activeDownloads}</div>
+              <div className="text-xs font-black text-black uppercase">Activos</div>
             </div>
             
             <div 
-              className="bg-red-100 border-4 border-black p-4 text-center"
+              className="bg-red-100 border-4 border-black p-4 text-center hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <XCircleIcon className="w-6 h-6 mx-auto mb-2 text-red-600" />
-              <div className="text-xl font-black text-black mb-1">{stats.expiredTokens}</div>
-              <div className="text-xs font-black text-black uppercase">{t('stats.expired')}</div>
+              <div className="text-xl font-black text-black mb-1">{stats.expiredDownloads}</div>
+              <div className="text-xs font-black text-black uppercase">Expirados</div>
             </div>
             
             <div 
-              className="bg-purple-100 border-4 border-black p-4 text-center"
+              className="bg-purple-100 border-4 border-black p-4 text-center hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <ActivityIcon className="w-6 h-6 mx-auto mb-2 text-purple-600" />
               <div className="text-xl font-black text-black mb-1">{stats.totalDownloads}</div>
-              <div className="text-xs font-black text-black uppercase">{t('stats.downloads')}</div>
+              <div className="text-xs font-black text-black uppercase">Descargas</div>
             </div>
             
             <div 
-              className="bg-orange-100 border-4 border-black p-4 text-center"
+              className="bg-orange-100 border-4 border-black p-4 text-center hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <CalendarIcon className="w-6 h-6 mx-auto mb-2 text-orange-600" />
-              <div className="text-xl font-black text-black mb-1">{stats.downloadsThisMonth}</div>
-              <div className="text-xs font-black text-black uppercase">{t('stats.this_month')}</div>
+              <div className="text-xl font-black text-black mb-1">{stats.recentDownloads.length}</div>
+              <div className="text-xs font-black text-black uppercase">Recientes</div>
             </div>
             
             <div 
-              className="bg-cyan-100 border-4 border-black p-4 text-center"
+              className="bg-cyan-100 border-4 border-black p-4 text-center hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
               <HardDriveIcon className="w-6 h-6 mx-auto mb-2 text-cyan-600" />
-              <div className="text-xl font-black text-black mb-1">{formatFileSize(stats.totalFileSize)}</div>
-              <div className="text-xs font-black text-black uppercase">{t('stats.total_size')}</div>
+              <div className="text-xl font-black text-black mb-1">{stats.topProducts.length}</div>
+              <div className="text-xs font-black text-black uppercase">Top PDFs</div>
             </div>
           </div>
         </div>
 
         {/* Filters and Search */}
         <div 
-          className="bg-white border-4 border-black p-6 mb-8"
+          className="bg-white border-4 border-black p-6 mb-8 hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
           style={{ boxShadow: '4px 4px 0 #000000' }}
         >
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -383,7 +417,7 @@ export default function DownloadsPage() {
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black" />
               <input
                 type="text"
-                placeholder={t('filters.search_placeholder')}
+                placeholder="Buscar por producto o vendedor..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
@@ -393,15 +427,15 @@ export default function DownloadsPage() {
 
             {/* Status Filter */}
             <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="ALL">{t('filters.all_statuses')}</option>
-              <option value="ACTIVE">{t('filters.active')}</option>
-              <option value="EXPIRED">{t('filters.expired')}</option>
-              <option value="EXHAUSTED">{t('filters.exhausted')}</option>
+              <option value="all">Todos los estados</option>
+              <option value="active">Activos</option>
+              <option value="expired">Expirados</option>
+              <option value="exhausted">Sin descargas</option>
             </select>
 
             {/* Sort By */}
@@ -411,10 +445,9 @@ export default function DownloadsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="date">{t('filters.sort_by_date')}</option>
-              <option value="name">{t('filters.sort_by_name')}</option>
-              <option value="downloads">{t('filters.sort_by_downloads')}</option>
-              <option value="expiry">{t('filters.sort_by_expiry')}</option>
+              <option value="createdAt">Por fecha de compra</option>
+              <option value="lastDownloadAt">Por última descarga</option>
+              <option value="expiresAt">Por fecha de expiración</option>
             </select>
 
             {/* Sort Order */}
@@ -424,52 +457,62 @@ export default function DownloadsPage() {
               className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
-              <option value="desc">{t('filters.most_recent')}</option>
-              <option value="asc">{t('filters.oldest')}</option>
+              <option value="desc">Más recientes</option>
+              <option value="asc">Más antiguos</option>
             </select>
           </div>
         </div>
 
-        {/* Downloads List */}
-        {filteredTokens.length === 0 ? (
+        {/* Error State */}
+        {error && (
           <div 
-            className="bg-gray-100 border-4 border-black p-12 text-center"
+            className="bg-red-100 border-4 border-red-500 p-6 mb-8 text-center"
             style={{ boxShadow: '4px 4px 0 #000000' }}
           >
-            <div className="text-6xl mb-4">📄</div>
-            <h2 className="text-2xl font-black text-black uppercase mb-4">
-              {downloadTokens.length === 0 ? t('empty.no_downloads_title') : t('empty.no_results_title')}
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-black text-red-600 uppercase mb-4">Error</h2>
+            <p className="text-red-700 font-bold">{error}</p>
+          </div>
+        )}
+
+        {/* Downloads List */}
+        {filteredDownloads.length === 0 ? (
+          <div 
+            className="bg-gray-100 border-4 border-black p-12 text-center hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            <div className="text-8xl mb-6">📄</div>
+            <h2 className="text-3xl font-black text-black uppercase mb-4">
+              {downloads.length === 0 ? 'No tienes descargas' : 'No se encontraron resultados'}
             </h2>
-            <p className="text-gray-600 font-bold mb-6">
-              {downloadTokens.length === 0 
-                ? t('empty.no_downloads_subtitle')
-                : t('empty.no_results_subtitle')
+            <p className="text-gray-600 font-bold mb-6 text-lg">
+              {downloads.length === 0 
+                ? 'Compra algunos productos para ver tus descargas aquí'
+                : 'Intenta cambiar los filtros de búsqueda'
               }
             </p>
             <Link 
               href="/productos"
-              className="inline-flex items-center gap-2 bg-yellow-400 border-4 border-black px-6 py-3 font-black text-black uppercase hover:bg-orange-500 transition-all"
+              className="inline-flex items-center gap-2 bg-orange-500 border-4 border-black px-6 py-3 font-black text-black uppercase hover:bg-yellow-400 transition-all"
               style={{ boxShadow: '4px 4px 0 #000000' }}
             >
-              <ShoppingCartIcon className="w-4 h-4" />
-              {t('empty.explore_products')}
+              <ShoppingCartIcon className="w-5 h-5" />
+              Explorar productos
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredTokens.map((token) => {
-              const status = getStatusBadge(token)
+            {filteredDownloads.map((download) => {
+              const status = getStatusBadge(download)
               const StatusIcon = status.icon
-              const daysUntilExpiry = getDaysUntilExpiry(token.expiresAt)
-              const isDownloading = downloadingTokens.has(token.id)
-              const canDownload = token.isActive && 
-                                new Date(token.expiresAt) > new Date() && 
-                                token.downloadCount < token.downloadLimit
+              const isDownloading = downloadingTokens.has(download.id)
+              const canDownload = getDownloadStatus(download) === 'active'
+              const remainingTime = formatTimeRemaining(download.expiresAt)
 
               return (
                 <div 
-                  key={token.id}
-                  className="bg-white border-4 border-black p-6 hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
+                  key={download.id}
+                  className="bg-white border-4 border-black p-6 hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
                   style={{ boxShadow: '6px 6px 0 #000000' }}
                 >
                   {/* Header */}
@@ -490,56 +533,55 @@ export default function DownloadsPage() {
                     </div>
                     
                     <div className="text-right text-sm">
-                      <div className="font-black text-black">{formatFileSize(token.pdfFileSize)}</div>
-                      <div className="text-gray-600 font-bold">PDF</div>
+                      <div className="font-black text-black">PDF</div>
+                      <div className="text-gray-600 font-bold">{remainingTime}</div>
                     </div>
                   </div>
 
                   {/* Product Title */}
                   <div className="mb-4">
                     <Link 
-                      href={`/productos/${token.productSlug}`}
-                      className="text-lg font-black text-black uppercase hover:text-orange-500 transition-colors line-clamp-2"
+                      href={`/productos/${download.product.slug}`}
+                      className="text-lg font-black text-black uppercase hover:text-orange-500 transition-colors line-clamp-2 block mb-2"
                     >
-                      {token.productTitle}
+                      {download.product.title}
                     </Link>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2">
+                      <Store className="w-4 h-4 text-gray-600" />
                       <span className="text-sm text-gray-600 font-bold">
-                        {t('card.by')}: {token.sellerName}
+                        {download.product.seller?.storeName || 'Vendedor'}
                       </span>
-                      <span className="text-sm text-gray-400">•</span>
-                      <span className="text-sm text-gray-600 font-bold">{formatPrice(token.purchasePrice)}</span>
                     </div>
                   </div>
 
                   {/* Download Progress */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-black text-black uppercase">{t('card.downloads')}:</span>
+                      <span className="text-sm font-black text-black uppercase">Descargas:</span>
                       <span className="text-sm font-black text-black">
-                        {token.downloadCount} / {token.downloadLimit}
+                        {download.downloadCount} / {download.maxDownloads}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 border-2 border-black h-3">
                       <div 
-                        className="bg-blue-500 h-full border-r-2 border-black transition-all duration-300"
+                        className="h-full border-r-2 border-black transition-all duration-300"
                         style={{ 
-                          width: `${(token.downloadCount / token.downloadLimit) * 100}%`,
-                          backgroundColor: token.downloadCount >= token.downloadLimit ? '#ef4444' : '#3b82f6'
+                          width: `${Math.min((download.downloadCount / download.maxDownloads) * 100, 100)}%`,
+                          backgroundColor: download.downloadCount >= download.maxDownloads ? '#ef4444' : '#3b82f6'
                         }}
                       />
                     </div>
                   </div>
 
                   {/* Expiry Warning */}
-                  {daysUntilExpiry <= 7 && daysUntilExpiry > 0 && (
+                  {getDownloadStatus(download) === 'active' && remainingTime !== 'Expirado' && (
                     <div 
                       className="bg-yellow-100 border-2 border-yellow-500 p-3 mb-4 flex items-center gap-2"
                       style={{ boxShadow: '2px 2px 0 #000000' }}
                     >
                       <AlertTriangleIcon className="w-4 h-4 text-yellow-600" />
                       <span className="text-yellow-800 font-bold text-sm">
-                        {t('card.expires_in', { days: daysUntilExpiry, unit: daysUntilExpiry === 1 ? t('card.day') : t('card.days') })}
+                        Expira en {remainingTime}
                       </span>
                     </div>
                   )}
@@ -547,22 +589,22 @@ export default function DownloadsPage() {
                   {/* Metadata */}
                   <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                     <div>
-                      <span className="block text-gray-600 font-bold">{t('card.purchased')}:</span>
-                      <span className="text-black font-black">{formatDate(token.purchaseDate)}</span>
+                      <span className="block text-gray-600 font-bold">Comprado:</span>
+                      <span className="text-black font-black">{formatDate(download.order.createdAt)}</span>
                     </div>
                     <div>
-                      <span className="block text-gray-600 font-bold">{t('card.expires')}:</span>
-                      <span className="text-black font-black">{formatDate(token.expiresAt)}</span>
+                      <span className="block text-gray-600 font-bold">Expira:</span>
+                      <span className="text-black font-black">{formatDate(download.expiresAt)}</span>
                     </div>
-                    {token.lastDownloadAt && (
+                    {download.lastDownloadAt && (
                       <>
                         <div>
-                          <span className="block text-gray-600 font-bold">{t('card.last_download')}:</span>
-                          <span className="text-black font-black">{formatDate(token.lastDownloadAt)}</span>
+                          <span className="block text-gray-600 font-bold">Última descarga:</span>
+                          <span className="text-black font-black">{formatDate(download.lastDownloadAt)}</span>
                         </div>
                         <div>
-                          <span className="block text-gray-600 font-bold">{t('card.from_ip')}:</span>
-                          <span className="text-black font-black">{token.lastIpAddress}</span>
+                          <span className="block text-gray-600 font-bold">Pedido:</span>
+                          <span className="text-black font-black">#{download.order.orderNumber}</span>
                         </div>
                       </>
                     )}
@@ -572,27 +614,27 @@ export default function DownloadsPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/productos/${token.productSlug}`}
+                        href={`/productos/${download.product.slug}`}
                         className="flex items-center gap-1 text-sm bg-blue-400 border-2 border-black px-3 py-1 font-black text-black uppercase hover:bg-yellow-400 transition-all"
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
                         <EyeIcon className="w-3 h-3" />
-                        {t('actions.view_product')}
+                        Ver producto
                       </Link>
                       
                       <Link
-                        href={`/pedidos/${token.orderNumber}`}
+                        href={`/pedidos/${download.order.orderNumber}`}
                         className="flex items-center gap-1 text-sm bg-gray-300 border-2 border-black px-3 py-1 font-black text-black uppercase hover:bg-gray-400 transition-all"
                         style={{ boxShadow: '2px 2px 0 #000000' }}
                       >
                         <ExternalLinkIcon className="w-3 h-3" />
-                        {t('actions.view_order')}
+                        Ver pedido
                       </Link>
                     </div>
 
                     {/* Download Button */}
                     <button
-                      onClick={() => handleDownload(token)}
+                      onClick={() => handleDownload(download)}
                       disabled={!canDownload || isDownloading}
                       className={`flex items-center gap-2 px-4 py-2 border-3 border-black font-black text-sm uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                         canDownload 
@@ -604,17 +646,17 @@ export default function DownloadsPage() {
                       {isDownloading ? (
                         <>
                           <RefreshCwIcon className="w-4 h-4 animate-spin" />
-                          {t('actions.downloading')}
+                          Descargando...
                         </>
                       ) : canDownload ? (
                         <>
                           <DownloadIcon className="w-4 h-4" />
-                          {t('actions.download_pdf')}
+                          Descargar PDF
                         </>
                       ) : (
                         <>
                           <XCircleIcon className="w-4 h-4" />
-                          {t('actions.not_available')}
+                          No disponible
                         </>
                       )}
                     </button>
@@ -626,37 +668,77 @@ export default function DownloadsPage() {
         )}
 
         {/* Results Counter */}
-        {filteredTokens.length > 0 && (
+        {filteredDownloads.length > 0 && (
           <div className="mt-8 text-center">
             <p className="text-gray-600 font-bold">
-              {t('results.showing', { current: filteredTokens.length, total: downloadTokens.length })}
+              Mostrando {filteredDownloads.length} de {downloads.length} descargas
             </p>
           </div>
         )}
 
         {/* Help Section */}
         <div 
-          className="bg-blue-100 border-4 border-black p-6 mt-8"
+          className="bg-blue-100 border-4 border-black p-8 mt-8 hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300"
           style={{ boxShadow: '4px 4px 0 #000000' }}
         >
-          <h3 className="text-xl font-black text-black uppercase mb-4">💡 {t('help.title')}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <h3 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-3">
+            💡 Ayuda y consejos
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="font-black text-black uppercase mb-2">{t('help.download_limits.title')}:</h4>
-              <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• {t('help.download_limits.max_downloads')}</li>
-                <li className="font-medium">• {t('help.download_limits.token_expiry')}</li>
-                <li className="font-medium">• {t('help.download_limits.buyer_only')}</li>
+              <h4 className="font-black text-black uppercase mb-3 text-lg">Límites de descarga:</h4>
+              <ul className="space-y-2 text-gray-700">
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-orange-500 font-black">•</span>
+                  Máximo 10 descargas por producto
+                </li>
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-orange-500 font-black">•</span>
+                  Los tokens expiran en 30 días
+                </li>
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-orange-500 font-black">•</span>
+                  Solo el comprador puede descargar
+                </li>
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-orange-500 font-black">•</span>
+                  Descarga inmediata tras el pago
+                </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-black text-black uppercase mb-2">{t('help.download_issues.title')}:</h4>
-              <ul className="space-y-1 text-gray-700">
-                <li className="font-medium">• {t('help.download_issues.stable_connection')}</li>
-                <li className="font-medium">• {t('help.download_issues.expired_token')}</li>
-                <li className="font-medium">• {t('help.download_issues.pdf_optimized')}</li>
+              <h4 className="font-black text-black uppercase mb-3 text-lg">Problemas comunes:</h4>
+              <ul className="space-y-2 text-gray-700">
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-blue-500 font-black">•</span>
+                  Mantén conexión estable durante la descarga
+                </li>
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-blue-500 font-black">•</span>
+                  Token expirado: contacta soporte
+                </li>
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-blue-500 font-black">•</span>
+                  PDFs optimizados para impresión
+                </li>
+                <li className="font-medium flex items-start gap-2">
+                  <span className="text-blue-500 font-black">•</span>
+                  Guarda copias de seguridad localmente
+                </li>
               </ul>
             </div>
+          </div>
+          
+          {/* Contact Support */}
+          <div className="mt-6 text-center">
+            <Link
+              href="/ayuda"
+              className="bg-orange-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-yellow-400 transition-all inline-flex items-center gap-2"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              <AlertCircleIcon className="w-5 h-5" />
+              Centro de ayuda
+            </Link>
           </div>
         </div>
       </div>

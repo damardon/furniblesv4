@@ -43,6 +43,14 @@ import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { Checkbox } from '@/components/ui/checkbox'
 
+const parseJsonField = (jsonString: string): any[] => {
+  try {
+    return JSON.parse(jsonString);
+  } catch {
+    return [];
+  }
+};
+
 // Tipos para las acciones de producto
 type ProductAction = 'approve' | 'reject' | 'suspend' | 'feature' | 'archive' | 'view_details' | null
 
@@ -596,9 +604,9 @@ export default function AdminProductsPage() {
               <Card key={product.id} className="border-3 border-black overflow-hidden" style={{ boxShadow: '5px 5px 0 #000000' }}>
                 {/* Imagen del producto */}
                 <div className="relative h-48 bg-gray-100">
-                  {product.previewImages?.[0] ? (
+                  {parseJsonField(product.imageFileIds)[0] ? (
                     <Image
-                      src={`/api/files/${product.previewImages[0]}`}
+                      src={`/api/files/${parseJsonField(product.imageFileIds)[0]}`}
                       alt={product.title}
                       fill
                       className="object-cover"
@@ -777,9 +785,9 @@ export default function AdminProductsPage() {
                         <td className="p-3">
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-gray-100 border-2 border-black rounded overflow-hidden">
-                              {product.previewImages?.[0] ? (
+                              {parseJsonField(product.imageFileIds)[0] ? (
                                 <Image
-                                  src={`/api/files/${product.previewImages[0]}`}
+                                  src={`/api/files/${parseJsonField(product.imageFileIds)[0]}`}
                                   alt={product.title}
                                   width={48}
                                   height={48}
@@ -976,9 +984,9 @@ export default function AdminProductsPage() {
               <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded">
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 bg-gray-100 border-2 border-black rounded overflow-hidden">
-                    {productAction.product.previewImages?.[0] ? (
+                    {parseJsonField(productAction.product.imageFileIds)[0] ? (
                       <Image
-                        src={`/api/files/${productAction.product.previewImages[0]}`}
+                        src={`/api/files/${parseJsonField(productAction.product.imageFileIds)[0]}`}
                         alt={productAction.product.title}
                         width={64}
                         height={64}
@@ -1079,7 +1087,7 @@ export default function AdminProductsPage() {
                         <div>
                           <label className="block text-sm font-bold text-gray-600 mb-1">{t('details.tools')}</label>
                           <div className="flex flex-wrap gap-1">
-                            {productAction.product.toolsRequired.map((tool, index) => (
+                            {parseJsonField(productAction.product.toolsRequired).map((tool: string, index: number) => (
                               <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded border">
                                 {tool}
                               </span>
@@ -1091,7 +1099,7 @@ export default function AdminProductsPage() {
                         <div>
                           <label className="block text-sm font-bold text-gray-600 mb-1">{t('details.materials')}</label>
                           <div className="flex flex-wrap gap-1">
-                            {productAction.product.materials.map((material, index) => (
+                            {parseJsonField(productAction.product.materials).map((material: string, index: number) => (
                               <span key={index} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded border">
                                 {material}
                               </span>

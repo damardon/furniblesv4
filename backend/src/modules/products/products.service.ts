@@ -34,6 +34,8 @@ export class ProductsService {
     };
   }
 
+  
+
   // Crear producto
     async create(sellerId: string, createProductDto: CreateProductDto) {
       // Verificar límite de productos por seller (50)
@@ -92,6 +94,7 @@ export class ProductsService {
       page = 1,
       limit = 12,
       status,
+      featured,
     } = filters;
 
     // Construir where clause
@@ -99,6 +102,11 @@ export class ProductsService {
       status: status || ProductStatus.APPROVED,
       publishedAt: { not: null },
     };
+
+    // ✅ AGREGAR filtro de featured
+    if (featured === true) {
+      where.featured = true;
+    }
 
     // Filtros de búsqueda (corregido para SQLite)
     if (q) {
@@ -640,4 +648,246 @@ export class ProductsService {
       return { createdAt: 'desc' };
   }
 }
+// backend/src/modules/products/products.service.ts
+// ✅ AGREGAR AL FINAL DE TU CLASE, antes del último }
+
+  /**
+   * 🆕 CRÍTICO: Obtener estadísticas generales para homepage
+   */
+  async getGeneralStats() {
+    try {
+      const [totalProducts, totalSellers, totalDownloads, featuredProducts] = await Promise.all([
+        this.prisma.product.count({
+          where: { status: ProductStatus.APPROVED }
+        }),
+        this.prisma.user.count({
+          where: { role: 'SELLER' }
+        }),
+        this.prisma.download.count(),
+        this.prisma.product.count({
+          where: { 
+            status: ProductStatus.APPROVED,
+            featured: true 
+          }
+        }),
+      ]);
+
+      return {
+        totalProducts,
+        totalSellers,
+        totalDownloads,
+        featuredProducts,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      // Si hay error con downloads (tabla puede no existir), devolver stats básicos
+      const [totalProducts, totalSellers, featuredProducts] = await Promise.all([
+        this.prisma.product.count({
+          where: { status: ProductStatus.APPROVED }
+        }),
+        this.prisma.user.count({
+          where: { role: 'SELLER' }
+        }),
+        this.prisma.product.count({
+          where: { 
+            status: ProductStatus.APPROVED,
+            featured: true 
+          }
+        }),
+      ]);
+
+      return {
+        totalProducts,
+        totalSellers,
+        totalDownloads: 0,
+        featuredProducts,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * 🆕 CRÍTICO: Obtener categorías con conteo para homepage
+   */
+  async getCategories() {
+    try {
+      const categories = await this.prisma.product.groupBy({
+        by: ['category'],
+        where: {
+          status: ProductStatus.APPROVED
+        },
+        _count: {
+          category: true
+        },
+        orderBy: {
+          _count: {
+            category: 'desc'
+          }
+        }
+      });
+
+      return categories.map(cat => ({
+        category: cat.category,
+        count: cat._count.category,
+        displayName: this.getCategoryDisplayName(cat.category),
+      }));
+    } catch (error) {
+      // Si hay error, devolver categorías por defecto
+      return [
+        { category: 'FURNITURE', count: 0, displayName: 'Muebles' },
+        { category: 'DECORATION', count: 0, displayName: 'Decoración' },
+        { category: 'STORAGE', count: 0, displayName: 'Almacenamiento' },
+        { category: 'OUTDOOR', count: 0, displayName: 'Exterior' },
+      ];
+    }
+  }
+
+  /**
+   * 🆕 Helper: Obtener nombre de categoría para mostrar
+   */
+  private getCategoryDisplayName(category: string): string {
+    const categoryNames = {
+      'FURNITURE': 'Muebles',
+      'DECORATION': 'Decoración', 
+      'STORAGE': 'Almacenamiento',
+      'OUTDOOR': 'Exterior',
+      'KITCHEN': 'Cocina',
+      'BEDROOM': 'Dormitorio',
+      'LIVING_ROOM': 'Sala de estar',
+      'BATHROOM': 'Baño',
+      'OFFICE': 'Oficina',
+      'KIDS': 'Infantil',
+    };
+
+    return categoryNames[category] || category;
+  }
+
+  /**
+   * 🆕 CRÍTICO: Buscar productos por múltiples criterios (para homepage)
+   */
+  async findProductsForHomepage() {
+    try {
+      const [featured, latest, popular, topRated] = await Promise.all([
+        // Productos destacados (máximo 8)
+        this.prisma.product.findMany({
+          where: {
+            status: ProductStatus.APPROVED,
+            featured: true,
+          },
+          include: {
+            seller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                sellerProfile: {
+                  select: {
+                    storeName: true,
+                    slug: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 8,
+        }),
+
+        // Productos más recientes (máximo 12)
+        this.prisma.product.findMany({
+          where: {
+            status: ProductStatus.APPROVED,
+          },
+          include: {
+            seller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                sellerProfile: {
+                  select: {
+                    storeName: true,
+                    slug: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { publishedAt: 'desc' },
+          take: 12,
+        }),
+
+        // Productos populares (por vistas)
+        this.prisma.product.findMany({
+          where: {
+            status: ProductStatus.APPROVED,
+            viewCount: { gt: 0 },
+          },
+          include: {
+            seller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                sellerProfile: {
+                  select: {
+                    storeName: true,
+                    slug: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { viewCount: 'desc' },
+          take: 8,
+        }),
+
+        // Productos mejor valorados
+        this.prisma.product.findMany({
+          where: {
+            status: ProductStatus.APPROVED,
+            rating: { gt: 4.0 },
+          },
+          include: {
+            seller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                sellerProfile: {
+                  select: {
+                    storeName: true,
+                    slug: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { rating: 'desc' },
+          take: 8,
+        }),
+      ]);
+
+      return {
+        featured,
+        latest,
+        popular,
+        topRated,
+      };
+    } catch (error) {
+      // Si hay error, devolver arrays vacíos
+      return {
+        featured: [],
+        latest: [],
+        popular: [],
+        topRated: [],
+      };
+    }
+  }
+
+
 }

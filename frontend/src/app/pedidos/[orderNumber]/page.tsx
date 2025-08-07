@@ -1,144 +1,215 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { notFound, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { 
-  ArrowLeftIcon,
-  CalendarIcon,
-  CreditCardIcon,
-  UserIcon,
-  MapPinIcon,
-  MailIcon,
-  PhoneIcon,
-  DownloadIcon,
-  FileTextIcon,
-  PackageIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-  AlertCircleIcon,
-  RefreshCwIcon,
-  ShareIcon,
-  PrinterIcon,
-  ExternalLinkIcon,
-  ShoppingCartIcon,
-  TagIcon
+  ArrowLeft, 
+  Package, 
+  Calendar, 
+  CreditCard, 
+  Download, 
+  X, 
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  FileText,
+  User,
+  Store,
+  Eye
 } from 'lucide-react'
-import { Order, OrderStatus } from '@/types'
-import { useAuthStore } from '@/lib/stores/auth-store'
-import { mockOrders } from '@/data/mockOrders'
 
-interface OrderDetailPageProps {
-  params: {
-    orderNumber: string
-  }
-}
+// ✅ Importar API real
+import { getOrderByNumber, cancelOrder } from '@/lib/orders-api'
+import { getDownloadsByOrder } from '@/lib/download-api'
+import type { Order } from '@/lib/orders-api'
+import type { Download as DownloadType } from '@/lib/download-api'
 
-export default function OrderDetailPage({ params }: OrderDetailPageProps) {
-  const t = useTranslations('order_detail')
-  const tCommon = useTranslations('common')
-  const tOrders = useTranslations('orders')
+export default function OrderDetailPage() {
+  const params = useParams()
   const router = useRouter()
+  const t = useTranslations('orders')
+  const tCommon = useTranslations('common')
   
-  // Stores
-  const { isAuthenticated, user, setLoginModalOpen } = useAuthStore()
-
-  // States
   const [order, setOrder] = useState<Order | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [downloads, setDownloads] = useState<DownloadType []>([])
+  const [loading, setLoading] = useState(true)
+  const [downloadsLoading, setDownloadsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
 
-  // Redirect if not authenticated
+  const orderNumber = params.orderNumber as string
+
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLoginModalOpen(true)
-      router.push('/productos')
-      return
+    if (!orderNumber) return
+
+    const fetchOrderData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        console.log('🔍 [ORDER-DETAIL] Fetching order:', orderNumber)
+        
+        const orderData = await getOrderByNumber(orderNumber)
+        
+        if (!orderData) {
+          setError('Pedido no encontrado')
+          return
+        }
+        
+        setOrder(orderData)
+        
+        // Si el pedido está pagado, cargar descargas
+        if (orderData.status === 'PAID' || orderData.status === 'COMPLETED') {
+          setDownloadsLoading(true)
+          try {
+            const downloadsData = await getDownloadsByOrder(orderNumber)
+            setDownloads(downloadsData)
+          } catch (downloadsError) {
+            console.error('Error loading downloads:', downloadsError)
+          } finally {
+            setDownloadsLoading(false)
+          }
+        }
+        
+      } catch (err) {
+        console.error('Error fetching order:', err)
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [isAuthenticated, setLoginModalOpen, router])
 
-  // Load order
-  useEffect(() => {
-    const foundOrder = mockOrders.find(o => o.orderNumber === params.orderNumber)
+    fetchOrderData()
+  }, [orderNumber])
+
+  const handleCancelOrder = async () => {
+    if (!order || order.status !== 'PENDING') return
     
-    if (!foundOrder) {
-      notFound()
+    const confirmed = window.confirm('¿Estás seguro de que quieres cancelar este pedido?')
+    if (!confirmed) return
+    
+    setCancelLoading(true)
+    try {
+      const result = await cancelOrder(orderNumber, 'Cancelado por el usuario')
+      
+      if (result.success) {
+        setOrder(prev => prev ? { ...prev, status: 'CANCELLED' as const } : null)
+      } else {
+        alert(result.error || 'Error al cancelar el pedido')
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error)
+      alert('Error al cancelar el pedido')
+    } finally {
+      setCancelLoading(false)
     }
+  }
 
-    // Check if order belongs to current user
-    if (foundOrder.buyerId !== user?.id) {
-      router.push('/pedidos')
-      return
-    }
-
-    setOrder(foundOrder)
-    setIsLoading(false)
-  }, [params.orderNumber, user?.id, router])
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">📦</div>
-          <p className="text-black font-black text-xl uppercase">{t('loading')}</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-black font-black text-xl uppercase">Cargando pedido...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div 
+            className="bg-white border-[5px] border-black p-12 text-center hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+            style={{ boxShadow: '8px 8px 0 #000000' }}
+          >
+            <div className="text-8xl mb-6">⚠️</div>
+            <h2 className="text-black font-black text-3xl mb-4 uppercase">
+              Error
+            </h2>
+            <p className="text-black font-medium text-lg mb-6">{error}</p>
+            <Link
+              href="/pedidos"
+              className="bg-orange-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-yellow-400 transition-all inline-block"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              Volver a pedidos
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
 
   if (!order) {
-    return notFound()
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div 
+            className="bg-white border-[5px] border-black p-12 text-center hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+            style={{ boxShadow: '8px 8px 0 #000000' }}
+          >
+            <div className="text-8xl mb-6">📦</div>
+            <h2 className="text-black font-black text-3xl mb-4 uppercase">
+              Pedido no encontrado
+            </h2>
+            <p className="text-black font-medium text-lg mb-6">
+              El pedido #{orderNumber} no existe o no tienes permisos para verlo.
+            </p>
+            <Link
+              href="/pedidos"
+              className="bg-orange-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-yellow-400 transition-all inline-block"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              Volver a pedidos
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const getStatusBadge = (status: OrderStatus) => {
-    const statusConfig = {
-      [OrderStatus.PENDING]: {
-        color: 'bg-yellow-400 text-black border-black',
-        icon: ClockIcon,
-        text: t('status.pending'),
-        description: t('status_descriptions.pending')
-      },
-      [OrderStatus.PROCESSING]: {
-        color: 'bg-blue-400 text-black border-black',
-        icon: RefreshCwIcon,
-        text: t('status.processing'),
-        description: t('status_descriptions.processing')
-      },
-      [OrderStatus.PAID]: {
-        color: 'bg-green-400 text-black border-black',
-        icon: CreditCardIcon,
-        text: t('status.paid'),
-        description: t('status_descriptions.paid')
-      },
-      [OrderStatus.COMPLETED]: {
-        color: 'bg-green-500 text-white border-black',
-        icon: CheckCircleIcon,
-        text: t('status.completed'),
-        description: t('status_descriptions.completed')
-      },
-      [OrderStatus.CANCELLED]: {
-        color: 'bg-red-400 text-black border-black',
-        icon: XCircleIcon,
-        text: t('status.failed'),
-        description: t('status_descriptions.failed')
-      },
-      [OrderStatus.REFUNDED]: {
-        color: 'bg-gray-400 text-black border-black',
-        icon: AlertCircleIcon,
-        text: t('status.refunded'),
-        description: t('status_descriptions.refunded')
-      },
-      [OrderStatus.DISPUTED]: {
-        color: 'bg-gray-400 text-black border-black',
-        icon: AlertCircleIcon,
-        text: t('status.refunded'),
-        description: t('status_descriptions.refunded')
-      },
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-400 text-black border-4 border-black'
+      case 'PROCESSING':
+        return 'bg-blue-400 text-black border-4 border-black'
+      case 'PAID':
+        return 'bg-green-400 text-black border-4 border-black'
+      case 'COMPLETED':
+        return 'bg-green-500 text-black border-4 border-black'
+      case 'CANCELLED':
+        return 'bg-red-400 text-black border-4 border-black'
+      case 'REFUNDED':
+        return 'bg-purple-400 text-black border-4 border-black'
+      case 'DISPUTED':
+        return 'bg-orange-600 text-white border-4 border-black'
+      default:
+        return 'bg-gray-400 text-black border-4 border-black'
     }
+  }
 
-    return statusConfig[status]
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return <Clock className="w-5 h-5" />
+      case 'PROCESSING':
+        return <Package className="w-5 h-5" />
+      case 'PAID':
+      case 'COMPLETED':
+        return <CheckCircle className="w-5 h-5" />
+      case 'CANCELLED':
+      case 'REFUNDED':
+        return <X className="w-5 h-5" />
+      case 'DISPUTED':
+        return <AlertCircle className="w-5 h-5" />
+      default:
+        return <Package className="w-5 h-5" />
+    }
   }
 
   const formatPrice = (price: number) => {
@@ -159,426 +230,299 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     })
   }
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: t('share.title', { orderNumber: order.orderNumber }),
-        text: t('share.text', { orderNumber: order.orderNumber }),
-        url: window.location.href,
-      })
-    } else {
-      navigator.clipboard.writeText(window.location.href)
-      // TODO: Show toast
-    }
-  }
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const statusInfo = getStatusBadge(order.status)
-  const StatusIcon = statusInfo.icon
-
-  // Don't render if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🔒</div>
-          <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Breadcrumb */}
       <div className="bg-yellow-400 border-b-4 border-black p-4">
-        <div className="container mx-auto">
+        <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
             <Link href="/" className="hover:text-orange-500 transition-colors">
-              {tCommon('navigation.home')}
+              Inicio
             </Link>
             <span>/</span>
             <Link href="/pedidos" className="hover:text-orange-500 transition-colors">
-              {tOrders('title')}
+              Pedidos
             </Link>
             <span>/</span>
-            <span className="text-orange-500">{order.orderNumber}</span>
+            <span className="text-orange-500 truncate">#{order.orderNumber}</span>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Title */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Link 
-                href="/pedidos"
-                className="inline-flex items-center gap-2 bg-white border-4 border-black px-4 py-2 font-black text-black uppercase hover:bg-yellow-400 transition-all"
-                style={{ boxShadow: '4px 4px 0 #000000' }}
-              >
-                <ArrowLeftIcon className="w-4 h-4" />
-                {tCommon('actions.back')}
-              </Link>
-              
-              <div>
-                <h1 className="text-4xl font-black text-black uppercase flex items-center gap-3">
-                  <PackageIcon className="w-8 h-8" />
-                  {order.orderNumber}
-                </h1>
-                <p className="text-gray-600 font-bold mt-2">
-                  {t('ordered_on', { date: formatDate(order.createdAt) })}
-                </p>
-              </div>
-            </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Botón volver */}
+        <div className="mb-6">
+          <Link 
+            href="/pedidos"
+            className="inline-flex items-center gap-2 bg-white border-4 border-black px-4 py-2 font-black text-black uppercase hover:bg-yellow-400 transition-all"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver a pedidos
+          </Link>
+        </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleShare}
-                className="p-3 bg-white border-4 border-black hover:bg-yellow-400 transition-all"
-                style={{ boxShadow: '4px 4px 0 #000000' }}
-                title={t('actions.share')}
+        {/* Header del pedido */}
+        <div 
+          className="bg-gradient-to-br from-blue-200 to-cyan-200 border-[5px] border-black p-8 mb-8 hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+          style={{ boxShadow: '8px 8px 0 #000000' }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-black text-black uppercase mb-2">
+                Pedido #{order.orderNumber}
+              </h1>
+              <div className="flex items-center gap-2 text-black font-bold">
+                <Calendar className="w-5 h-5" />
+                <span>Creado el {formatDate(order.createdAt)}</span>
+              </div>
+              {order.paidAt && (
+                <div className="flex items-center gap-2 text-black font-bold mt-1">
+                  <CreditCard className="w-5 h-5" />
+                  <span>Pagado el {formatDate(order.paidAt)}</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <span 
+                className={`px-4 py-2 font-black text-sm uppercase flex items-center gap-2 ${getStatusBadge(order.status)}`}
+                style={{ boxShadow: '3px 3px 0 #000000' }}
               >
-                <ShareIcon className="w-5 h-5 text-black" />
-              </button>
-              
-              <button
-                onClick={handlePrint}
-                className="p-3 bg-white border-4 border-black hover:bg-yellow-400 transition-all"
-                style={{ boxShadow: '4px 4px 0 #000000' }}
-                title={t('actions.print')}
-              >
-                <PrinterIcon className="w-5 h-5 text-black" />
-              </button>
+                {getStatusIcon(order.status)}
+                {order.status}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Resumen del pedido */}
+        <div 
+          className="bg-white border-[5px] border-black p-8 mb-8 hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+          style={{ boxShadow: '8px 8px 0 #000000' }}
+        >
+          <h2 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-3">
+            <Package className="w-8 h-8 text-orange-500" />
+            Resumen del pedido
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-yellow-400 border-3 border-black" style={{ boxShadow: '3px 3px 0 #000000' }}>
+              <div className="text-2xl font-black text-black mb-1">{order.items.length}</div>
+              <div className="text-sm font-black text-black uppercase">Productos</div>
+            </div>
+            <div className="text-center p-4 bg-green-400 border-3 border-black" style={{ boxShadow: '3px 3px 0 #000000' }}>
+              <div className="text-2xl font-black text-black mb-1">{formatPrice(order.subtotal)}</div>
+              <div className="text-sm font-black text-black uppercase">Subtotal</div>
+            </div>
+            <div className="text-center p-4 bg-orange-400 border-3 border-black" style={{ boxShadow: '3px 3px 0 #000000' }}>
+              <div className="text-2xl font-black text-black mb-1">{formatPrice(order.totalAmount)}</div>
+              <div className="text-sm font-black text-black uppercase">Total</div>
             </div>
           </div>
 
-          {/* Order Status */}
-          <div 
-            className={`${statusInfo.color} border-4 p-6 mb-8`}
-            style={{ boxShadow: '6px 6px 0 #000000' }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-black/10 border-3 border-black rounded-full flex items-center justify-center">
-                  <StatusIcon className="w-8 h-8" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-black uppercase mb-1">
-                    {t('status_label')}: {statusInfo.text}
-                  </h2>
-                  <p className="font-bold text-sm">
-                    {statusInfo.description}
-                  </p>
-                </div>
+          {/* Desglose de costos */}
+          <div className="mt-6 bg-gray-100 border-3 border-black p-4" style={{ boxShadow: '3px 3px 0 #000000' }}>
+            <h3 className="font-black text-black uppercase mb-3">Desglose de costos</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-black">Subtotal:</span>
+                <span className="font-bold text-black">{formatPrice(order.subtotal)}</span>
               </div>
-              
-              <div className="text-right">
-                <div className="text-3xl font-black mb-1">
-                  {formatPrice(order.totalAmount)}
-                </div>
-                <div className="text-sm font-bold uppercase">
-                  {t('products_count', { 
-                    count: order.items.length, 
-                    unit: order.items.length === 1 ? t('product_singular') : t('product_plural') 
-                  })}
-                </div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-black">Comisión plataforma ({(order.platformFeeRate * 100).toFixed(0)}%):</span>
+                <span className="font-bold text-black">{formatPrice(order.platformFee)}</span>
+              </div>
+              <div className="border-t-2 border-black pt-2 flex justify-between items-center">
+                <span className="font-black text-black uppercase">Total:</span>
+                <span className="font-black text-black text-xl">{formatPrice(order.totalAmount)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Order Details */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Products */}
-            <div 
-              className="bg-white border-4 border-black p-6"
-              style={{ boxShadow: '6px 6px 0 #000000' }}
-            >
-              <h3 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-2">
-                <ShoppingCartIcon className="w-6 h-6" />
-                {t('sections.products')}
-              </h3>
-              
+        {/* Productos del pedido */}
+        <div 
+          className="bg-white border-[5px] border-black p-8 mb-8 hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+          style={{ boxShadow: '8px 8px 0 #000000' }}
+        >
+          <h2 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-3">
+            <FileText className="w-8 h-8 text-blue-500" />
+            Productos ({order.items.length})
+          </h2>
+          
+          <div className="space-y-4">
+            {order.items.map((item) => (
+              <div 
+                key={item.id} 
+                className="bg-gray-50 border-3 border-black p-6 hover:bg-yellow-50 transition-all"
+                style={{ boxShadow: '3px 3px 0 #000000' }}
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex-1">
+                    <Link 
+                      href={`/productos/${item.productSlug}`}
+                      className="text-xl font-black text-black uppercase hover:text-orange-500 transition-colors block mb-2"
+                    >
+                      {item.productTitle}
+                    </Link>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Store className="w-4 h-4 text-gray-600" />
+                        <span className="font-bold text-gray-700">Vendedor: {item.sellerName}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Package className="w-4 h-4 text-gray-600" />
+                        <span className="font-bold text-gray-700">Cantidad: {item.quantity}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-2xl font-black text-green-600 mb-1">
+                      {formatPrice(item.price * item.quantity)}
+                    </div>
+                    <div className="text-sm font-bold text-gray-600">
+                      {formatPrice(item.price)} c/u
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Información del comprador */}
+        <div 
+          className="bg-white border-[5px] border-black p-8 mb-8 hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+          style={{ boxShadow: '8px 8px 0 #000000' }}
+        >
+          <h2 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-3">
+            <User className="w-8 h-8 text-purple-500" />
+            Información del comprador
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-black text-black uppercase mb-2">Datos personales</h3>
+              <p className="font-bold text-black">{order.buyer.firstName} {order.buyer.lastName}</p>
+              <p className="font-medium text-gray-700">{order.buyer.email}</p>
+            </div>
+            
+            {order.billingData && (
+              <div>
+                <h3 className="font-black text-black uppercase mb-2">Datos de facturación</h3>
+                <div className="text-sm font-medium text-gray-700">
+                  {/* Renderizar datos de facturación si existen */}
+                  <pre className="bg-gray-100 p-2 rounded text-xs">
+                    {JSON.stringify(order.billingData, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Descargas disponibles */}
+        {(order.status === 'PAID' || order.status === 'COMPLETED') && (
+          <div 
+            className="bg-white border-[5px] border-black p-8 mb-8 hover:translate-x-[-3px] hover:translate-y-[-3px] transition-all duration-300"
+            style={{ boxShadow: '8px 8px 0 #000000' }}
+          >
+            <h2 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-3">
+              <Download className="w-8 h-8 text-green-500" />
+              Descargas disponibles
+            </h2>
+            
+            {downloadsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+                <p className="font-bold text-gray-600">Cargando descargas...</p>
+              </div>
+            ) : downloads.length > 0 ? (
               <div className="space-y-4">
-                {order.items.map((item) => (
+                {downloads.map((download) => (
                   <div 
-                    key={item.id}
-                    className="flex gap-6 p-4 bg-gray-50 border-3 border-black"
+                    key={download.id}
+                    className="bg-green-50 border-3 border-black p-6"
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                   >
-                    <div className="relative w-24 h-24 border-3 border-black overflow-hidden">
-                      {item.product.previewImages?.[0] ? (
-                        <Image
-                          src={item.product.previewImages[0]}
-                          alt={item.productTitle}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-orange-200 to-yellow-200 flex items-center justify-center">
-                          <span className="text-3xl">🪵</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <Link 
-                            href={`/productos/${item.productSlug}`}
-                            className="text-lg font-black text-black uppercase hover:text-orange-500 transition-colors"
-                          >
-                            {item.productTitle}
-                          </Link>
-                          <p className="text-sm text-gray-600 font-bold mt-1">
-                            {item.product.seller.sellerProfile?.storeName || 
-                             `${item.product.seller.firstName} ${item.product.seller.lastName}`}
-                          </p>
-                        </div>
-                        
-                        <div className="text-right">
-                          <div className="text-xl font-black text-black">
-                            {formatPrice(item.price * item.quantity)}
-                          </div>
-                          <div className="text-sm text-gray-600 font-bold">
-                            {formatPrice(item.price)} × {item.quantity}
-                          </div>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-black text-black uppercase mb-1">
+                          {download.product.title}
+                        </h3>
+                        <p className="text-sm font-bold text-gray-700 mb-2">
+                          Descargas restantes: {download.maxDownloads - download.downloadCount} de {download.maxDownloads}
+                        </p>
+                        <p className="text-xs font-medium text-gray-600">
+                          Válido hasta: {formatDate(download.expiresAt)}
+                        </p>
                       </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span 
-                            className="bg-blue-200 text-black text-xs font-black px-2 py-1 border-2 border-black uppercase"
-                            style={{ boxShadow: '2px 2px 0 #000000' }}
-                          >
-                            {t('product.quantity')}: {item.quantity}
-                          </span>
-                          
-                          <span 
-                            className={`${item.product.difficulty === 'BEGINNER' ? 'bg-green-400' : 
-                                       item.product.difficulty === 'INTERMEDIATE' ? 'bg-yellow-400' : 'bg-orange-400'} 
-                                       text-black text-xs font-black px-2 py-1 border-2 border-black uppercase`}
-                            style={{ boxShadow: '2px 2px 0 #000000' }}
-                          >
-                            {item.product.difficulty}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {(order.status === OrderStatus.COMPLETED || order.status === OrderStatus.PAID) && (
-                            <Link
-                              href="/descargas"
-                              className="flex items-center gap-1 bg-green-400 border-2 border-black px-3 py-1 font-black text-black text-xs uppercase hover:bg-yellow-400 transition-all"
-                              style={{ boxShadow: '2px 2px 0 #000000' }}
-                            >
-                              <DownloadIcon className="w-3 h-3" />
-                              {t('product.download')}
-                            </Link>
-                          )}
-                          
-                          <Link
-                            href={`/productos/${item.productSlug}`}
-                            className="flex items-center gap-1 bg-white border-2 border-black px-3 py-1 font-black text-black text-xs uppercase hover:bg-gray-100 transition-all"
-                            style={{ boxShadow: '2px 2px 0 #000000' }}
-                          >
-                            <ExternalLinkIcon className="w-3 h-3" />
-                            {t('product.view')}
-                          </Link>
-                        </div>
-                      </div>
+                      
+                      <Link
+                        href={`/descargas`}
+                        className="bg-green-500 border-3 border-black text-black font-black py-2 px-4 uppercase hover:bg-green-600 transition-all flex items-center gap-2"
+                        style={{ boxShadow: '3px 3px 0 #000000' }}
+                      >
+                        <Download className="w-4 h-4" />
+                        Descargar
+                      </Link>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Order Timeline */}
-            <div 
-              className="bg-white border-4 border-black p-6"
-              style={{ boxShadow: '6px 6px 0 #000000' }}
-            >
-              <h3 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-2">
-                <CalendarIcon className="w-6 h-6" />
-                {t('sections.timeline')}
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-green-100 border-2 border-black">
-                  <div className="w-10 h-10 bg-green-500 border-2 border-black rounded-full flex items-center justify-center">
-                    <CheckCircleIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-black text-black uppercase">{t('timeline.order_created')}</p>
-                    <p className="text-sm text-gray-600 font-bold">{formatDate(order.createdAt)}</p>
-                  </div>
-                </div>
-
-                {order.paidAt && (
-                  <div className="flex items-center gap-4 p-4 bg-blue-100 border-2 border-black">
-                    <div className="w-10 h-10 bg-blue-500 border-2 border-black rounded-full flex items-center justify-center">
-                      <CreditCardIcon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-black text-black uppercase">{t('timeline.payment_confirmed')}</p>
-                      <p className="text-sm text-gray-600 font-bold">{formatDate(order.paidAt)}</p>
-                    </div>
-                  </div>
-                )}
-
-                {order.completedAt && (
-                  <div className="flex items-center gap-4 p-4 bg-purple-100 border-2 border-black">
-                    <div className="w-10 h-10 bg-purple-500 border-2 border-black rounded-full flex items-center justify-center">
-                      <PackageIcon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-black text-black uppercase">{t('timeline.order_completed')}</p>
-                      <p className="text-sm text-gray-600 font-bold">{formatDate(order.completedAt)}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Summary */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Order Summary */}
-            <div 
-              className="bg-white border-4 border-black p-6"
-              style={{ boxShadow: '6px 6px 0 #000000' }}
-            >
-              <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
-                <FileTextIcon className="w-5 h-5" />
-                {t('sections.summary')}
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-black font-bold">
-                  <span>{t('summary.subtotal')}:</span>
-                  <span>{formatPrice(order.subtotal)}</span>
-                </div>
-                
-                <div className="flex justify-between items-center text-black font-bold">
-                  <span>{t('summary.platform_fee')}:</span>
-                  <span>{formatPrice(order.platformFee)}</span>
-                </div>
-                
-                <div className="border-t-3 border-black pt-3">
-                  <div className="flex justify-between items-center text-black font-black text-xl">
-                    <span className="uppercase">{t('summary.total')}:</span>
-                    <span className="text-orange-500">{formatPrice(order.totalAmount)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Information */}
-            {order.paymentIntentId && (
-              <div 
-                className="bg-white border-4 border-black p-6"
-                style={{ boxShadow: '6px 6px 0 #000000' }}
-              >
-                <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
-                  <CreditCardIcon className="w-5 h-5" />
-                  {t('sections.payment_info')}
-                </h3>
-                
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="font-black text-black uppercase block">{t('payment.payment_id')}:</span>
-                    <span className="font-bold text-gray-600 break-all">
-                      {order.paymentIntentId}
-                    </span>
-                  </div>
-                  
-                  <div>
-                    <span className="font-black text-black uppercase block">{t('payment.payment_status')}:</span>
-                    <span className="font-bold text-gray-600">
-                      {order.paymentStatus}
-                    </span>
-                  </div>
-                  
-                  <div>
-                    <span className="font-black text-black uppercase block">{t('payment.method')}:</span>
-                    <span className="font-bold text-gray-600">{t('payment.credit_debit_card')}</span>
-                  </div>
-                </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">📁</div>
+                <p className="font-bold text-gray-600">No hay descargas disponibles para este pedido</p>
               </div>
             )}
-
-            {/* Billing Information */}
-            <div 
-              className="bg-white border-4 border-black p-6"
-              style={{ boxShadow: '6px 6px 0 #000000' }}
-            >
-              <h3 className="text-xl font-black text-black uppercase mb-4 flex items-center gap-2">
-                <UserIcon className="w-5 h-5" />
-                {t('sections.billing_info')}
-              </h3>
-              
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <UserIcon className="w-4 h-4 text-gray-600" />
-                  <span className="font-bold text-black">
-                    {order.billingAddress.firstName} {order.billingAddress.lastName}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <MailIcon className="w-4 h-4 text-gray-600" />
-                  <span className="font-bold text-gray-600">
-                    {order.billingAddress.email}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <PhoneIcon className="w-4 h-4 text-gray-600" />
-                  <span className="font-bold text-gray-600">
-                    {order.billingAddress.phone}
-                  </span>
-                </div>
-                
-                <div className="flex items-start gap-2">
-                  <MapPinIcon className="w-4 h-4 text-gray-600 mt-1" />
-                  <div className="font-bold text-gray-600">
-                    <div>{order.billingAddress.address}</div>
-                    <div>{order.billingAddress.city}, {order.billingAddress.country}</div>
-                    <div>{order.billingAddress.zipCode}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-3">
-              {(order.status === OrderStatus.COMPLETED || order.status === OrderStatus.PAID) && (
-                <Link
-                  href="/descargas"
-                  className="w-full flex items-center justify-center gap-2 bg-green-500 border-4 border-black font-black text-white text-lg uppercase py-3 hover:bg-yellow-400 hover:text-black transition-all"
-                  style={{ boxShadow: '4px 4px 0 #000000' }}
-                >
-                  <DownloadIcon className="w-5 h-5" />
-                  {t('actions.go_to_downloads')}
-                </Link>
-              )}
-              
-              <Link
-                href="/productos"
-                className="w-full flex items-center justify-center gap-2 bg-blue-400 border-4 border-black font-black text-black text-lg uppercase py-3 hover:bg-yellow-400 transition-all"
-                style={{ boxShadow: '4px 4px 0 #000000' }}
-              >
-                <ShoppingCartIcon className="w-5 h-5" />
-                {t('actions.continue_shopping')}
-              </Link>
-            </div>
           </div>
+        )}
+
+        {/* Acciones del pedido */}
+        <div className="flex flex-wrap gap-4">
+          {order.status === 'PENDING' && (
+            <button
+              onClick={handleCancelOrder}
+              disabled={cancelLoading}
+              className="bg-red-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              {cancelLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                  Cancelando...
+                </>
+              ) : (
+                <>
+                  <X className="w-5 h-5" />
+                  Cancelar pedido
+                </>
+              )}
+            </button>
+          )}
+
+          {(order.status === 'PAID' || order.status === 'COMPLETED') && (
+            <Link
+              href="/descargas"
+              className="bg-blue-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-blue-600 transition-all flex items-center gap-2"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              <Download className="w-5 h-5" />
+              Ver todas las descargas
+            </Link>
+          )}
+
+          <Link
+            href={`/productos/${order.items[0]?.productSlug}`}
+            className="bg-orange-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-yellow-400 transition-all flex items-center gap-2"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            <Eye className="w-5 h-5" />
+            Ver producto
+          </Link>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
+// backend/src/modules/products/dto/product-filters.dto.ts
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsEnum, IsNumber, IsArray, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsNumber, IsArray, Min, Max, IsBoolean } from 'class-validator';
 import { ProductCategory, Difficulty, ProductStatus } from '@prisma/client';
 
 export class ProductFiltersDto {
@@ -57,25 +58,17 @@ export class ProductFiltersDto {
   @Transform(({ value }) => Array.isArray(value) ? value : [value])
   tags?: string[];
 
-  // ✅ ACTUALIZAR: Campos que SÍ existen en el schema de Prisma
   @ApiPropertyOptional({
-    description: 'Campo por el cual ordenar',
-    enum: [
-      'createdAt', 'updatedAt', 'price', 'rating', 'viewCount', 
-      'downloadCount', 'favoriteCount', 'reviewCount', 'title',  // ✅ CAMPOS REALES
-      'newest', 'oldest', 'popular', 'price_asc', 'price_desc'  // ✅ COMPATIBILIDAD
-    ],
-    default: 'createdAt',
+    description: 'Ordenar por',
+    enum: ['newest', 'oldest', 'popular', 'rating', 'price_asc', 'price_desc', 'createdAt', 'publishedAt'],
+    default: 'newest',
   })
   @IsOptional()
   @IsString()
-  sortBy?: 
-    | 'createdAt' | 'updatedAt' | 'price' | 'rating' | 'viewCount' 
-    | 'downloadCount' | 'favoriteCount' | 'reviewCount' | 'title'  // ✅ CAMPOS REALES
-    | 'newest' | 'oldest' | 'popular' | 'price_asc' | 'price_desc'  // ✅ COMPATIBILIDAD
-    = 'createdAt';
+  sortBy?: 'newest' | 'oldest' | 'popular' | 'rating' | 'price_asc' | 'price_desc' | 'createdAt' | 'publishedAt' = 'newest';
 
-  // ✅ AGREGAR: Soporte para sortOrder
+  // ✅ AGREGAR estas propiedades nuevas:
+
   @ApiPropertyOptional({
     description: 'Dirección del ordenamiento',
     enum: ['asc', 'desc'],
@@ -84,6 +77,15 @@ export class ProductFiltersDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @ApiPropertyOptional({
+    description: 'Filtrar solo productos destacados',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  featured?: boolean;
 
   @ApiPropertyOptional({
     description: 'Número de página',

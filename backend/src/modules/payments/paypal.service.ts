@@ -1,4 +1,4 @@
-// backend/src/modules/payments/paypal.service.ts
+// backend/src/modules/payments/paypal.service.ts - UBICACIÓN CORRECTA
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 

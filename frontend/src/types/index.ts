@@ -151,7 +151,7 @@ export interface Product {
   updatedAt: string;
   
   // Relations
-  seller?: SellerProfile;       // ✅ CORREGIDO: Referencia SellerProfile
+  seller?: User;       // ✅ CORREGIDO: Referencia SellerProfile
   productRating?: ProductRating;
 }
 

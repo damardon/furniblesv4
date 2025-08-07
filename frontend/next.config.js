@@ -2,41 +2,23 @@ const createNextIntlPlugin = require('next-intl/plugin');
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig = {
-  experimental: {
-    // Mejorar el rendimiento de WebVitals
-    webVitalsAttribution: ['CLS', 'LCP']
-  },
+  // ✅ NUEVO: Configuración para export estático
+  output: 'export',
+  trailingSlash: true,
   
-  // Configuración específica para GitHub Codespaces
-  ...(process.env.CODESPACE_NAME && {
-    webpack: (config, { dev, isServer }) => {
-      if (dev && !isServer) {
-        // Configurar WebSocket para HMR en Codespaces
-        config.watchOptions = {
-          poll: 1000,
-          aggregateTimeout: 300,
-        };
-        
-        // Configuración adicional para Hot Module Replacement
-        config.infrastructureLogging = {
-          level: 'error',
-        };
-      }
-      return config;
-    },
-    
-    // Configuración para hot reload en Codespaces
-    onDemandEntries: {
-      maxInactiveAge: 25 * 1000,
-      pagesBufferLength: 2,
-    },
-  }),
-
+  // ✅ NUEVO: Desabilitar optimizaciones que no funcionan en estático
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'probable-barnacle-65pw9jg5qwxc5w6-3002.app.github.dev',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'furnibles-backend.up.railway.app',
         port: '',
         pathname: '/**',
       },
@@ -52,17 +34,56 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
-      // ✅ AGREGADO: Unsplash para imágenes reales de muebles
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
       }
-      // ❌ ELIMINADO: picsum.photos (ya no lo usamos)
     ],
   },
   
+  experimental: {
+    // Mejorar el rendimiento de WebVitals
+    webVitalsAttribution: ['CLS', 'LCP']
+  },
+  
+  // ✅ MODIFICADO: Webpack config compatible con export
+  webpack: (config, { dev, isServer }) => {
+    // Configuración para Codespaces (solo en desarrollo)
+    if (dev && !isServer && process.env.CODESPACE_NAME) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+      };
+      
+      config.infrastructureLogging = {
+        level: 'error',
+      };
+    }
+    
+    // ✅ NUEVO: Fallbacks para export estático
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+      };
+    }
+    
+    return config;
+  },
+  
+  // ✅ MODIFICADO: Solo para desarrollo en Codespaces
+  ...(process.env.CODESPACE_NAME && process.env.NODE_ENV === 'development' && {
+    onDemandEntries: {
+      maxInactiveAge: 25 * 1000,
+      pagesBufferLength: 2,
+    },
+  }),
+
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,

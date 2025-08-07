@@ -23,12 +23,17 @@ import { CreateUserDto, UpdateUserDto } from '../auth/dto/auth.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly prisma: PrismaService, // ✅ AGREGAR esta línea
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
@@ -138,4 +143,58 @@ export class UsersController {
   ) {
     return this.usersService.updateStatus(id, statusDto.isActive);
   }
+  @Get('sellers/featured')
+@Public()
+@ApiOperation({ summary: 'Get featured sellers' })
+async getFeaturedSellers() {
+  try {
+    const sellers = await this.prisma.user.findMany({
+      where: {
+        role: 'SELLER',
+        sellerProfile: {
+          isVerified: true,
+        }
+      },
+      include: {
+        sellerProfile: {
+          select: {
+            storeName: true,
+            slug: true,
+            description: true,
+            avatar: true,
+            isVerified: true,
+          }
+        },
+        _count: {
+          select: {
+            products: {
+              where: { status: 'APPROVED' }
+            }
+          }
+        }
+      },
+      take: 8,
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return {
+      success: true,
+      data: sellers.map(seller => ({
+        id: seller.id,
+        firstName: seller.firstName,
+        lastName: seller.lastName,
+        avatar: seller.avatar,
+        sellerProfile: seller.sellerProfile,
+        productCount: seller._count.products,
+      }))
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: []
+    };
+  }
+}
 }

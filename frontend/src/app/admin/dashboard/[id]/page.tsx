@@ -44,18 +44,28 @@ import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
 
 interface AdminProductDetailProps {
-  params: Promise<{
+  params: {
     id: string
-  }>
+  }
 }
 
+// ✅ HELPER FUNCTIONS para manejar JSON strings del schema Prisma
+const parseJsonField = (jsonString: string): any[] => {
+  try {
+    return JSON.parse(jsonString);
+  } catch {
+    return [];
+  }
+};
+
 export default function AdminProductDetail({ params }: AdminProductDetailProps) {
-  const resolvedParams = use(params)
+  const { id } = params
   const [moderationAction, setModerationAction] = useState<'approve' | 'reject' | 'suspend' | null>(null)
   const [moderationReason, setModerationReason] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [product, setProduct] = useState<Product | null>(null)
   const [showModerationModal, setShowModerationModal] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
   const router = useRouter()
   
@@ -70,99 +80,55 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     updateProductStatus,
     featureProduct,
     isLoading: storeLoading,
-    error
+    error: storeError
   } = useAdminStore()
 
-  // Cargar producto específico
+  // ✅ MIGRACIÓN: Cargar producto desde API real
   useEffect(() => {
     const loadProduct = async () => {
       setIsLoading(true)
+      setError(null)
       try {
-        // TODO: Reemplazar con llamada real a la API
-        // const response = await fetch(`/api/admin/products/${params.id}`)
-        // const data = await response.json()
-        
-        // Mock data realista basado en el schema Prisma
-        const mockProduct: Product = {
-          id: resolvedParams.id,
-          title: "Mesa de Comedor Rústica Premium",
-          description: "Una hermosa mesa de comedor hecha de madera maciza de roble con acabado rústico artesanal. Diseño perfecto para reuniones familiares, con capacidad para 6-8 personas. Incluye planos detallados, lista de materiales y guía paso a paso.",
-          slug: "mesa-comedor-rustica-premium",
-          price: 89.99,
-          category: ProductCategory.LIVING_DINING,
-          difficulty: Difficulty.INTERMEDIATE,
-          status: ProductStatus.PENDING,
-          pdfUrl: "/files/pdf_12345.pdf",
-          previewImages: ["/files/img_001.jpg", "/files/img_002.jpg", "/files/img_003.jpg"],
-          tags: ["mesa", "comedor", "rustico", "madera", "roble", "familiar"],
-          estimatedTime: "6-8 horas",
-          toolsRequired: [
-            "Sierra circular",
-            "Taladro eléctrico",
-            "Lijadora orbital",
-            "Fresadora",
-            "Prensas",
-            "Escuadra",
-            "Metro"
-          ],
-          materials: [
-            "Tablón de roble 200x90x4cm",
-            "Listones de roble 8x8cm",
-            "Tornillos de madera 6x80mm",
-            "Cola blanca para madera",
-            "Barniz poliuretano",
-            "Lija grano 120, 220, 320"
-          ],
-          dimensions: "180cm L x 90cm W x 75cm H",
-          specifications: {
-            weight: "Aproximadamente 35kg",
-            finish: "Barniz poliuretano satinado",
-            assembly: "Requiere ensamblaje completo",
-            skill_level: "Intermedio - Se requiere experiencia básica",
-            tools_included: false,
-            materials_included: false
-          },
-          moderatedBy: undefined,
-          moderatedAt: undefined,
-          rejectionReason: undefined,
-          sellerId: "seller_abc123",
-          viewCount: 342,
-          downloadCount: 67,
-          favoriteCount: 28,
-          featured: false,
-          rating: 4.7,
-          reviewCount: 15,
-          createdAt: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 días atrás
-          publishedAt: undefined,
-          updatedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hora atrás
-          seller: {
-            id: "seller_abc123",
-            email: "seller@example.com",
-            firstName: "Juan",
-            lastName: "Pérez",
-            role: 'SELLER' as any,
-            isBoth: false,
-            emailVerified: true,
-            isActive: true,
-            status: 'ACTIVE' as any,
-            onboardingComplete: true,
-            payoutsEnabled: true,
-            chargesEnabled: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+        const token = localStorage.getItem('token')
+        if (!token) {
+          throw new Error('No authentication token found')
         }
+
+        const response = await fetch(`/api/admin/products/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Product not found')
+          }
+          if (response.status === 401) {
+            throw new Error('Unauthorized access')
+          }
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
         
-        setProduct(mockProduct)
+        if (data.success && data.product) {
+          setProduct(data.product)
+        } else {
+          throw new Error(data.message || 'Failed to load product')
+        }
       } catch (error) {
         console.error('Error loading product:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error occurred')
+        setProduct(null)
       } finally {
         setIsLoading(false)
       }
     }
 
     loadProduct()
-  }, [resolvedParams.id])
+  }, [id])
 
   // Manejar moderación
   const handleModeration = async () => {
@@ -270,6 +236,29 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     )
   }
 
+  // ✅ HELPER: Convertir campos JSON para mostrar en UI
+  const productTags = parseJsonField(product?.tags || '[]');
+  const productToolsRequired = parseJsonField(product?.toolsRequired || '[]');
+  const productMaterials = parseJsonField(product?.materials || '[]');
+  const productImages = parseJsonField(product?.imageFileIds || '[]');
+
+  // ✅ HELPER: Obtener información del seller
+  const getSellerInfo = () => {
+    if (!product?.seller) return null;
+    
+    return {
+      id: product.seller.id,
+      name: `${product.seller.firstName || ''} ${product.seller.lastName || ''}`.trim(),
+      email: product.seller.email,
+      storeName: product.seller.sellerProfile?.storeName || 'Unknown Store',
+      rating: product.seller.sellerProfile?.rating || 0,
+      totalSales: product.seller.sellerProfile?.totalSales || 0,
+      isVerified: product.seller.sellerProfile?.isVerified || false
+    };
+  };
+
+  const sellerInfo = getSellerInfo();
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -283,7 +272,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     )
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -300,8 +289,19 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
         <Card className="border-3 border-red-500" style={{ boxShadow: '5px 5px 0 #000000' }}>
           <CardContent className="text-center py-12">
             <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h3 className="text-xl font-black text-red-600 mb-2">{t('not_found')}</h3>
-            <p className="text-gray-500">{t('not_found_desc')}</p>
+            <h3 className="text-xl font-black text-red-600 mb-2">
+              {error === 'Product not found' ? t('not_found') : t('error_loading')}
+            </h3>
+            <p className="text-gray-500 mb-4">
+              {error === 'Product not found' ? t('not_found_desc') : error}
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 hover:bg-blue-600 text-white border-2 border-black"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t('retry')}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -478,11 +478,12 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 </div>
               )}
 
-              {product.tags && product.tags.length > 0 && (
+              {/* ✅ CORREGIDO: Usar productTags parseado */}
+              {productTags && productTags.length > 0 && (
                 <div>
                   <p className="text-sm font-bold text-gray-600 mb-2">{t('tags')}:</p>
                   <div className="flex flex-wrap gap-2">
-                    {product.tags.map((tag, index) => (
+                    {productTags.map((tag, index) => (
                       <Badge key={index} variant="outline" className="border-black">
                         {tag}
                       </Badge>
@@ -495,7 +496,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
 
           {/* Herramientas y materiales */}
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Herramientas */}
+            {/* ✅ CORREGIDO: Herramientas */}
             <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-black">
@@ -505,7 +506,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  {product.toolsRequired.map((tool, index) => (
+                  {productToolsRequired.map((tool, index) => (
                     <li key={index} className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-orange-500 rounded-full" />
                       <span className="font-medium">{tool}</span>
@@ -515,7 +516,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               </CardContent>
             </Card>
 
-            {/* Materiales */}
+            {/* ✅ CORREGIDO: Materiales */}
             <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-black">
@@ -525,7 +526,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  {product.materials.map((material, index) => (
+                  {productMaterials.map((material, index) => (
                     <li key={index} className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                       <span className="font-medium">{material}</span>
@@ -610,7 +611,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
             </CardContent>
           </Card>
 
-          {/* Información del vendedor */}
+          {/* ✅ MEJORADO: Información del vendedor con datos reales */}
           <Card className="border-3 border-black" style={{ boxShadow: '5px 5px 0 #000000' }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-black">
@@ -623,7 +624,31 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 <div className="w-12 h-12 bg-orange-500 border-2 border-black rounded-full flex items-center justify-center mx-auto mb-3">
                   <User className="h-6 w-6 text-white" />
                 </div>
-                <p className="font-black">ID: {product.sellerId}</p>
+                {sellerInfo && (
+                  <>
+                    <p className="font-black text-lg">{sellerInfo.name}</p>
+                    <p className="text-sm text-gray-600 mb-1">{sellerInfo.email}</p>
+                    <p className="text-sm font-bold text-blue-600 mb-2">{sellerInfo.storeName}</p>
+                    
+                    <div className="flex justify-center gap-4 text-xs mb-3">
+                      <div className="text-center">
+                        <p className="font-bold">{sellerInfo.rating.toFixed(1)}</p>
+                        <p className="text-gray-500">Rating</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="font-bold">{sellerInfo.totalSales}</p>
+                        <p className="text-gray-500">Sales</p>
+                      </div>
+                    </div>
+                    
+                    {sellerInfo.isVerified && (
+                      <Badge className="bg-green-100 text-green-800 mb-3">
+                        ✓ Verified
+                      </Badge>
+                    )}
+                  </>
+                )}
+                
                 <div className="mt-3">
                   <Link
                     href={`/admin/dashboard/usuarios?search=${product.sellerId}`}
@@ -645,7 +670,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {product.pdfUrl && (
+              {product.pdfFileId && (
                 <div className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200">
                   <span className="flex items-center gap-2 font-bold">
                     <FileText className="h-4 w-4 text-red-600" />
@@ -657,11 +682,12 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 </div>
               )}
               
-              {product.previewImages && product.previewImages.length > 0 && (
+              {/* ✅ CORREGIDO: Usar productImages parseado */}
+              {productImages && productImages.length > 0 && (
                 <div className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200">
                   <span className="flex items-center gap-2 font-bold">
                     <ImageIcon className="h-4 w-4 text-blue-600" />
-                    {t('images')} ({product.previewImages.length})
+                    {t('images')} ({productImages.length})
                   </span>
                   <Button size="sm" variant="outline" className="border-black">
                     {t('view')}

@@ -506,9 +506,12 @@ export default function AdminReviewsPage() {
                     {/* Info del comprador y producto */}
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-black text-black">{review.buyerName}</h3>
-                        <p className="text-sm text-gray-600 font-bold">{review.productTitle}</p>
-                        <p className="text-xs text-gray-500 font-bold">{t('seller')}: {review.sellerName}</p>
+                        <h3 className="font-black text-black">
+                          {review.buyer ? `${review.buyer.firstName} ${review.buyer.lastName}` : 'Usuario desconocido'}</h3>
+                        <p className="text-sm text-gray-600 font-bold">{review.product?.title || 'Producto no disponible'}</p>
+                        <p className="text-xs text-gray-500 font-bold">
+                        {t('seller')}: {review.product?.seller ? `${review.product.seller.firstName} ${review.product.seller.lastName}` : 'Vendedor desconocido'}
+                        </p>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1 mb-1">
@@ -534,10 +537,10 @@ export default function AdminReviewsPage() {
                         </span>
                       )}
 
-                      {review.reportsCount && review.reportsCount > 0 && (
+                      {review.reports && review.reports.length > 0 && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold bg-red-100 text-red-800 border border-red-300">
                           <Flag className="h-3 w-3" />
-                          {review.reportsCount} {t('reports')}
+                          {review.reports?.length || 0} {t('reports')}
                         </span>
                       )}
                     </div>
@@ -674,7 +677,7 @@ export default function AdminReviewsPage() {
                       )}
 
                       <button
-                        onClick={() => window.open(`/products/${review.productSlug}`, '_blank')}
+                        onClick={() => window.open(`/products/${review.product?.slug}`, '_blank')}
                         className="flex items-center gap-2 px-3 py-2 bg-blue-500 border-2 border-black font-bold text-black hover:bg-blue-400 transition-all"
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       >
@@ -780,10 +783,14 @@ export default function AdminReviewsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       {renderStars(selectedReview.rating)}
-                      <span className="font-bold text-black">{selectedReview.buyerName}</span>
+                      <span className="font-bold text-black">
+                      {selectedReview.buyer ? `${selectedReview.buyer.firstName} ${selectedReview.buyer.lastName}` : 'Usuario desconocido'}
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-600 font-bold">{selectedReview.productTitle}</p>
-                    <p className="text-xs text-gray-500 font-bold">{t('seller')}: {selectedReview.sellerName}</p>
+                   <p className="text-sm text-gray-600 font-bold">{selectedReview.product?.title || 'Producto no disponible'}</p>
+                    <p className="text-xs text-gray-500 font-bold">
+                    {t('seller')}: {selectedReview.product?.seller ? `${selectedReview.product.seller.firstName} ${selectedReview.product.seller.lastName}` : 'Vendedor desconocido'}
+                  </p>
                   </div>
                   <div className="text-right">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-black border border-black ${getStatusColor(selectedReview.status)}`}>
@@ -822,11 +829,11 @@ export default function AdminReviewsPage() {
                   </div>
                 )}
 
-                {selectedReview.reportsCount && selectedReview.reportsCount > 0 && (
+                {selectedReview.reports && selectedReview.reports.length > 0 && (
                   <div className="flex items-center gap-1 mt-2">
                     <Flag className="h-3 w-3 text-red-600" />
                     <span className="text-red-600 font-bold text-sm">
-                      {selectedReview.reportsCount} {t('reports')}
+                      {selectedReview.reports?.length || 0} {t('reports')}
                     </span>
                   </div>
                 )}

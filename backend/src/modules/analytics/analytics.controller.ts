@@ -27,7 +27,9 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { UserRole } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import { AnalyticsService } from './analytics.service';
 
 // Import DTOs
@@ -66,7 +68,10 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   // ================================
   // SELLER ANALYTICS ENDPOINTS
@@ -652,4 +657,37 @@ return this.analyticsService.getPlatformOverviewChart(dto);
   }
     return this.analyticsService.getCacheStatus();
   }
+
+  @Get('stats')
+@Public()
+@ApiOperation({ summary: 'Get general analytics stats' })
+async getStats() {
+  try {
+    const [totalProducts, totalUsers, totalOrders] = await Promise.all([
+      this.prisma.product.count({ where: { status: 'APPROVED' } }),
+      this.prisma.user.count(),
+      this.prisma.order.count({ where: { status: 'PAID' } }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        totalProducts,
+        totalUsers,
+        totalOrders,
+        totalRevenue: 0, // Calcular si tienes datos
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: {
+        totalProducts: 0,
+        totalUsers: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+      }
+    };
+  }
+}
 }

@@ -36,7 +36,7 @@ import { UserRole } from '@prisma/client';
 
 // ✅ NUEVOS imports para frontend checkout
 import { StripeService } from '../stripe/stripe.service';
-import { PayPalService } from '../paypal/paypal.service'; // Nuevo servicio que vamos a crear
+import { PayPalService } from './paypal.service'; // Nuevo servicio que vamos a crear
 
 // ✅ NUEVOS DTOs para frontend
 interface CreatePaymentIntentDto {

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { CartItem, Product } from '@/types/additional'
 import { ApiResponse } from '@/types/additional'
-import { storeManager, registerStore } from './store-manager'
+import { storeManager, registerStore } from '@/lib/stores/store-manager'
 
 // CART STATE INTERFACE
 interface CartState {

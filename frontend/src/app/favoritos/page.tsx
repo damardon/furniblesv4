@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+// ✅ Importar desde el lugar correcto
+import type { Product } from '@/types' // o donde esté el tipo correcto
 import { useTranslations } from 'next-intl'
 import { 
   HeartIcon,
@@ -119,8 +121,20 @@ export default function FavoritesPage() {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(favorite => 
         favorite.product.title.toLowerCase().includes(query) ||
-        favorite.product.seller.sellerProfile?.storeName.toLowerCase().includes(query) ||
-        favorite.product.tags.some(tag => tag.toLowerCase().includes(query))
+        favorite.product.seller?.sellerProfile?.storeName?.toLowerCase().includes(query) ||
+        (() => {
+  try {
+    const tags = typeof favorite.product.tags === 'string' 
+      ? JSON.parse(favorite.product.tags) 
+      : favorite.product.tags || []
+    return Array.isArray(tags) 
+      ? tags.some((tag: string) => tag.toLowerCase().includes(query))
+      : false
+  } catch {
+    return false
+  }
+})()
+
       )
     }
 
@@ -528,7 +542,7 @@ export default function FavoritesPage() {
                   {formatDate(favorite.createdAt)}
                 </div>
 
-                <ProductCard product={favorite.product} />
+                <ProductCard key={favorite.id} product={favorite.product as any} />
               </div>
             ))}
           </div>
@@ -544,9 +558,9 @@ export default function FavoritesPage() {
                 <div className="flex gap-6">
                   {/* Product Image */}
                   <div className="relative w-32 h-32 border-3 border-black overflow-hidden flex-shrink-0">
-                    {favorite.product.previewImages?.[0] ? (
-                      <img
-                        src={favorite.product.previewImages[0]}
+                    {favorite.product.thumbnailFileIds ? (
+  <img
+    src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/thumbnail/${JSON.parse(favorite.product.thumbnailFileIds)[0]}`}
                         alt={favorite.product.title}
                         className="w-full h-full object-cover"
                       />
@@ -568,8 +582,8 @@ export default function FavoritesPage() {
                           {favorite.product.title}
                         </Link>
                         <p className="text-sm text-gray-600 font-bold mt-1">
-                          {favorite.product.seller.sellerProfile?.storeName || 
-                           `${favorite.product.seller.firstName} ${favorite.product.seller.lastName}`}
+                          {favorite.product.seller?.sellerProfile?.storeName || 
+ `${favorite.product.seller?.firstName || ''} ${favorite.product.seller?.lastName || ''}`.trim() || 'Vendedor'}
                         </p>
                       </div>
                       
