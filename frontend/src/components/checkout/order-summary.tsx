@@ -39,7 +39,7 @@ export function OrderSummary({ items, subtotal, platformFee, total }: OrderSumma
           >
             <div className="relative w-16 h-16 border-2 border-black overflow-hidden">
               <Image
-                src={item.product.previewImages[0] || '/placeholder-product.jpg'}
+                src={item.product.imageFileIds[0] || '/placeholder-product.jpg'}
                 alt={item.product.title}
                 fill
                 className="object-cover"
@@ -50,8 +50,8 @@ export function OrderSummary({ items, subtotal, platformFee, total }: OrderSumma
                 {item.product.title}
               </h4>
               <p className="text-xs text-gray-600 font-bold mb-2">
-                {item.product.seller.sellerProfile?.storeName || 
-                 `${item.product.seller.firstName} ${item.product.seller.lastName}`}
+                {item.product.seller?.sellerProfile?.storeName || 
+                 `${item.product.seller?.firstName} ${item.product.seller?.lastName}`}
               </p>
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold bg-blue-200 text-black px-2 py-1 border border-black">

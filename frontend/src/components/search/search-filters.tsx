@@ -206,7 +206,7 @@ export function SearchFilters({
 
   const difficulties = [
     { value: 'ALL', label: t('difficulty.all') },
-    { value: Difficulty.EASY, label: t('difficulty.easy') },
+    { value: Difficulty.BEGINNER, label: t('difficulty.easy') },
     { value: Difficulty.INTERMEDIATE, label: t('difficulty.intermediate') },
     { value: Difficulty.ADVANCED, label: t('difficulty.advanced') }
   ]

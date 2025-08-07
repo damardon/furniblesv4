@@ -182,7 +182,7 @@ export function AdvancedSearch({
       name: t('presets.easy_furniture'),
       filters: { 
         ...defaultFilters, 
-        difficulty: Difficulty.EASY, 
+        difficulty: Difficulty.BEGINNER, 
         category: ProductCategory.OFFICE, 
         priceRange: { min: 0, max: 50 }
       }
@@ -462,7 +462,7 @@ export function AdvancedSearch({
             style={{ boxShadow: '2px 2px 0 #000000' }}
           >
             <option value="ALL">{t('difficulty.all')}</option>
-            <option value={Difficulty.EASY}>{t('difficulty.easy')}</option>
+            <option value={Difficulty.BEGINNER}>{t('difficulty.easy')}</option>
             <option value={Difficulty.INTERMEDIATE}>{t('difficulty.intermediate')}</option>
             <option value={Difficulty.ADVANCED}>{t('difficulty.advanced')}</option>
           </select>

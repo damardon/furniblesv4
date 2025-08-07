@@ -77,14 +77,14 @@ export default function OrdersPage() {
       filtered = filtered.filter(order => order.status === selectedStatus)
     }
 
-    // Search by order number or product title
+    // ✅ FIXED: Search by order number or product title with safe navigation
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(order => 
         order.orderNumber.toLowerCase().includes(query) ||
-        order.items.some(item => 
+        (order.items && order.items.some(item => 
           item.productTitle.toLowerCase().includes(query)
-        )
+        ))
       )
     }
 
@@ -390,9 +390,10 @@ export default function OrdersPage() {
                         {formatPrice(order.totalAmount)}
                       </div>
                       <div className="text-sm text-gray-600 font-bold">
+                        {/* ✅ FIXED: Safe navigation for items length */}
                         {t('items_count', { 
-                          count: order.items.length,
-                          item: order.items.length === 1 ? t('item.singular') : t('item.plural')
+                          count: order.items?.length || 0,
+                          item: (order.items?.length || 0) === 1 ? t('item.singular') : t('item.plural')
                         })}
                       </div>
                     </div>
@@ -408,45 +409,62 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* Order Items Preview */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {order.items.map((item) => (
-                    <div 
-                      key={item.id}
-                      className="flex gap-3 p-4 bg-gray-50 border-2 border-black"
-                      style={{ boxShadow: '2px 2px 0 #000000' }}
-                    >
-                      <div className="relative w-16 h-16 border-2 border-black overflow-hidden">
-                        {item.product.previewImages?.[0] ? (
-                          <Image
-                            src={item.product.previewImages[0]}
-                            alt={item.productTitle}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-orange-200 to-yellow-200 flex items-center justify-center">
-                            <span className="text-2xl">🪵</span>
+                {/* ✅ FIXED: Order Items Preview with safe navigation */}
+                {order.items && order.items.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {order.items.map((item) => (
+                      <div 
+                        key={item.id}
+                        className="flex gap-3 p-4 bg-gray-50 border-2 border-black"
+                        style={{ boxShadow: '2px 2px 0 #000000' }}
+                      >
+                        <div className="relative w-16 h-16 border-2 border-black overflow-hidden">
+                          {(() => {
+                            // ✅ FIXED: Parse imageFileIds JSON string safely
+                            try {
+                              const imageIds = item.product?.imageFileIds ? JSON.parse(item.product.imageFileIds) : [];
+                              const firstImageId = Array.isArray(imageIds) && imageIds.length > 0 ? imageIds[0] : null;
+                              
+                              if (firstImageId) {
+                                return (
+                                  <Image
+                                    src={`/api/files/${firstImageId}`}
+                                    alt={item.productTitle}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                );
+                              }
+                            } catch (error) {
+                              console.error('Error parsing imageFileIds:', error);
+                            }
+                            
+                            // Fallback image
+                            return (
+                              <div className="w-full h-full bg-gradient-to-br from-orange-200 to-yellow-200 flex items-center justify-center">
+                                <span className="text-2xl">🪵</span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-black text-black text-sm uppercase line-clamp-2 mb-1">
+                            {item.productTitle}
+                          </h4>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold bg-blue-200 text-black px-2 py-1 border border-black">
+                              {t('quantity_label')}: {item.quantity}
+                            </span>
+                            <span className="font-black text-black text-sm">
+                              {formatPrice(item.price * item.quantity)}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-black text-sm uppercase line-clamp-2 mb-1">
-                          {item.productTitle}
-                        </h4>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold bg-blue-200 text-black px-2 py-1 border border-black">
-                            {t('quantity_label')}: {item.quantity}
-                          </span>
-                          <span className="font-black text-black text-sm">
-                            {formatPrice(item.price * item.quantity)}
-                          </span>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Quick Actions */}
                 <div className="flex items-center justify-between mt-4 pt-4 border-t-2 border-gray-200">

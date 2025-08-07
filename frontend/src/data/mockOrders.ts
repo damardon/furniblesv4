@@ -18,7 +18,7 @@ export const mockOrders: Order[] = [
     paymentIntentId: 'pi_3O4Z5L2eZvKYlo2C1234567',
     paymentStatus: 'succeeded',
     buyerEmail: 'juan@example.com',
-    billingData: {                         // ← Primer campo obligatorio
+    billingData: {
       firstName: 'Juan',
       lastName: 'Pérez',
       email: 'juan@example.com',
@@ -28,16 +28,7 @@ export const mockOrders: Order[] = [
       address: 'Av. Providencia 123',
       zipCode: '7500000'
     },
-    billingAddress: {                      // ← Segundo campo obligatorio
-      firstName: 'Juan',
-      lastName: 'Pérez',
-      email: 'juan@example.com',
-      phone: '+56 9 8765 4321',
-      country: 'Chile',
-      city: 'Santiago',
-      address: 'Av. Providencia 123',
-      zipCode: '7500000'
-    },
+    // ✅ REMOVED: billingAddress no existe en el tipo Order
     items: [
       {
         id: 'oit_001',
@@ -99,16 +90,7 @@ export const mockOrders: Order[] = [
       address: 'Av. Providencia 123',
       zipCode: '7500000'
     },
-    billingAddress: {
-      firstName: 'Juan',
-      lastName: 'Pérez',
-      email: 'juan@example.com',
-      phone: '+56 9 8765 4321',
-      country: 'Chile',
-      city: 'Santiago',
-      address: 'Av. Providencia 123',
-      zipCode: '7500000'
-    },
+    // ✅ REMOVED: billingAddress no existe en el tipo Order
     items: [
       {
         id: 'oit_003',
@@ -155,16 +137,7 @@ export const mockOrders: Order[] = [
       address: 'Av. Providencia 123',
       zipCode: '7500000'
     },
-    billingAddress: {
-      firstName: 'Juan',
-      lastName: 'Pérez',
-      email: 'juan@example.com',
-      phone: '+56 9 8765 4321',
-      country: 'Chile',
-      city: 'Santiago',
-      address: 'Av. Providencia 123',
-      zipCode: '7500000'
-    },
+    // ✅ REMOVED: billingAddress no existe en el tipo Order
     items: [
       {
         id: 'oit_004',
@@ -207,16 +180,7 @@ export const mockOrders: Order[] = [
       address: 'Av. Providencia 123',
       zipCode: '7500000'
     },
-    billingAddress: {
-      firstName: 'Juan',
-      lastName: 'Pérez',
-      email: 'juan@example.com',
-      phone: '+56 9 8765 4321',
-      country: 'Chile',
-      city: 'Santiago',
-      address: 'Av. Providencia 123',
-      zipCode: '7500000'
-    },
+    // ✅ REMOVED: billingAddress no existe en el tipo Order
     items: [
       {
         id: 'oit_005',
@@ -260,16 +224,7 @@ export const mockOrders: Order[] = [
       address: 'Av. Providencia 123',
       zipCode: '7500000'
     },
-    billingAddress: {
-      firstName: 'Juan',
-      lastName: 'Pérez',
-      email: 'juan@example.com',
-      phone: '+56 9 8765 4321',
-      country: 'Chile',
-      city: 'Santiago',
-      address: 'Av. Providencia 123',
-      zipCode: '7500000'
-    },
+    // ✅ REMOVED: billingAddress no existe en el tipo Order
     items: [
       {
         id: 'oit_006',

@@ -158,8 +158,8 @@ export function OrderCard({ order }: OrderCardProps) {
           <CreditCardIcon className="w-4 h-4 text-gray-600" />
           <span className="font-bold text-black">
             {t('product_count', { 
-              count: order.items.length,
-              text: order.items.length === 1 ? t('product_singular') : t('product_plural')
+              count: order.items?.length,
+              text: order.items?.length === 1 ? t('product_singular') : t('product_plural')
             })}
           </span>
         </div>
@@ -176,14 +176,14 @@ export function OrderCard({ order }: OrderCardProps) {
 
       {/* Productos (preview) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        {order.items.slice(0, 4).map((item) => (
+        {order.items?.slice(0, 4).map((item) => (
           <div 
             key={item.id}
             className="relative aspect-square border-2 border-black overflow-hidden group"
             style={{ boxShadow: '2px 2px 0 #000000' }}
           >
             <Image
-              src={item.product.previewImages[0] || '/placeholder-product.jpg'}
+              src={item.product?.imageFileIds[0] || '/placeholder-product.jpg'}
               alt={item.productTitle}
               fill
               className="object-cover group-hover:scale-105 transition-transform"
@@ -199,13 +199,13 @@ export function OrderCard({ order }: OrderCardProps) {
           </div>
         ))}
         
-        {order.items.length > 4 && (
+        {(order.items?.length || 0) > 4 && (
           <div 
             className="aspect-square border-2 border-black flex items-center justify-center bg-gray-100"
             style={{ boxShadow: '2px 2px 0 #000000' }}
           >
             <span className="font-black text-black text-sm">
-              +{order.items.length - 4}
+              +{(order.items?.length || 0) - 4}
             </span>
           </div>
         )}
@@ -253,7 +253,7 @@ export function OrderCard({ order }: OrderCardProps) {
                 {t('expanded.products_title')}
               </h4>
               <div className="space-y-2">
-                {order.items.map((item) => (
+                {order.items?.map((item) => (
                   <div 
                     key={item.id}
                     className="flex items-center gap-3 p-3 border-2 border-black"
@@ -261,7 +261,7 @@ export function OrderCard({ order }: OrderCardProps) {
                   >
                     <div className="relative w-12 h-12 border border-black overflow-hidden">
                       <Image
-                        src={item.product.previewImages[0] || '/placeholder-product.jpg'}
+                        src={item.product?.imageFileIds[0] || '/placeholder-product.jpg'}
                         alt={item.productTitle}
                         fill
                         className="object-cover"

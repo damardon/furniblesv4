@@ -70,8 +70,11 @@ export const mockReviews: Review[] = (() => {
 
   // Review 1 - Mesa de Comedor (muy positiva con respuesta del seller)
   const order1 = completedOrders[0]
-  if (order1 && order1.items[0]) {
+  if (order1?.items?.[0]) {
     const item = order1.items[0]
+    const product = item.product
+    const seller = product?.seller
+    
     reviews.push({
       id: 'rev_001',
       orderId: order1.id,
@@ -80,7 +83,7 @@ export const mockReviews: Review[] = (() => {
       productTitle: item.productTitle,
       productSlug: item.productSlug,
       buyerId: order1.buyerId!,
-      sellerId: item.product.seller.id,
+      sellerId: seller?.id || 'unknown_seller',
       rating: 5,
       title: 'Excelente plano, muy detallado',
       comment: 'Increíble nivel de detalle en los planos. Las instrucciones son claras y los diagramas muy precisos. Logré construir la mesa sin problemas y quedó exactamente como esperaba. Definitivamente recomiendo este vendedor.',
@@ -99,8 +102,8 @@ export const mockReviews: Review[] = (() => {
       sellerResponse: {
         id: 'resp_001',
         reviewId: 'rev_001',
-        sellerId: item.product.seller.id,
-        sellerName: item.product.seller.sellerProfile?.storeName || 'Maderas Mendoza',
+        sellerId: seller?.id || 'unknown_seller',
+        sellerName: seller?.sellerProfile?.storeName || 'Maderas Mendoza',
         storeName: 'Maderas Mendoza',
         comment: '¡Muchas gracias por tu review! Me alegra mucho saber que lograste construir la mesa sin problemas. Las fotos quedaron espectaculares. Si necesitas ayuda con futuros proyectos, no dudes en contactarme.',
         createdAt: '2024-12-06T09:15:00Z',
@@ -109,18 +112,21 @@ export const mockReviews: Review[] = (() => {
       product: {
         title: item.productTitle,
         slug: item.productSlug,
-        category: item.product.category,
-        difficulty: item.product.difficulty,
-        sellerName: `${item.product.seller.firstName} ${item.product.seller.lastName}`,
-        storeName: item.product.seller.sellerProfile?.storeName || 'Tienda Personal',
+        category: product?.category || 'Unknown',
+        difficulty: product?.difficulty || 'Unknown',
+        sellerName: `${seller?.firstName || 'Unknown'} ${seller?.lastName || 'Seller'}`.trim(),
+        storeName: seller?.sellerProfile?.storeName || 'Tienda Personal',
         price: item.price
       }
     })
   }
 
   // Review 2 - Silla Escandinava (positiva, sin respuesta aún)
-  if (order1 && order1.items[1]) {
+  if (order1?.items?.[1]) {
     const item = order1.items[1]
+    const product = item.product
+    const seller = product?.seller
+    
     reviews.push({
       id: 'rev_002',
       orderId: order1.id,
@@ -129,7 +135,7 @@ export const mockReviews: Review[] = (() => {
       productTitle: item.productTitle,
       productSlug: item.productSlug,
       buyerId: order1.buyerId!,
-      sellerId: item.product.seller.id,
+      sellerId: seller?.id || 'unknown_seller',
       rating: 4,
       title: 'Buen diseño, algunas mejoras necesarias',
       comment: 'El diseño es muy elegante y las medidas están bien especificadas. Sin embargo, algunos pasos de ensamblaje podrían estar más detallados. Tuve que improvisar en un par de partes, pero el resultado final es muy bueno.',
@@ -147,10 +153,10 @@ export const mockReviews: Review[] = (() => {
       product: {
         title: item.productTitle,
         slug: item.productSlug,
-        category: item.product.category,
-        difficulty: item.product.difficulty,
-        sellerName: `${item.product.seller.firstName} ${item.product.seller.lastName}`,
-        storeName: item.product.seller.sellerProfile?.storeName || 'Tienda Personal',
+        category: product?.category || 'Unknown',
+        difficulty: product?.difficulty || 'Unknown',
+        sellerName: `${seller?.firstName || 'Unknown'} ${seller?.lastName || 'Seller'}`.trim(),
+        storeName: seller?.sellerProfile?.storeName || 'Tienda Personal',
         price: item.price
       }
     })
@@ -158,8 +164,11 @@ export const mockReviews: Review[] = (() => {
 
   // Review 3 - Estantería Industrial (neutral, con respuesta del seller)
   const order2 = completedOrders[1]
-  if (order2 && order2.items[0]) {
+  if (order2?.items?.[0]) {
     const item = order2.items[0]
+    const product = item.product
+    const seller = product?.seller
+    
     reviews.push({
       id: 'rev_003',
       orderId: order2.id,
@@ -168,7 +177,7 @@ export const mockReviews: Review[] = (() => {
       productTitle: item.productTitle,
       productSlug: item.productSlug,
       buyerId: order2.buyerId!,
-      sellerId: item.product.seller.id,
+      sellerId: seller?.id || 'unknown_seller',
       rating: 3,
       title: 'Proyecto ambicioso, requiere experiencia',
       comment: 'El plano está bien diseñado pero definitivamente no es para principiantes. Requiere soldadura y herramientas especializadas que no estaban claramente especificadas en la descripción. El resultado es bueno pero fue más complejo de lo esperado.',
@@ -183,8 +192,8 @@ export const mockReviews: Review[] = (() => {
       sellerResponse: {
         id: 'resp_002',
         reviewId: 'rev_003',
-        sellerId: item.product.seller.id,
-        sellerName: item.product.seller.sellerProfile?.storeName || 'Industrial Craft',
+        sellerId: seller?.id || 'unknown_seller',
+        sellerName: seller?.sellerProfile?.storeName || 'Industrial Craft',
         storeName: 'Industrial Craft',
         comment: 'Gracias por tu feedback. Tienes razón, voy a actualizar la descripción para ser más claro sobre las herramientas requeridas. He agregado un video tutorial que puede ayudar con los pasos más complejos.',
         createdAt: '2024-12-01T10:30:00Z',
@@ -193,10 +202,10 @@ export const mockReviews: Review[] = (() => {
       product: {
         title: item.productTitle,
         slug: item.productSlug,
-        category: item.product.category,
-        difficulty: item.product.difficulty,
-        sellerName: `${item.product.seller.firstName} ${item.product.seller.lastName}`,
-        storeName: item.product.seller.sellerProfile?.storeName || 'Tienda Personal',
+        category: product?.category || 'Unknown',
+        difficulty: product?.difficulty || 'Unknown',
+        sellerName: `${seller?.firstName || 'Unknown'} ${seller?.lastName || 'Seller'}`.trim(),
+        storeName: seller?.sellerProfile?.storeName || 'Tienda Personal',
         price: item.price
       }
     })
@@ -219,7 +228,8 @@ export const getPendingReviews = (userId: string) => {
   const pendingItems = []
   
   for (const order of userOrders) {
-    for (const item of order.items) {
+    // ✅ FIXED: Safe navigation for order.items
+    for (const item of (order.items || [])) {
       if (!reviewedProductIds.includes(item.productId)) {
         pendingItems.push({
           orderId: order.id,

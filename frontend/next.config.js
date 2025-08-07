@@ -3,7 +3,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig = {
   // ✅ NUEVO: Configuración para export estático
-  output: 'export',
+  
   trailingSlash: true,
   
   // ✅ NUEVO: Desabilitar optimizaciones que no funcionan en estático

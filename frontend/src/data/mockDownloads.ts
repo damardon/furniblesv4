@@ -46,10 +46,15 @@ export const mockDownloadTokens: DownloadToken[] = (() => {
   )
 
   eligibleOrders.forEach(order => {
-    order.items.forEach((item, index) => {
+    // ✅ FIXED: Safe navigation for order.items
+    (order.items || []).forEach((item, index) => {
       const tokenId = `dt_${order.id}_${item.id}`
       const isExpired = Math.random() > 0.8 // 20% de tokens expirados para variedad
       const downloadCount = Math.floor(Math.random() * 3) // 0-2 descargas usadas
+      
+      // ✅ FIXED: Safe navigation for item.product and seller
+      const product = item.product
+      const seller = product?.seller
       
       tokens.push({
         id: tokenId,
@@ -71,11 +76,14 @@ export const mockDownloadTokens: DownloadToken[] = (() => {
           ? new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 7).toISOString() // Última semana
           : undefined,
         lastIpAddress: downloadCount > 0 ? '192.168.1.' + Math.floor(Math.random() * 254 + 1) : undefined,
-        pdfUrl: item.product.pdfUrl,
+        // ✅ FIXED: Use pdfFileId instead of non-existent pdfUrl
+        pdfUrl: product?.pdfFileId ? `/api/files/${product.pdfFileId}` : '/placeholder.pdf',
         pdfFileSize: Math.round((Math.random() * 15 + 2) * 100) / 100, // 2-17 MB
-        sellerName: item.product.seller.sellerProfile?.storeName || 
-                   `${item.product.seller.firstName} ${item.product.seller.lastName}`,
-        storeName: item.product.seller.sellerProfile?.storeName || 'Tienda Personal',
+        // ✅ FIXED: Safe navigation for seller properties with fallbacks
+        sellerName: seller?.sellerProfile?.storeName || 
+                   `${seller?.firstName || 'Unknown'} ${seller?.lastName || 'Seller'}`.trim() ||
+                   'Unknown Seller',
+        storeName: seller?.sellerProfile?.storeName || 'Tienda Personal',
         purchaseDate: order.createdAt,
         purchasePrice: item.price * item.quantity
       })

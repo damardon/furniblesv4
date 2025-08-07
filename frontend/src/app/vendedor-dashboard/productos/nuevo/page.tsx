@@ -36,7 +36,7 @@ export default function NewProductPage() {
     title: '',
     description: '',
     price: 5.00,
-    category: ProductCategory.TABLES,
+    category: ProductCategory.KITCHEN,
     difficulty: Difficulty.INTERMEDIATE,
     tags: [],
     estimatedTime: '',
@@ -335,12 +335,18 @@ export default function NewProductPage() {
                 className="w-full p-3 border-2 border-black font-bold focus:outline-none focus:bg-yellow-400"
                 style={{ boxShadow: '3px 3px 0 #000000' }}
               >
-                <option value={ProductCategory.TABLES}>Mesas</option>
-                <option value={ProductCategory.CHAIRS}>Sillas</option>
+                <option value={ProductCategory.LIVING_DINING}>Living Comedor</option>
+                <option value={ProductCategory.BEDROOM}>Dormitorio</option>
                 <option value={ProductCategory.BEDS}>Camas</option>
                 <option value={ProductCategory.STORAGE}>Almacenamiento</option>
                 <option value={ProductCategory.OUTDOOR}>Exterior</option>
                 <option value={ProductCategory.DECORATIVE}>Decorativo</option>
+                <option value={ProductCategory.NORDIC}>Nordico</option>
+                <option value={ProductCategory.DECORATIVE}>Decorativos</option>
+                <option value={ProductCategory.FURNITURE}>Muebles</option>
+                <option value={ProductCategory.OFFICE}>Oficina</option>
+                <option value={ProductCategory.BATHROOM}>Baño</option>
+                <option value={ProductCategory.KITCHEN}>Cocina</option>      
               </select>
             </div>
 

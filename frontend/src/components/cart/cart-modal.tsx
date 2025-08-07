@@ -147,7 +147,7 @@ export function CartModal() {
                       {/* Imagen */}
                       <div className="relative w-16 h-16 border-2 border-black overflow-hidden">
                         <Image
-                          src={item.product.previewImages[0] || '/placeholder-product.jpg'}
+                          src={item.product.imageFileIds[0] || '/placeholder-product.jpg'}
                           alt={item.product.title}
                           fill
                           className="object-cover"
@@ -160,8 +160,8 @@ export function CartModal() {
                           {item.product.title}
                         </h4>
                         <p className="text-xs text-gray-600 font-bold mb-2">
-                          {item.product.seller.sellerProfile?.storeName || 
-                           `${item.product.seller.firstName} ${item.product.seller.lastName}`}
+                          {item.product.seller?.sellerProfile?.storeName || 
+                           `${item.product.seller?.firstName} ${item.product.seller?.lastName}`}
                         </p>
                         
                         {/* Precio */}

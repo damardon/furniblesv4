@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -44,9 +44,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
 
 interface AdminProductDetailProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // ✅ HELPER FUNCTIONS para manejar JSON strings del schema Prisma
@@ -59,7 +59,7 @@ const parseJsonField = (jsonString: string): any[] => {
 };
 
 export default function AdminProductDetail({ params }: AdminProductDetailProps) {
-  const { id } = params
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null)
   const [moderationAction, setModerationAction] = useState<'approve' | 'reject' | 'suspend' | null>(null)
   const [moderationReason, setModerationReason] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -83,8 +83,25 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     error: storeError
   } = useAdminStore()
 
+  // ✅ FIXED: Resolver params asíncronos (Next.js 15)
+  useEffect(() => {
+    const resolveParams = async () => {
+      try {
+        const resolved = await params
+        setResolvedParams(resolved)
+      } catch (error) {
+        console.error('Error resolving params:', error)
+        setError('Failed to load page parameters')
+      }
+    }
+
+    resolveParams()
+  }, [params])
+
   // ✅ MIGRACIÓN: Cargar producto desde API real
   useEffect(() => {
+    if (!resolvedParams?.id) return
+
     const loadProduct = async () => {
       setIsLoading(true)
       setError(null)
@@ -94,7 +111,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
           throw new Error('No authentication token found')
         }
 
-        const response = await fetch(`/api/admin/products/${id}`, {
+        const response = await fetch(`/api/admin/products/${resolvedParams.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -128,7 +145,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
     }
 
     loadProduct()
-  }, [id])
+  }, [resolvedParams?.id])
 
   // Manejar moderación
   const handleModeration = async () => {
@@ -258,6 +275,20 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
   };
 
   const sellerInfo = getSellerInfo();
+
+  // Show loading while resolving params
+  if (!resolvedParams) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <RefreshCw className="h-16 w-16 text-gray-400 animate-spin mx-auto mb-4" />
+            <p className="text-xl font-bold text-gray-600">{t('loading')}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -780,59 +811,59 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
                 value={moderationReason}
                 onChange={(e) => setModerationReason(e.target.value)}
                 className="border-2 border-black"
-               rows={4}
-               required
-             />
-             <p className="text-xs text-gray-500 mt-1">
-               {t('modals.required_field')}
-             </p>
-           </div>
-         )}
+                rows={4}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {t('modals.required_field')}
+              </p>
+            </div>
+          )}
 
-         <div className="flex justify-end gap-3 pt-4 border-t">
-           <Button 
-             variant="outline" 
-             onClick={() => {
-               setShowModerationModal(false)
-               setModerationAction(null)
-               setModerationReason('')
-             }}
-             className="border-2 border-black"
-             disabled={isLoading}
-           >
-             {tCommon('cancel')}
-           </Button>
-           <Button
-             onClick={handleModeration}
-             disabled={isLoading || (moderationAction !== 'approve' && !moderationReason.trim())}
-             className={`border-2 border-black font-black ${
-               moderationAction === 'approve' 
-                 ? 'bg-green-500 hover:bg-green-600' 
-                 : 'bg-red-500 hover:bg-red-600'
-             } text-white`}
-             style={{ boxShadow: '3px 3px 0 #000000' }}
-           >
-             {isLoading ? (
-               <>
-                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                 {t('modals.processing')}
-               </>
-             ) : (
-               <>
-                 {moderationAction === 'approve' ? (
-                   <Check className="h-4 w-4 mr-2" />
-                 ) : (
-                   <X className="h-4 w-4 mr-2" />
-                 )}
-                 {moderationAction === 'approve' ? t('modals.approve_button') : 
-                  moderationAction === 'reject' ? t('modals.reject_button') : 
-                  t('modals.suspend_button')}
-               </>
-             )}
-           </Button>
-         </div>
-       </div>
-     </Modal>
-   </div>
- )
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowModerationModal(false)
+                setModerationAction(null)
+                setModerationReason('')
+              }}
+              className="border-2 border-black"
+              disabled={isLoading}
+            >
+              {tCommon('cancel')}
+            </Button>
+            <Button
+              onClick={handleModeration}
+              disabled={isLoading || (moderationAction !== 'approve' && !moderationReason.trim())}
+              className={`border-2 border-black font-black ${
+                moderationAction === 'approve' 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-red-500 hover:bg-red-600'
+              } text-white`}
+              style={{ boxShadow: '3px 3px 0 #000000' }}
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  {t('modals.processing')}
+                </>
+              ) : (
+                <>
+                  {moderationAction === 'approve' ? (
+                    <Check className="h-4 w-4 mr-2" />
+                  ) : (
+                    <X className="h-4 w-4 mr-2" />
+                  )}
+                  {moderationAction === 'approve' ? t('modals.approve_button') : 
+                   moderationAction === 'reject' ? t('modals.reject_button') : 
+                   t('modals.suspend_button')}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  )
 }

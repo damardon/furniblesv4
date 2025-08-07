@@ -207,9 +207,9 @@ export function ReviewModal({
               style={{ borderTop: 'none' }}
             >
               <div className="relative w-20 h-20 border-3 border-black overflow-hidden">
-                {product.previewImages?.[0] ? (
+                {product.imageFileIds?.[0] ? (
                   <Image
-                    src={product.previewImages[0]}
+                    src={product.imageFileIds[0]}
                     alt={product.title}
                     fill
                     className="object-cover"
@@ -226,8 +226,8 @@ export function ReviewModal({
                   {product.title}
                 </h3>
                 <p className="text-sm text-gray-600 font-bold mb-2">
-                  {product.seller.sellerProfile?.storeName || 
-                   `${product.seller.firstName} ${product.seller.lastName}`}
+                  {product.seller?.sellerProfile?.storeName || 
+                   `${product.seller?.firstName} ${product.seller?.lastName}`}
                 </p>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="bg-blue-200 text-black px-2 py-1 border border-black font-black uppercase">
