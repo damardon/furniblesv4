@@ -22,7 +22,6 @@ pids
 .next/
 out/
 build/
-dist/
 
 # Prisma
 backend/prisma/migrations/dev.db*

@@ -19,11 +19,14 @@ import {
   CreditCardIcon,
   PackageIcon,
   DownloadIcon,
-  EyeIcon
+  EyeIcon,
+  RefreshCwIcon
 } from 'lucide-react'
 import { Order, OrderStatus } from '@/types'
 import { useAuthStore } from '@/lib/stores/auth-store'
-import { getOrdersByUserId, getOrderStats } from '@/data/mockOrders'
+
+// ✅ MIGRATED: No more mock data imports
+// ❌ REMOVED: import { getOrdersByUserId, getOrderStats } from '@/data/mockOrders'
 
 export default function OrdersPage() {
   const t = useTranslations('orders')
@@ -47,6 +50,10 @@ export default function OrdersPage() {
     pendingOrders: 0
   })
 
+  // ✅ MIGRATED: Loading and error states for API calls
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
@@ -56,17 +63,89 @@ export default function OrdersPage() {
     }
   }, [isAuthenticated, setLoginModalOpen, router])
 
-  // Load user orders
+  // ✅ MIGRATED: Load user orders from API instead of mock data
   useEffect(() => {
-    if (user?.id) {
-      const userOrders = getOrdersByUserId(user.id)
-      const userStats = getOrderStats(user.id)
-      
-      setOrders(userOrders)
-      setFilteredOrders(userOrders)
-      setStats(userStats)
+    if (!user?.id) return
+
+    const loadUserOrders = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          throw new Error('No authentication token found')
+        }
+
+        // Fetch user orders from API
+        const ordersResponse = await fetch('/api/orders/my', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!ordersResponse.ok) {
+          if (ordersResponse.status === 401) {
+            setLoginModalOpen(true)
+            router.push('/productos')
+            return
+          }
+          throw new Error(`HTTP error! status: ${ordersResponse.status}`)
+        }
+
+        const ordersData = await ordersResponse.json()
+        
+        if (ordersData.success) {
+          const userOrders = ordersData.orders || []
+          setOrders(userOrders)
+          setFilteredOrders(userOrders)
+
+          // Calculate stats from fetched orders
+          const calculatedStats = calculateOrderStats(userOrders)
+          setStats(calculatedStats)
+        } else {
+          throw new Error(ordersData.message || 'Failed to load orders')
+        }
+
+      } catch (error) {
+        console.error('Error loading orders:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load orders')
+        setOrders([])
+        setFilteredOrders([])
+        setStats({
+          totalOrders: 0,
+          totalSpent: 0,
+          completedOrders: 0,
+          pendingOrders: 0
+        })
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [user?.id])
+
+    loadUserOrders()
+  }, [user?.id, setLoginModalOpen, router])
+
+  // ✅ MIGRATED: Helper function to calculate stats from orders
+  const calculateOrderStats = (ordersList: Order[]) => {
+    const totalOrders = ordersList.length
+    const totalSpent = ordersList
+      .filter(order => order.status === OrderStatus.COMPLETED || order.status === OrderStatus.PAID)
+      .reduce((sum, order) => sum + order.totalAmount, 0)
+    
+    const statusCounts = ordersList.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1
+      return acc
+    }, {} as Record<OrderStatus, number>)
+
+    return {
+      totalOrders,
+      totalSpent,
+      completedOrders: statusCounts[OrderStatus.COMPLETED] || 0,
+      pendingOrders: statusCounts[OrderStatus.PENDING] || 0
+    }
+  }
 
   // Filter and search orders
   useEffect(() => {
@@ -191,6 +270,15 @@ export default function OrdersPage() {
     })
   }
 
+  // ✅ MIGRATED: Retry function for API failures
+  const handleRetry = () => {
+    if (user?.id) {
+      setError(null)
+      // Trigger the orders reload by changing a dependency
+      window.location.reload()
+    }
+  }
+
   // Don't render if not authenticated
   if (!isAuthenticated) {
     return (
@@ -198,6 +286,74 @@ export default function OrdersPage() {
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
           <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ✅ MIGRATED: Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="bg-yellow-400 border-b-4 border-black p-4">
+          <div className="container mx-auto">
+            <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
+              <Link href="/" className="hover:text-orange-500 transition-colors">
+                {tCommon('navigation.home')}
+              </Link>
+              <span>/</span>
+              <span className="text-orange-500">{t('title')}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <RefreshCwIcon className="h-16 w-16 text-gray-400 animate-spin mx-auto mb-4" />
+              <p className="text-xl font-bold text-gray-600">{t('loading')}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ✅ MIGRATED: Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="bg-yellow-400 border-b-4 border-black p-4">
+          <div className="container mx-auto">
+            <div className="flex items-center gap-2 text-black font-black text-sm uppercase">
+              <Link href="/" className="hover:text-orange-500 transition-colors">
+                {tCommon('navigation.home')}
+              </Link>
+              <span>/</span>
+              <span className="text-orange-500">{t('title')}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="container mx-auto px-4 py-8">
+          <div 
+            className="bg-red-100 border-4 border-red-500 p-8 text-center"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-black text-red-800 uppercase mb-4">
+              {t('error.title')}
+            </h2>
+            <p className="text-red-700 font-bold mb-6">{error}</p>
+            <button
+              onClick={handleRetry}
+              className="bg-red-500 hover:bg-red-600 text-white border-2 border-black px-6 py-3 font-black uppercase transition-all"
+              style={{ boxShadow: '3px 3px 0 #000000' }}
+            >
+              <RefreshCwIcon className="h-4 w-4 mr-2 inline" />
+              {t('error.retry')}
+            </button>
+          </div>
         </div>
       </div>
     )

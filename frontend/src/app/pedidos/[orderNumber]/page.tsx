@@ -20,11 +20,107 @@ import {
   Eye
 } from 'lucide-react'
 
-// ✅ Importar API real
-import { getOrderByNumber, cancelOrder } from '@/lib/orders-api'
-import { getDownloadsByOrder } from '@/lib/download-api'
-import type { Order } from '@/lib/orders-api'
-import type { Download as DownloadType } from '@/lib/download-api'
+// ✅ Tipos coherentes con backend
+interface Order {
+  id: string
+  orderNumber: string
+  buyerId: string
+  subtotal: number
+  subtotalAmount: number
+  platformFeeRate: number
+  platformFee: number
+  totalAmount: number
+  sellerAmount: number
+  transferGroup: string
+  applicationFee: number
+  status: 'PENDING' | 'PROCESSING' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'DISPUTED'
+  paymentIntentId?: string
+  paymentStatus?: string
+  buyerEmail: string
+  billingData?: any
+  metadata?: any
+  feeBreakdown?: any
+  createdAt: string
+  paidAt?: string
+  completedAt?: string
+  cancelledAt?: string
+  updatedAt: string
+  items: OrderItem[]
+  buyer: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
+}
+
+interface OrderItem {
+  id: string
+  orderId: string
+  productId: string
+  sellerId: string
+  productTitle: string
+  productSlug: string
+  price: number
+  quantity: number
+  sellerName: string
+  storeName: string
+  createdAt: string
+  product: {
+    id: string
+    title: string
+    slug: string
+    thumbnailFileIds: string
+    pdfFileId: string
+  }
+}
+
+interface Download {
+  id: string
+  downloadToken: string
+  orderId: string
+  productId: string
+  buyerId: string
+  expiresAt: string
+  downloadCount: number
+  maxDownloads: number
+  isActive: boolean
+  createdAt: string
+  lastDownloadAt?: string
+  ipAddress?: string
+  userAgent?: string
+  product: {
+    id: string
+    title: string
+    slug: string
+    pdfFileId: string
+    thumbnailFileIds: string
+    seller: {
+      storeName: string
+      slug: string
+    }
+  }
+  order: {
+    id: string
+    orderNumber: string
+    createdAt: string
+    paidAt?: string
+  }
+}
+
+// ✅ Helper para obtener token de autenticación
+const getAuthToken = (): string | null => {
+  try {
+    const authData = localStorage.getItem('furnibles-auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed.state?.token || parsed.token
+    }
+  } catch (error) {
+    console.error('Error parsing auth token:', error)
+  }
+  return null
+}
 
 export default function OrderDetailPage() {
   const params = useParams()
@@ -33,7 +129,7 @@ export default function OrderDetailPage() {
   const tCommon = useTranslations('common')
   
   const [order, setOrder] = useState<Order | null>(null)
-  const [downloads, setDownloads] = useState<DownloadType []>([])
+  const [downloads, setDownloads] = useState<Download[]>([])
   const [loading, setLoading] = useState(true)
   const [downloadsLoading, setDownloadsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,32 +145,62 @@ export default function OrderDetailPage() {
         setLoading(true)
         setError(null)
         
-        console.log('🔍 [ORDER-DETAIL] Fetching order:', orderNumber)
-        
-        const orderData = await getOrderByNumber(orderNumber)
-        
-        if (!orderData) {
-          setError('Pedido no encontrado')
+        const token = getAuthToken()
+        if (!token) {
+          setError('No autorizado')
           return
         }
+
+        console.log('🔍 [ORDER-DETAIL] Fetching order:', orderNumber)
         
+        // ✅ API call directa al backend
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderNumber}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Pedido no encontrado')
+            return
+          }
+          throw new Error(`Error ${response.status}: ${response.statusText}`)
+        }
+
+        const orderData = await response.json()
+        console.log('✅ [ORDER-DETAIL] Order data received:', orderData)
         setOrder(orderData)
         
         // Si el pedido está pagado, cargar descargas
         if (orderData.status === 'PAID' || orderData.status === 'COMPLETED') {
           setDownloadsLoading(true)
           try {
-            const downloadsData = await getDownloadsByOrder(orderNumber)
-            setDownloads(downloadsData)
+            // ✅ API call directa para descargas del pedido
+            const downloadsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads/order/${orderNumber}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              },
+            })
+
+            if (downloadsResponse.ok) {
+              const downloadsData = await downloadsResponse.json()
+              console.log('✅ [ORDER-DETAIL] Downloads loaded:', downloadsData.length)
+              setDownloads(downloadsData)
+            }
           } catch (downloadsError) {
-            console.error('Error loading downloads:', downloadsError)
+            console.error('❌ [ORDER-DETAIL] Error loading downloads:', downloadsError)
           } finally {
             setDownloadsLoading(false)
           }
         }
         
       } catch (err) {
-        console.error('Error fetching order:', err)
+        console.error('❌ [ORDER-DETAIL] Error fetching order:', err)
         setError(err instanceof Error ? err.message : 'Error desconocido')
       } finally {
         setLoading(false)
@@ -92,21 +218,39 @@ export default function OrderDetailPage() {
     
     setCancelLoading(true)
     try {
-      const result = await cancelOrder(orderNumber, 'Cancelado por el usuario')
-      
-      if (result.success) {
+      const token = getAuthToken()
+      if (!token) {
+        alert('No autorizado')
+        return
+      }
+
+      // ✅ API call directa para cancelar pedido
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderNumber}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason: 'Cancelado por el usuario' }),
+      })
+
+      if (response.ok) {
+        console.log('✅ [ORDER-DETAIL] Order cancelled successfully')
         setOrder(prev => prev ? { ...prev, status: 'CANCELLED' as const } : null)
       } else {
-        alert(result.error || 'Error al cancelar el pedido')
+        const result = await response.json()
+        alert(result.message || 'Error al cancelar el pedido')
       }
     } catch (error) {
-      console.error('Error cancelling order:', error)
+      console.error('❌ [ORDER-DETAIL] Error cancelling order:', error)
       alert('Error al cancelar el pedido')
     } finally {
       setCancelLoading(false)
     }
   }
 
+  // ✅ Estados de loading y error
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -308,15 +452,15 @@ export default function OrderDetailPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-4 bg-yellow-400 border-3 border-black" style={{ boxShadow: '3px 3px 0 #000000' }}>
-              <div className="text-2xl font-black text-black mb-1">{order.items.length}</div>
+              <div className="text-2xl font-black text-black mb-1">{order.items?.length || 0}</div>
               <div className="text-sm font-black text-black uppercase">Productos</div>
             </div>
             <div className="text-center p-4 bg-green-400 border-3 border-black" style={{ boxShadow: '3px 3px 0 #000000' }}>
-              <div className="text-2xl font-black text-black mb-1">{formatPrice(order.subtotal)}</div>
+              <div className="text-2xl font-black text-black mb-1">{formatPrice(order.subtotal || 0)}</div>
               <div className="text-sm font-black text-black uppercase">Subtotal</div>
             </div>
             <div className="text-center p-4 bg-orange-400 border-3 border-black" style={{ boxShadow: '3px 3px 0 #000000' }}>
-              <div className="text-2xl font-black text-black mb-1">{formatPrice(order.totalAmount)}</div>
+              <div className="text-2xl font-black text-black mb-1">{formatPrice(order.totalAmount || 0)}</div>
               <div className="text-sm font-black text-black uppercase">Total</div>
             </div>
           </div>
@@ -327,15 +471,15 @@ export default function OrderDetailPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-black">Subtotal:</span>
-                <span className="font-bold text-black">{formatPrice(order.subtotal)}</span>
+                <span className="font-bold text-black">{formatPrice(order.subtotal || 0)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-bold text-black">Comisión plataforma ({(order.platformFeeRate * 100).toFixed(0)}%):</span>
-                <span className="font-bold text-black">{formatPrice(order.platformFee)}</span>
+                <span className="font-bold text-black">Comisión plataforma ({((order.platformFeeRate || 0) * 100).toFixed(0)}%):</span>
+                <span className="font-bold text-black">{formatPrice(order.platformFee || 0)}</span>
               </div>
               <div className="border-t-2 border-black pt-2 flex justify-between items-center">
                 <span className="font-black text-black uppercase">Total:</span>
-                <span className="font-black text-black text-xl">{formatPrice(order.totalAmount)}</span>
+                <span className="font-black text-black text-xl">{formatPrice(order.totalAmount || 0)}</span>
               </div>
             </div>
           </div>
@@ -348,11 +492,11 @@ export default function OrderDetailPage() {
         >
           <h2 className="text-2xl font-black text-black uppercase mb-6 flex items-center gap-3">
             <FileText className="w-8 h-8 text-blue-500" />
-            Productos ({order.items.length})
+            Productos ({order.items?.length || 0})
           </h2>
           
           <div className="space-y-4">
-            {order.items.map((item) => (
+            {order.items?.map((item) => (
               <div 
                 key={item.id} 
                 className="bg-gray-50 border-3 border-black p-6 hover:bg-yellow-50 transition-all"
@@ -361,7 +505,7 @@ export default function OrderDetailPage() {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex-1">
                     <Link 
-                      href={`/productos/${item.productSlug}`}
+                      href={`/productos/${item.productSlug || item.productId}`}
                       className="text-xl font-black text-black uppercase hover:text-orange-500 transition-colors block mb-2"
                     >
                       {item.productTitle}
@@ -369,7 +513,7 @@ export default function OrderDetailPage() {
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-1">
                         <Store className="w-4 h-4 text-gray-600" />
-                        <span className="font-bold text-gray-700">Vendedor: {item.sellerName}</span>
+                        <span className="font-bold text-gray-700">Vendedor: {item.sellerName || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Package className="w-4 h-4 text-gray-600" />
@@ -380,15 +524,20 @@ export default function OrderDetailPage() {
                   
                   <div className="text-right">
                     <div className="text-2xl font-black text-green-600 mb-1">
-                      {formatPrice(item.price * item.quantity)}
+                      {formatPrice((item.price || 0) * (item.quantity || 1))}
                     </div>
                     <div className="text-sm font-bold text-gray-600">
-                      {formatPrice(item.price)} c/u
+                      {formatPrice(item.price || 0)} c/u
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            )) || (
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">📦</div>
+                <p className="font-bold text-gray-600">No hay productos en este pedido</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -405,15 +554,14 @@ export default function OrderDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-black text-black uppercase mb-2">Datos personales</h3>
-              <p className="font-bold text-black">{order.buyer.firstName} {order.buyer.lastName}</p>
-              <p className="font-medium text-gray-700">{order.buyer.email}</p>
+              <p className="font-bold text-black">{order.buyer?.firstName} {order.buyer?.lastName}</p>
+              <p className="font-medium text-gray-700">{order.buyer?.email || order.buyerEmail}</p>
             </div>
             
             {order.billingData && (
               <div>
                 <h3 className="font-black text-black uppercase mb-2">Datos de facturación</h3>
                 <div className="text-sm font-medium text-gray-700">
-                  {/* Renderizar datos de facturación si existen */}
                   <pre className="bg-gray-100 p-2 rounded text-xs">
                     {JSON.stringify(order.billingData, null, 2)}
                   </pre>
@@ -450,10 +598,10 @@ export default function OrderDetailPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-black text-black uppercase mb-1">
-                          {download.product.title}
+                          {download.product?.title || 'Producto sin título'}
                         </h3>
                         <p className="text-sm font-bold text-gray-700 mb-2">
-                          Descargas restantes: {download.maxDownloads - download.downloadCount} de {download.maxDownloads}
+                          Descargas restantes: {(download.maxDownloads || 0) - (download.downloadCount || 0)} de {download.maxDownloads || 0}
                         </p>
                         <p className="text-xs font-medium text-gray-600">
                           Válido hasta: {formatDate(download.expiresAt)}
@@ -515,14 +663,16 @@ export default function OrderDetailPage() {
             </Link>
           )}
 
-          <Link
-            href={`/productos/${order.items[0]?.productSlug}`}
-            className="bg-orange-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-yellow-400 transition-all flex items-center gap-2"
-            style={{ boxShadow: '4px 4px 0 #000000' }}
-          >
-            <Eye className="w-5 h-5" />
-            Ver producto
-          </Link>
+          {order.items?.[0]?.productSlug && (
+            <Link
+              href={`/productos/${order.items[0].productSlug}`}
+              className="bg-orange-500 border-4 border-black text-black font-black py-3 px-6 uppercase hover:bg-yellow-400 transition-all flex items-center gap-2"
+              style={{ boxShadow: '4px 4px 0 #000000' }}
+            >
+              <Eye className="w-5 h-5" />
+              Ver producto
+            </Link>
+          )}
         </div>
       </div>
     </div>
