@@ -1,0 +1,14 @@
+node_modules
+dist
+.next
+.env
+.env.* 
+.vscode
+.idea
+.DS_Store
+*.log
+frontend
+coverage
+.vercel
+.turbo
+.cache
