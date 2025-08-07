@@ -20,140 +20,329 @@ import {
   Filter,
   RefreshCw
 } from 'lucide-react'
-import { useNotificationStore } from '@/lib/stores/notification-store'
 import { useAuthStore } from '@/lib/stores/auth-store'
 
-// Mock notification types and data
-enum NotificationType {
-  ORDER_COMPLETED = 'ORDER_COMPLETED',
-  ORDER_SHIPPED = 'ORDER_SHIPPED',
-  REVIEW_RECEIVED = 'REVIEW_RECEIVED',
-  PAYOUT_RECEIVED = 'PAYOUT_RECEIVED',
-  PRODUCT_APPROVED = 'PRODUCT_APPROVED',
-  PRODUCT_REJECTED = 'PRODUCT_REJECTED',
-  SYSTEM_UPDATE = 'SYSTEM_UPDATE',
-  PROMOTION = 'PROMOTION'
-}
-
+// ✅ Tipos coherentes con backend
 interface Notification {
   id: string
-  type: NotificationType
+  userId: string
+  type: string
   title: string
   message: string
+  data?: any
   isRead: boolean
+  readAt?: string
+  sentAt: string
+  emailSent: boolean
+  orderId?: string
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
+  channel: 'EMAIL' | 'WEB_PUSH' | 'IN_APP' | 'SMS'
+  groupKey?: string
+  expiresAt?: string
+  clickedAt?: string
+  clickCount: number
   createdAt: string
-  actionUrl?: string
-  metadata?: any
 }
 
-// Mock notifications
-const mockNotifications: Notification[] = [
-  {
-    id: 'notif_001',
-    type: NotificationType.ORDER_COMPLETED,
-    title: 'Pedido Completado',
-    message: 'Tu pedido ORD-20241201-001 ha sido completado exitosamente. Ya puedes descargar tus archivos.',
-    isRead: false,
-    createdAt: '2024-12-07T10:30:00Z',
-    actionUrl: '/pedidos/ORD-20241201-001'
-  },
-  {
-    id: 'notif_002',
-    type: NotificationType.REVIEW_RECEIVED,
-    title: 'Nueva Review Recibida',
-    message: 'Has recibido una nueva review de 5 estrellas en "Mesa de Comedor Moderna Roble".',
-    isRead: false,
-    createdAt: '2024-12-06T15:45:00Z',
-    actionUrl: '/reviews'
-  },
-  {
-    id: 'notif_003',
-    type: NotificationType.PAYOUT_RECEIVED,
-    title: 'Pago Recibido',
-    message: 'Has recibido un pago de $25.64 USD por tus ventas del período anterior.',
-    isRead: true,
-    createdAt: '2024-12-05T09:15:00Z',
-    actionUrl: '/vendedor-dashboard/dashboard'
-  },
-  {
-    id: 'notif_004',
-    type: NotificationType.PRODUCT_APPROVED,
-    title: 'Producto Aprobado',
-    message: 'Tu producto "Estantería Industrial" ha sido aprobado y ya está disponible en el marketplace.',
-    isRead: true,
-    createdAt: '2024-12-04T14:20:00Z',
-    actionUrl: '/vendedor/productos'
-  },
-  {
-    id: 'notif_005',
-    type: NotificationType.PROMOTION,
-    title: 'Oferta Especial',
-    message: '¡50% de descuento en productos premium! Válido hasta el 15 de diciembre.',
-    isRead: false,
-    createdAt: '2024-12-03T08:00:00Z',
-    actionUrl: '/productos?featured=true'
-  }
-]
+interface NotificationsPagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
 
-export function NotificationPanel() {
+interface NotificationsData {
+  data: Notification[]
+  pagination: NotificationsPagination
+  unreadCount: number
+}
+
+// ✅ Helper para obtener token de autenticación
+const getAuthToken = (): string | null => {
+  try {
+    const authData = localStorage.getItem('furnibles-auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed.state?.token || parsed.token
+    }
+  } catch (error) {
+    console.error('Error parsing auth token:', error)
+  }
+  return null
+}
+
+interface NotificationPanelProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const t = useTranslations('notifications')
   
-  // Stores
-  const { 
-    isNotificationPanelOpen, 
-    setNotificationPanelOpen, 
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification 
-  } = useNotificationStore()
-  
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
-  // Local states
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
+  // ✅ Estados locales para manejar datos
+  const [notificationsData, setNotificationsData] = useState<NotificationsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
-  const [selectedType, setSelectedType] = useState<NotificationType | 'all'>('all')
+  const [selectedType, setSelectedType] = useState<string>('all')
 
-  const getNotificationIcon = (type: NotificationType) => {
+  // ✅ Cargar notificaciones desde API
+  const loadNotifications = async (page: number = 1) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const token = getAuthToken()
+      if (!token) {
+        setError('No autorizado')
+        return
+      }
+
+      console.log('🔍 [NOTIFICATIONS] Loading notifications')
+      
+      // Construir query params
+      const queryParams = new URLSearchParams()
+      queryParams.append('page', page.toString())
+      queryParams.append('limit', '20')
+      queryParams.append('sortBy', 'createdAt')
+      queryParams.append('sortOrder', 'desc')
+      
+      if (filter === 'unread') queryParams.append('isRead', 'false')
+      if (selectedType !== 'all') queryParams.append('type', selectedType)
+      
+      // ✅ API call para notificaciones
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('✅ [NOTIFICATIONS] Notifications loaded:', data.data?.length || 0)
+      
+      // Calcular unreadCount desde los datos
+      const unreadCount = data.data?.filter((n: Notification) => !n.isRead).length || 0
+      
+      setNotificationsData({
+        data: data.data || [],
+        pagination: {
+          page: data.page || 1,
+          limit: data.limit || 20,
+          total: data.total || 0,
+          totalPages: data.totalPages || 0,
+        },
+        unreadCount
+      })
+
+    } catch (err) {
+      console.error('❌ [NOTIFICATIONS] Error loading notifications:', err)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // ✅ Marcar notificación como leída
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const token = getAuthToken()
+      if (!token) return
+
+      console.log('🔍 [NOTIFICATIONS] Marking as read:', notificationId)
+      
+      // ✅ API call para marcar como leída
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        console.log('✅ [NOTIFICATIONS] Marked as read successfully')
+        
+        // Actualizar estado local
+        setNotificationsData(prev => {
+          if (!prev) return prev
+          
+          const updatedNotifications = prev.data.map(notif => 
+            notif.id === notificationId 
+              ? { ...notif, isRead: true, readAt: new Date().toISOString() }
+              : notif
+          )
+          
+          const unreadCount = updatedNotifications.filter(n => !n.isRead).length
+          
+          return {
+            ...prev,
+            data: updatedNotifications,
+            unreadCount
+          }
+        })
+      }
+    } catch (error) {
+      console.error('❌ [NOTIFICATIONS] Error marking as read:', error)
+    }
+  }
+
+  // ✅ Marcar todas como leídas
+  const markAllAsRead = async () => {
+    try {
+      const token = getAuthToken()
+      if (!token) return
+
+      console.log('🔍 [NOTIFICATIONS] Marking all as read')
+      
+      // ✅ API call para marcar todas como leídas
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/mark-all-read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        console.log('✅ [NOTIFICATIONS] All marked as read successfully')
+        
+        // Actualizar estado local
+        setNotificationsData(prev => {
+          if (!prev) return prev
+          
+          const updatedNotifications = prev.data.map(notif => ({
+            ...notif,
+            isRead: true,
+            readAt: new Date().toISOString()
+          }))
+          
+          return {
+            ...prev,
+            data: updatedNotifications,
+            unreadCount: 0
+          }
+        })
+      }
+    } catch (error) {
+      console.error('❌ [NOTIFICATIONS] Error marking all as read:', error)
+    }
+  }
+
+  // ✅ Eliminar notificación
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      const token = getAuthToken()
+      if (!token) return
+
+      console.log('🔍 [NOTIFICATIONS] Deleting notification:', notificationId)
+      
+      // ✅ API call para eliminar notificación
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        console.log('✅ [NOTIFICATIONS] Deleted successfully')
+        
+        // Actualizar estado local
+        setNotificationsData(prev => {
+          if (!prev) return prev
+          
+          const filteredNotifications = prev.data.filter(notif => notif.id !== notificationId)
+          const unreadCount = filteredNotifications.filter(n => !n.isRead).length
+          
+          return {
+            ...prev,
+            data: filteredNotifications,
+            unreadCount,
+            pagination: {
+              ...prev.pagination,
+              total: prev.pagination.total - 1
+            }
+          }
+        })
+      }
+    } catch (error) {
+      console.error('❌ [NOTIFICATIONS] Error deleting notification:', error)
+    }
+  }
+
+  // ✅ Cargar datos cuando se abre el panel
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      loadNotifications()
+    }
+  }, [isOpen, isAuthenticated])
+
+  // ✅ Recargar cuando cambian los filtros
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      loadNotifications()
+    }
+  }, [filter, selectedType])
+
+  // ✅ Obtener ícono según tipo de notificación
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case NotificationType.ORDER_COMPLETED:
-      case NotificationType.ORDER_SHIPPED:
+      case 'ORDER_COMPLETED':
+      case 'ORDER_SHIPPED':
+      case 'ORDER_DELIVERED':
         return <Package className="w-5 h-5 text-green-600" />
-      case NotificationType.REVIEW_RECEIVED:
+      case 'REVIEW_RECEIVED':
+      case 'REVIEW_RESPONSE':
         return <Star className="w-5 h-5 text-yellow-600" />
-      case NotificationType.PAYOUT_RECEIVED:
+      case 'PAYOUT_RECEIVED':
+      case 'PAYMENT_RECEIVED':
         return <DollarSign className="w-5 h-5 text-green-600" />
-      case NotificationType.PRODUCT_APPROVED:
+      case 'PRODUCT_APPROVED':
         return <CheckCircle className="w-5 h-5 text-green-600" />
-      case NotificationType.PRODUCT_REJECTED:
+      case 'PRODUCT_REJECTED':
         return <AlertCircle className="w-5 h-5 text-red-600" />
-      case NotificationType.PROMOTION:
+      case 'PROMOTION':
+      case 'MARKETING':
         return <ShoppingCart className="w-5 h-5 text-orange-600" />
       default:
         return <Bell className="w-5 h-5 text-blue-600" />
     }
   }
 
-  const getNotificationColor = (type: NotificationType) => {
+  // ✅ Obtener color según tipo
+  const getNotificationColor = (type: string) => {
     switch (type) {
-      case NotificationType.ORDER_COMPLETED:
-      case NotificationType.ORDER_SHIPPED:
+      case 'ORDER_COMPLETED':
+      case 'ORDER_SHIPPED':
+      case 'PRODUCT_APPROVED':
+      case 'PAYOUT_RECEIVED':
         return 'bg-green-100 border-green-500'
-      case NotificationType.REVIEW_RECEIVED:
+      case 'REVIEW_RECEIVED':
+      case 'REVIEW_RESPONSE':
         return 'bg-yellow-100 border-yellow-500'
-      case NotificationType.PAYOUT_RECEIVED:
-      case NotificationType.PRODUCT_APPROVED:
-        return 'bg-green-100 border-green-500'
-      case NotificationType.PRODUCT_REJECTED:
+      case 'PRODUCT_REJECTED':
         return 'bg-red-100 border-red-500'
-      case NotificationType.PROMOTION:
+      case 'PROMOTION':
+      case 'MARKETING':
         return 'bg-orange-100 border-orange-500'
       default:
         return 'bg-blue-100 border-blue-500'
     }
   }
 
+  // ✅ Formatear fecha relativa
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -169,40 +358,33 @@ export function NotificationPanel() {
     })
   }
 
+  // ✅ Manejar acciones locales
   const handleMarkAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId ? { ...notif, isRead: true } : notif
-      )
-    )
     markAsRead(notificationId)
   }
 
   const handleMarkAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, isRead: true }))
-    )
     markAllAsRead()
   }
 
   const handleDelete = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.filter(notif => notif.id !== notificationId)
-    )
-    deleteNotification(notificationId)
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta notificación?')) {
+      deleteNotification(notificationId)
+    }
   }
 
-  const filteredNotifications = notifications.filter(notif => {
+  const handleRefresh = () => {
+    loadNotifications()
+  }
+
+  // ✅ Filtrar notificaciones
+  const filteredNotifications = notificationsData?.data.filter(notif => {
     if (filter === 'unread' && notif.isRead) return false
     if (selectedType !== 'all' && notif.type !== selectedType) return false
     return true
-  })
+  }) || []
 
-  const handleClose = () => {
-    setNotificationPanelOpen(false)
-  }
-
-  if (!isNotificationPanelOpen || !isAuthenticated) return null
+  if (!isOpen || !isAuthenticated) return null
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -221,7 +403,7 @@ export function NotificationPanel() {
                 Notificaciones
               </h2>
               <p className="text-gray-600 font-bold text-sm">
-                {unreadCount} {unreadCount === 1 ? 'nueva' : 'nuevas'}
+                {notificationsData?.unreadCount || 0} {(notificationsData?.unreadCount || 0) === 1 ? 'nueva' : 'nuevas'}
               </p>
             </div>
           </div>
@@ -229,8 +411,8 @@ export function NotificationPanel() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleMarkAllAsRead}
-              disabled={unreadCount === 0}
-              className="p-2 bg-white border-3 border-black hover:bg-green-400 transition-all disabled:opacity-50"
+              disabled={(notificationsData?.unreadCount || 0) === 0}
+              className="p-2 bg-white border-3 border-black hover:bg-green-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ boxShadow: '3px 3px 0 #000000' }}
               title="Marcar todo como leído"
             >
@@ -238,7 +420,7 @@ export function NotificationPanel() {
             </button>
             
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="p-2 bg-white border-3 border-black hover:bg-red-400 transition-all"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
@@ -267,35 +449,53 @@ export function NotificationPanel() {
 
             <select
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as NotificationType | 'all')}
+              onChange={(e) => setSelectedType(e.target.value)}
               className="px-3 py-2 bg-white border-2 border-black font-bold text-sm focus:outline-none focus:bg-yellow-400"
               style={{ boxShadow: '2px 2px 0 #000000' }}
             >
               <option value="all">Todos los tipos</option>
-              <option value={NotificationType.ORDER_COMPLETED}>Pedidos</option>
-              <option value={NotificationType.REVIEW_RECEIVED}>Reviews</option>
-              <option value={NotificationType.PAYOUT_RECEIVED}>Pagos</option>
-              <option value={NotificationType.PRODUCT_APPROVED}>Productos</option>
-              <option value={NotificationType.PROMOTION}>Promociones</option>
+              <option value="ORDER_COMPLETED">Pedidos</option>
+              <option value="REVIEW_RECEIVED">Reviews</option>
+              <option value="PAYOUT_RECEIVED">Pagos</option>
+              <option value="PRODUCT_APPROVED">Productos</option>
+              <option value="PROMOTION">Promociones</option>
             </select>
 
             <button
-              onClick={() => {
-                // Simulate refresh
-                console.log('Refreshing notifications...')
-              }}
-              className="p-2 bg-white border-2 border-black hover:bg-blue-400 transition-all"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="p-2 bg-white border-2 border-black hover:bg-blue-400 transition-all disabled:opacity-50"
               style={{ boxShadow: '2px 2px 0 #000000' }}
               title="Actualizar"
             >
-              <RefreshCw className="w-4 h-4 text-black" />
+              <RefreshCw className={`w-4 h-4 text-black ${isLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* Notifications List */}
         <div className="flex-1 overflow-y-auto max-h-96">
-          {filteredNotifications.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+                <p className="text-gray-600 font-bold">Cargando notificaciones...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="p-12 text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-black text-black uppercase mb-2">Error</h3>
+              <p className="text-gray-600 font-bold mb-4">{error}</p>
+              <button
+                onClick={handleRefresh}
+                className="bg-orange-500 border-2 border-black text-black font-black py-2 px-4 uppercase hover:bg-orange-400 transition-all"
+                style={{ boxShadow: '4px 4px 0 #000000' }}
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : filteredNotifications.length === 0 ? (
             <div className="p-12 text-center">
               <div className="text-6xl mb-4">🔔</div>
               <h3 className="text-xl font-black text-black uppercase mb-2">
@@ -324,7 +524,7 @@ export function NotificationPanel() {
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className={`font-black text-black text-sm uppercase ${
+                        <h4 className={`font-black text-sm uppercase ${
                           !notification.isRead ? 'text-black' : 'text-gray-700'
                         }`}>
                           {notification.title}
@@ -347,12 +547,12 @@ export function NotificationPanel() {
                       </p>
                       
                       <div className="flex items-center gap-2">
-                        {notification.actionUrl && (
+                        {notification.orderId && (
                           <Link
-                            href={notification.actionUrl}
+                            href={`/pedidos/${notification.orderId}`}
                             onClick={() => {
                               handleMarkAsRead(notification.id)
-                              handleClose()
+                              onClose()
                             }}
                             className="flex items-center gap-1 text-xs bg-blue-400 border-2 border-black px-3 py-1 font-black text-black uppercase hover:bg-yellow-400 transition-all"
                             style={{ boxShadow: '2px 2px 0 #000000' }}
@@ -399,7 +599,7 @@ export function NotificationPanel() {
             
             <Link
               href="/configuracion/notificaciones"
-              onClick={handleClose}
+              onClick={onClose}
               className="flex items-center gap-2 text-sm bg-white border-2 border-black px-3 py-2 font-black text-black uppercase hover:bg-yellow-400 transition-all"
               style={{ boxShadow: '2px 2px 0 #000000' }}
             >

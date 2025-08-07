@@ -4,16 +4,39 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { 
-  StarIcon,
-  XIcon,
-  ImageIcon,
-  CheckCircleIcon,
-  AlertCircleIcon,
-  UploadIcon,
-  TrashIcon
+  Star,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Upload,
+  Trash
 } from 'lucide-react'
-import { Product } from '@/types'
-import { submitReview } from '@/data/mockReviews'
+import { FileUpload } from '../upload/file-upload'
+import { useAuthStore } from '@/lib/stores/auth-store'
+
+// ✅ Tipos coherentes con backend
+interface Product {
+  id: string
+  title: string
+  slug: string
+  imageFileIds: string[]
+  seller?: {
+    id: string
+    firstName: string
+    lastName: string
+    sellerProfile?: {
+      storeName: string
+      slug: string
+    }
+  }
+}
+
+interface UploadedFile {
+  id: string
+  filename: string
+  url: string
+  type: string
+}
 
 interface ReviewModalProps {
   isOpen: boolean
@@ -22,6 +45,20 @@ interface ReviewModalProps {
   orderNumber: string
   product: Product
   onReviewSubmitted?: () => void
+}
+
+// ✅ Helper para obtener token de autenticación
+const getAuthToken = (): string | null => {
+  try {
+    const authData = localStorage.getItem('furnibles-auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed.state?.token || parsed.token
+    }
+  } catch (error) {
+    console.error('Error parsing auth token:', error)
+  }
+  return null
 }
 
 export function ReviewModal({ 
@@ -33,6 +70,7 @@ export function ReviewModal({
   onReviewSubmitted 
 }: ReviewModalProps) {
   const t = useTranslations('reviews')
+  const { user } = useAuthStore()
   
   // Form states
   const [rating, setRating] = useState(0)
@@ -46,42 +84,20 @@ export function ReviewModal({
   const [errorMessage, setErrorMessage] = useState('')
   
   // Image upload states
-  const [selectedImages, setSelectedImages] = useState<File[]>([])
-  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [uploadedImages, setUploadedImages] = useState<UploadedFile[]>([])
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    
-    // Límite de 4 imágenes
-    const remainingSlots = 4 - selectedImages.length
-    const newFiles = files.slice(0, remainingSlots)
-    
-    if (newFiles.length > 0) {
-      const newPreviews: string[] = []
-      newFiles.forEach(file => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          newPreviews.push(e.target?.result as string)
-          if (newPreviews.length === newFiles.length) {
-            setImagePreviews(prev => [...prev, ...newPreviews])
-          }
-        }
-        reader.readAsDataURL(file)
-      })
-      
-      setSelectedImages(prev => [...prev, ...newFiles])
-    }
+  // ✅ Manejar archivos subidos
+  const handleFilesUploaded = (files: UploadedFile[]) => {
+    console.log('🔍 [REVIEW-MODAL] Files uploaded:', files.length)
+    setUploadedImages(files)
   }
 
-  const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index))
-    setImagePreviews(prev => prev.filter((_, i) => i !== index))
-  }
-
+  // ✅ Enviar review a API real
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage('')
     
+    // Validaciones básicas
     if (rating === 0) {
       setErrorMessage('Por favor selecciona una calificación')
       return
@@ -92,10 +108,20 @@ export function ReviewModal({
       return
     }
 
+    if (!user) {
+      setErrorMessage('Debes iniciar sesión para enviar una review')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      const result = await submitReview({
+      const token = getAuthToken()
+      if (!token) {
+        throw new Error('No autorizado')
+      }
+
+      console.log('🔍 [REVIEW-MODAL] Submitting review:', {
         orderId,
         productId: product.id,
         rating,
@@ -103,25 +129,52 @@ export function ReviewModal({
         comment: comment.trim(),
         pros: pros.trim() || undefined,
         cons: cons.trim() || undefined,
-        imageFiles: selectedImages
+        imageFileIds: uploadedImages.map(img => img.id)
       })
 
-      if (result.success) {
-        setShowSuccess(true)
-        setTimeout(() => {
-          onReviewSubmitted?.()
-          handleClose()
-        }, 2000)
-      } else {
-        setErrorMessage(result.message)
+      // ✅ API call para crear review
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId,
+          productId: product.id,
+          rating,
+          title: title.trim() || undefined,
+          comment: comment.trim(),
+          pros: pros.trim() || undefined,
+          cons: cons.trim() || undefined,
+          imageFileIds: uploadedImages.map(img => img.id)
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`)
       }
+
+      const result = await response.json()
+      console.log('✅ [REVIEW-MODAL] Review submitted successfully:', result)
+
+      setShowSuccess(true)
+      setTimeout(() => {
+        onReviewSubmitted?.()
+        handleClose()
+      }, 2500)
+
     } catch (error) {
-      setErrorMessage('Error al enviar la review. Inténtalo de nuevo.')
+      console.error('❌ [REVIEW-MODAL] Error submitting review:', error)
+      setErrorMessage(error instanceof Error ? error.message : 'Error al enviar la review. Inténtalo de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // ✅ Cerrar modal y resetear form
   const handleClose = () => {
     if (isSubmitting) return
     
@@ -132,14 +185,14 @@ export function ReviewModal({
     setComment('')
     setPros('')
     setCons('')
-    setSelectedImages([])
-    setImagePreviews([])
+    setUploadedImages([])
     setErrorMessage('')
     setShowSuccess(false)
     
     onClose()
   }
 
+  // ✅ Renderizar estrellas interactivas
   const renderStars = () => {
     return Array.from({ length: 5 }, (_, index) => {
       const starValue = index + 1
@@ -155,12 +208,24 @@ export function ReviewModal({
           className="transition-all duration-200 hover:scale-110"
           disabled={isSubmitting}
         >
-          <StarIcon 
+          <Star 
             className={`w-8 h-8 ${isActive ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
           />
         </button>
       )
     })
+  }
+
+  // ✅ Obtener texto descriptivo del rating
+  const getRatingText = () => {
+    switch (rating) {
+      case 1: return 'Muy malo'
+      case 2: return 'Malo'
+      case 3: return 'Regular'
+      case 4: return 'Bueno'
+      case 5: return 'Excelente'
+      default: return ''
+    }
   }
 
   if (!isOpen) return null
@@ -172,20 +237,23 @@ export function ReviewModal({
         style={{ boxShadow: '8px 8px 0 #000000' }}
       >
         {showSuccess ? (
-          // Success State
+          // ✅ Estado de éxito
           <div className="p-8 text-center">
             <div className="w-16 h-16 bg-green-500 border-4 border-black rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircleIcon className="w-8 h-8 text-white" />
+              <CheckCircle className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-black text-black uppercase mb-4">
               ¡Review Enviada!
             </h2>
-            <p className="text-gray-600 font-bold">
-              Tu review ha sido enviada exitosamente y será publicada una vez aprobada.
+            <p className="text-gray-600 font-bold mb-2">
+              Tu review ha sido enviada exitosamente y será publicada una vez aprobada por nuestro equipo.
+            </p>
+            <p className="text-sm text-gray-500 font-medium">
+              Te notificaremos cuando esté disponible públicamente.
             </p>
           </div>
         ) : (
-          // Form State
+          // ✅ Estado del formulario
           <>
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b-4 border-black">
@@ -197,7 +265,7 @@ export function ReviewModal({
                 disabled={isSubmitting}
                 className="p-2 hover:bg-gray-100 transition-colors disabled:opacity-50"
               >
-                <XIcon className="w-6 h-6 text-black" />
+                <X className="w-6 h-6 text-black" />
               </button>
             </div>
 
@@ -250,14 +318,14 @@ export function ReviewModal({
                 <div className="flex items-center gap-2 mb-2">
                   {renderStars()}
                   <span className="ml-2 font-bold text-black">
-                    {rating > 0 && (
-                      rating === 1 ? 'Muy malo' :
-                      rating === 2 ? 'Malo' :
-                      rating === 3 ? 'Regular' :
-                      rating === 4 ? 'Bueno' : 'Excelente'
-                    )}
+                    {getRatingText()}
                   </span>
                 </div>
+                {rating === 0 && (
+                  <p className="text-xs text-gray-500 font-medium mt-1">
+                    Selecciona una calificación del 1 al 5
+                  </p>
+                )}
               </div>
 
               {/* Title */}
@@ -295,8 +363,9 @@ export function ReviewModal({
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                   placeholder="Comparte tu experiencia construyendo este mueble. ¿Cómo fueron las instrucciones? ¿El resultado final?"
                 />
-                <div className="text-right text-xs text-gray-500 font-bold mt-1">
-                  {comment.length}/1000 {comment.length < 10 && '(mínimo 10 caracteres)'}
+                <div className="flex justify-between text-xs text-gray-500 font-bold mt-1">
+                  <span>{comment.length < 10 ? 'Mínimo 10 caracteres' : ''}</span>
+                  <span>{comment.length}/1000</span>
                 </div>
               </div>
 
@@ -316,6 +385,9 @@ export function ReviewModal({
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                     placeholder="¿Qué te gustó más?"
                   />
+                  <div className="text-right text-xs text-gray-500 font-bold mt-1">
+                    {pros.length}/300
+                  </div>
                 </div>
                 
                 <div>
@@ -332,6 +404,9 @@ export function ReviewModal({
                     style={{ boxShadow: '3px 3px 0 #000000' }}
                     placeholder="¿Qué podría mejorarse?"
                   />
+                  <div className="text-right text-xs text-gray-500 font-bold mt-1">
+                    {cons.length}/300
+                  </div>
                 </div>
               </div>
 
@@ -341,59 +416,19 @@ export function ReviewModal({
                   📸 Fotos del Resultado (Opcional)
                 </label>
                 <p className="text-xs text-gray-600 font-bold mb-3">
-                  Sube fotos del mueble terminado para ayudar a otros compradores
+                  Sube fotos del mueble terminado para ayudar a otros compradores (máx. 4 fotos)
                 </p>
                 
-                {/* Upload Area */}
-                {selectedImages.length < 4 && (
-                  <label className="block w-full p-6 border-3 border-dashed border-black hover:bg-yellow-100 transition-all cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageSelect}
-                      disabled={isSubmitting}
-                      className="hidden"
-                    />
-                    <div className="text-center">
-                      <UploadIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                      <p className="text-black font-bold text-sm">
-                        Haz clic para subir imágenes
-                      </p>
-                      <p className="text-xs text-gray-500 font-bold">
-                        PNG, JPG hasta 5MB c/u (máx. 4 fotos)
-                      </p>
-                    </div>
-                  </label>
-                )}
-
-                {/* Image Previews */}
-                {imagePreviews.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                    {imagePreviews.map((preview, index) => (
-                      <div 
-                        key={index}
-                        className="relative aspect-square border-3 border-black overflow-hidden"
-                      >
-                        <Image
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          disabled={isSubmitting}
-                          className="absolute top-1 right-1 p-1 bg-red-500 border-2 border-black text-white hover:bg-red-600 transition-colors disabled:opacity-50"
-                          style={{ boxShadow: '2px 2px 0 #000000' }}
-                        >
-                          <TrashIcon className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <FileUpload
+                  onFilesUploaded={handleFilesUploaded}
+                  maxFiles={4}
+                  maxSizePerFile={5}
+                  acceptedTypes={['.jpg', '.jpeg', '.png', '.gif']}
+                  allowMultiple={true}
+                  showPreview={true}
+                  uploadType="REVIEW_IMAGE"
+                  className="border-2 border-gray-300 rounded p-4"
+                />
               </div>
 
               {/* Error Message */}
@@ -402,7 +437,7 @@ export function ReviewModal({
                   className="bg-red-100 border-3 border-red-500 p-4 flex items-center gap-3"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
-                  <AlertCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
                   <p className="text-red-800 font-bold text-sm">{errorMessage}</p>
                 </div>
               )}
@@ -427,7 +462,7 @@ export function ReviewModal({
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Enviando...
                     </>
                   ) : (

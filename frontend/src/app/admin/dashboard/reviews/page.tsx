@@ -26,24 +26,109 @@ import {
   Trash2
 } from 'lucide-react'
 
-import { useAdminStore } from '@/lib/stores/admin-store'
-import { ReviewStatus, Review } from '@/types'
+// ✅ Tipos coherentes con backend
+interface Review {
+  id: string
+  orderId: string
+  productId: string
+  buyerId: string
+  sellerId: string
+  rating: number
+  title?: string
+  comment: string
+  pros?: string
+  cons?: string
+  status: 'PENDING_MODERATION' | 'PUBLISHED' | 'FLAGGED' | 'REMOVED'
+  isVerified: boolean
+  helpfulCount: number
+  notHelpfulCount: number
+  moderatedBy?: string
+  moderatedAt?: string
+  moderationReason?: string
+  createdAt: string
+  updatedAt: string
+  buyer?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
+  product?: {
+    id: string
+    title: string
+    slug: string
+    seller?: {
+      id: string
+      firstName: string
+      lastName: string
+      storeName?: string
+    }
+  }
+  response?: {
+    id: string
+    sellerId: string
+    comment: string
+    createdAt: string
+  }
+  reports?: Array<{
+    id: string
+    userId: string
+    reason: string
+    details?: string
+    createdAt: string
+  }>
+}
 
-// Tipos locales para la paginación y filtros de reviews
 interface ReviewsPagination {
   page: number
   limit: number
   total: number
   totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
 }
 
 interface ReviewsFilters {
-  status?: ReviewStatus
+  status?: string
   rating?: number
   productId?: string
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+}
+
+interface ReviewsData {
+  data: Review[]
+  pagination: ReviewsPagination
+  stats: {
+    total: number
+    pending: number
+    flagged: number
+    published: number
+    removed: number
+    averageRating: number
+    byRating: {
+      1: number
+      2: number
+      3: number
+      4: number
+      5: number
+    }
+  }
+}
+
+// ✅ Helper para obtener token de autenticación
+const getAuthToken = (): string | null => {
+  try {
+    const authData = localStorage.getItem('furnibles-auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed.state?.token || parsed.token
+    }
+  } catch (error) {
+    console.error('Error parsing auth token:', error)
+  }
+  return null
 }
 
 export default function AdminReviewsPage() {
@@ -52,6 +137,10 @@ export default function AdminReviewsPage() {
   const tStatus = useTranslations('admin.reviews.status')
   const tActions = useTranslations('admin.reviews.actions')
 
+  const [reviewsData, setReviewsData] = useState<ReviewsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
   const [searchQuery, setSearchQuery] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [moderationModalOpen, setModerationModalOpen] = useState(false)
@@ -60,64 +149,130 @@ export default function AdminReviewsPage() {
   const [moderationReason, setModerationReason] = useState('')
   const [isSubmittingModeration, setIsSubmittingModeration] = useState(false)
 
-  // Estados locales para reviews (ya que no existen en el store)
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [reviewsLoading, setReviewsLoading] = useState(false)
-  const [reviewsPagination, setReviewsPagination] = useState<ReviewsPagination>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0
-  })
   const [reviewsFilters, setReviewsFiltersLocal] = useState<ReviewsFilters>({
     sortBy: 'createdAt',
     sortOrder: 'desc'
   })
 
-  // Usar el store admin (sin las funciones de reviews que no existen)
-  const {
-    dashboardStats,
-    isLoading: storeLoading,
-    error
-  } = useAdminStore()
-
-  // Función mock para cargar reviews (reemplazar con API real)
+  // ✅ Cargar reviews desde API real
   const loadReviews = async (page: number = 1, filters?: ReviewsFilters) => {
-    setReviewsLoading(true)
     try {
-      // TODO: Implementar llamada real a la API
-      // const response = await fetch(`/api/admin/reviews?page=${page}&...`)
-      // const data = await response.json()
+      setIsLoading(true)
+      setError(null)
       
-      // Mock data por ahora
-      setReviews([])
-      setReviewsPagination({
-        page,
-        limit: 20,
-        total: 0,
-        totalPages: 0
+      const token = getAuthToken()
+      if (!token) {
+        setError('No autorizado')
+        return
+      }
+
+      console.log('🔍 [ADMIN-REVIEWS] Fetching reviews with filters:', { page, ...filters })
+      
+      // Construir query params
+      const queryParams = new URLSearchParams()
+      queryParams.append('page', page.toString())
+      queryParams.append('limit', '20')
+      
+      if (filters?.status) queryParams.append('status', filters.status)
+      if (filters?.rating) queryParams.append('rating', filters.rating.toString())
+      if (filters?.productId) queryParams.append('productId', filters.productId)
+      if (filters?.search) queryParams.append('search', filters.search)
+      if (filters?.sortBy) queryParams.append('sortBy', filters.sortBy)
+      if (filters?.sortOrder) queryParams.append('sortOrder', filters.sortOrder)
+      
+      // ✅ API call para reviews del admin
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
       })
-    } catch (error) {
-      console.error('Error loading reviews:', error)
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('✅ [ADMIN-REVIEWS] Reviews loaded:', data.data?.length || 0)
+      
+      // Calcular estadísticas desde los datos
+      const reviews = data.data || []
+      const stats = {
+        total: data.total || 0,
+        pending: reviews.filter((r: Review) => r.status === 'PENDING_MODERATION').length,
+        flagged: reviews.filter((r: Review) => r.status === 'FLAGGED').length,
+        published: reviews.filter((r: Review) => r.status === 'PUBLISHED').length,
+        removed: reviews.filter((r: Review) => r.status === 'REMOVED').length,
+        averageRating: reviews.length > 0 
+          ? reviews.reduce((sum: number, r: Review) => sum + r.rating, 0) / reviews.length 
+          : 0,
+        byRating: {
+          1: reviews.filter((r: Review) => r.rating === 1).length,
+          2: reviews.filter((r: Review) => r.rating === 2).length,
+          3: reviews.filter((r: Review) => r.rating === 3).length,
+          4: reviews.filter((r: Review) => r.rating === 4).length,
+          5: reviews.filter((r: Review) => r.rating === 5).length,
+        }
+      }
+
+      setReviewsData({
+        data: reviews,
+        pagination: {
+          page: data.page || page,
+          limit: data.limit || 20,
+          total: data.total || 0,
+          totalPages: data.totalPages || 0,
+          hasNext: data.hasNext || false,
+          hasPrev: data.hasPrev || false,
+        },
+        stats
+      })
+
+    } catch (err) {
+      console.error('❌ [ADMIN-REVIEWS] Error loading reviews:', err)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
-      setReviewsLoading(false)
+      setIsLoading(false)
     }
   }
 
-  // Función mock para moderar reviews
+  // ✅ Moderar review
   const moderateReview = async (reviewId: string, action: string, reason: string) => {
     try {
-      // TODO: Implementar llamada real a la API
-      // const response = await fetch(`/api/admin/reviews/${reviewId}/moderate`, {
-      //   method: 'POST',
-      //   body: JSON.stringify({ action, reason })
-      // })
-      // return await response.json()
+      const token = getAuthToken()
+      if (!token) {
+        throw new Error('No autorizado')
+      }
+
+      console.log('🔍 [ADMIN-REVIEWS] Moderating review:', { reviewId, action, reason })
       
-      return { success: true }
+      // ✅ API call para moderar review
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews/${reviewId}/moderate`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, reason }),
+      })
+
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.message || `Error ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      console.log('✅ [ADMIN-REVIEWS] Review moderated successfully:', result)
+      
+      return { success: true, data: result }
     } catch (error) {
-      console.error('Error moderating review:', error)
-      return { success: false, error: 'Error moderating review' }
+      console.error('❌ [ADMIN-REVIEWS] Error moderating review:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Error moderating review' 
+      }
     }
   }
 
@@ -126,7 +281,7 @@ export default function AdminReviewsPage() {
     setReviewsFiltersLocal(prev => ({ ...prev, ...filters }))
   }
 
-  // Funciones de formato
+  // ✅ Formatear fecha
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -137,7 +292,7 @@ export default function AdminReviewsPage() {
     })
   }
 
-  // Renderizar estrellas
+  // ✅ Renderizar estrellas
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
@@ -151,31 +306,31 @@ export default function AdminReviewsPage() {
     ))
   }
 
-  // Cargar datos iniciales
+  // ✅ Cargar datos iniciales
   useEffect(() => {
     loadReviews(1)
-  }, [loadReviews])
+  }, [])
 
-  // Aplicar filtros cuando cambien
+  // ✅ Aplicar filtros cuando cambien
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       loadReviews(1, { ...reviewsFilters, search: searchQuery })
     }, 500)
 
     return () => clearTimeout(timeoutId)
-  }, [reviewsFilters, searchQuery, loadReviews])
+  }, [reviewsFilters, searchQuery])
 
   // Manejadores
   const handleSearch = (value: string) => {
     setSearchQuery(value)
   }
 
-  const handleFilterChange = (key: keyof typeof reviewsFilters, value: string | number | boolean) => {
+  const handleFilterChange = (key: keyof ReviewsFilters, value: string | number | boolean) => {
     setReviewsFilters({ [key]: value })
   }
 
   const handlePageChange = (page: number) => {
-    loadReviews(page)
+    loadReviews(page, { ...reviewsFilters, search: searchQuery })
   }
 
   // Modal de moderación
@@ -208,25 +363,29 @@ export default function AdminReviewsPage() {
       
       if (result.success) {
         closeModerationModal()
-        loadReviews(reviewsPagination.page)
+        // Recargar la página actual
+        loadReviews(reviewsData?.pagination.page || 1, { ...reviewsFilters, search: searchQuery })
+      } else {
+        alert(result.error || 'Error al moderar la review')
       }
     } catch (error) {
       console.error('Error submitting moderation:', error)
+      alert('Error al moderar la review')
     } finally {
       setIsSubmittingModeration(false)
     }
   }
 
   // Función para obtener el color del estado
-  const getStatusColor = (status: ReviewStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case ReviewStatus.PUBLISHED:
+      case 'PUBLISHED':
         return 'bg-green-500 text-white'
-      case ReviewStatus.PENDING_MODERATION:
+      case 'PENDING_MODERATION':
         return 'bg-yellow-500 text-black'
-      case ReviewStatus.FLAGGED:
+      case 'FLAGGED':
         return 'bg-orange-500 text-black'
-      case ReviewStatus.REMOVED:
+      case 'REMOVED':
         return 'bg-red-500 text-white'
       default:
         return 'bg-gray-500 text-white'
@@ -234,39 +393,61 @@ export default function AdminReviewsPage() {
   }
 
   // Función para obtener el ícono del estado
-  const getStatusIcon = (status: ReviewStatus) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case ReviewStatus.PUBLISHED:
+      case 'PUBLISHED':
         return <CheckCircle className="h-4 w-4" />
-      case ReviewStatus.PENDING_MODERATION:
+      case 'PENDING_MODERATION':
         return <Clock className="h-4 w-4" />
-      case ReviewStatus.FLAGGED:
+      case 'FLAGGED':
         return <AlertCircle className="h-4 w-4" />
-      case ReviewStatus.REMOVED:
+      case 'REMOVED':
         return <XCircle className="h-4 w-4" />
       default:
         return <MessageSquare className="h-4 w-4" />
     }
   }
 
-  // Calcular estadísticas de reviews
-  const reviewStats = {
-    total: reviews.length,
-    pending: reviews.filter((r: Review) => r.status === ReviewStatus.PENDING_MODERATION).length,
-    flagged: reviews.filter((r: Review) => r.status === ReviewStatus.FLAGGED).length,
-    published: reviews.filter((r: Review) => r.status === ReviewStatus.PUBLISHED).length,
-    removed: reviews.filter((r: Review) => r.status === ReviewStatus.REMOVED).length,
-    averageRating: reviews.length > 0 
-      ? reviews.reduce((sum: number, r: Review) => sum + r.rating, 0) / reviews.length 
-      : 0,
-    byRating: {
-      5: reviews.filter((r: Review) => r.rating === 5).length,
-      4: reviews.filter((r: Review) => r.rating === 4).length,
-      3: reviews.filter((r: Review) => r.rating === 3).length,
-      2: reviews.filter((r: Review) => r.rating === 2).length,
-      1: reviews.filter((r: Review) => r.rating === 1).length,
-    }
+  // ✅ Estados de loading y error
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-bold">{tCommon('loading')}</p>
+        </div>
+      </div>
+    )
   }
+
+  if (error) {
+    return (
+      <div className="bg-white border-[3px] border-black p-8 text-center" style={{ boxShadow: '6px 6px 0 #000000' }}>
+        <div className="text-6xl mb-4">⚠️</div>
+        <h2 className="text-2xl font-black text-black uppercase mb-4">Error</h2>
+        <p className="text-gray-600 font-bold mb-6">{error}</p>
+        <button
+          onClick={() => loadReviews(1)}
+          className="bg-orange-500 border-2 border-black text-black font-black py-2 px-4 uppercase hover:bg-orange-400 transition-all"
+          style={{ boxShadow: '4px 4px 0 #000000' }}
+        >
+          {tCommon('retry')}
+        </button>
+      </div>
+    )
+  }
+
+  if (!reviewsData) {
+    return (
+      <div className="bg-white border-[3px] border-black p-8 text-center" style={{ boxShadow: '6px 6px 0 #000000' }}>
+        <div className="text-6xl mb-4">📊</div>
+        <h2 className="text-2xl font-black text-black uppercase mb-4">Sin datos</h2>
+        <p className="text-gray-600 font-bold">No se pudieron cargar los datos de reviews</p>
+      </div>
+    )
+  }
+
+  const { data: reviews, pagination: reviewsPagination, stats: reviewStats } = reviewsData
 
   return (
     <div className="space-y-6">
@@ -422,10 +603,10 @@ export default function AdminReviewsPage() {
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
                   <option value="">{t('filters.all_statuses')}</option>
-                  <option value={ReviewStatus.PENDING_MODERATION}>{tStatus('pending_moderation')}</option>
-                  <option value={ReviewStatus.PUBLISHED}>{tStatus('published')}</option>
-                  <option value={ReviewStatus.FLAGGED}>{tStatus('flagged')}</option>
-                  <option value={ReviewStatus.REMOVED}>{tStatus('removed')}</option>
+                  <option value="PENDING_MODERATION">{tStatus('pending_moderation')}</option>
+                  <option value="PUBLISHED">{tStatus('published')}</option>
+                  <option value="FLAGGED">{tStatus('flagged')}</option>
+                  <option value="REMOVED">{tStatus('removed')}</option>
                 </select>
               </div>
 
@@ -439,7 +620,6 @@ export default function AdminReviewsPage() {
                   style={{ boxShadow: '3px 3px 0 #000000' }}
                 >
                   <option value="">{t('filters.all_products')}</option>
-                  {/* Lista de productos se cargaría desde el store */}
                 </select>
               </div>
 
@@ -451,7 +631,7 @@ export default function AdminReviewsPage() {
                   onChange={(e) => {
                     const [sortBy, sortOrder] = e.target.value.split('-')
                     handleFilterChange('sortBy', sortBy)
-                    handleFilterChange('sortOrder', sortOrder)
+                    handleFilterChange('sortOrder', sortOrder as 'asc' | 'desc')
                   }}
                   className="w-full border-2 border-black font-bold p-2 focus:outline-none focus:bg-yellow-400"
                   style={{ boxShadow: '3px 3px 0 #000000' }}
@@ -461,7 +641,6 @@ export default function AdminReviewsPage() {
                   <option value="rating-desc">{t('filters.sort_highest_rating')}</option>
                   <option value="rating-asc">{t('filters.sort_lowest_rating')}</option>
                   <option value="helpfulCount-desc">{t('filters.sort_most_helpful')}</option>
-                  <option value="reports-desc">{t('filters.sort_most_reported')}</option>
                 </select>
               </div>
             </div>
@@ -470,14 +649,7 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* LISTA DE REVIEWS */}
-      {reviewsLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-bold">{tCommon('loading')}</p>
-          </div>
-        </div>
-      ) : reviews.length === 0 ? (
+      {reviews.length === 0 ? (
         <div className="bg-white border-[3px] border-black p-12 text-center" style={{ boxShadow: '6px 6px 0 #000000' }}>
           <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-black text-black mb-2">{t('no_reviews')}</h3>
@@ -507,10 +679,11 @@ export default function AdminReviewsPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-black text-black">
-                          {review.buyer ? `${review.buyer.firstName} ${review.buyer.lastName}` : 'Usuario desconocido'}</h3>
+                          {review.buyer ? `${review.buyer.firstName} ${review.buyer.lastName}` : 'Usuario desconocido'}
+                        </h3>
                         <p className="text-sm text-gray-600 font-bold">{review.product?.title || 'Producto no disponible'}</p>
                         <p className="text-xs text-gray-500 font-bold">
-                        {t('seller')}: {review.product?.seller ? `${review.product.seller.firstName} ${review.product.seller.lastName}` : 'Vendedor desconocido'}
+                          {t('seller')}: {review.product?.seller ? `${review.product.seller.firstName} ${review.product.seller.lastName}` : 'Vendedor desconocido'}
                         </p>
                       </div>
                       <div className="text-right">
@@ -605,7 +778,7 @@ export default function AdminReviewsPage() {
 
                     {/* Acciones de moderación */}
                     <div className="flex items-center gap-2 mt-4 pt-4 border-t-2 border-gray-200">
-                      {review.status === ReviewStatus.PENDING_MODERATION && (
+                      {review.status === 'PENDING_MODERATION' && (
                         <>
                           <button
                             onClick={() => openModerationModal(review, 'approve')}
@@ -634,7 +807,7 @@ export default function AdminReviewsPage() {
                         </>
                       )}
 
-                      {review.status === ReviewStatus.PUBLISHED && (
+                      {review.status === 'PUBLISHED' && (
                         <>
                           <button
                             onClick={() => openModerationModal(review, 'flag')}
@@ -655,7 +828,7 @@ export default function AdminReviewsPage() {
                         </>
                       )}
 
-                      {review.status === ReviewStatus.FLAGGED && (
+                      {review.status === 'FLAGGED' && (
                         <>
                           <button
                             onClick={() => openModerationModal(review, 'approve')}
@@ -677,7 +850,7 @@ export default function AdminReviewsPage() {
                       )}
 
                       <button
-                        onClick={() => window.open(`/products/${review.product?.slug}`, '_blank')}
+                        onClick={() => window.open(`/productos/${review.product?.slug}`, '_blank')}
                         className="flex items-center gap-2 px-3 py-2 bg-blue-500 border-2 border-black font-bold text-black hover:bg-blue-400 transition-all"
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       >
@@ -784,13 +957,13 @@ export default function AdminReviewsPage() {
                     <div className="flex items-center gap-2 mb-1">
                       {renderStars(selectedReview.rating)}
                       <span className="font-bold text-black">
-                      {selectedReview.buyer ? `${selectedReview.buyer.firstName} ${selectedReview.buyer.lastName}` : 'Usuario desconocido'}
+                        {selectedReview.buyer ? `${selectedReview.buyer.firstName} ${selectedReview.buyer.lastName}` : 'Usuario desconocido'}
                       </span>
                     </div>
-                   <p className="text-sm text-gray-600 font-bold">{selectedReview.product?.title || 'Producto no disponible'}</p>
+                    <p className="text-sm text-gray-600 font-bold">{selectedReview.product?.title || 'Producto no disponible'}</p>
                     <p className="text-xs text-gray-500 font-bold">
-                    {t('seller')}: {selectedReview.product?.seller ? `${selectedReview.product.seller.firstName} ${selectedReview.product.seller.lastName}` : 'Vendedor desconocido'}
-                  </p>
+                      {t('seller')}: {selectedReview.product?.seller ? `${selectedReview.product.seller.firstName} ${selectedReview.product.seller.lastName}` : 'Vendedor desconocido'}
+                    </p>
                   </div>
                   <div className="text-right">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-black border border-black ${getStatusColor(selectedReview.status)}`}>
@@ -931,7 +1104,7 @@ export default function AdminReviewsPage() {
                     isSubmittingModeration || 
                     ((moderationAction === 'flag' || moderationAction === 'remove') && !moderationReason.trim())
                   }
-                  className={`flex items-center gap-2 px-6 py-3 border-2 border-black font-bold transition-all disabled:opacity-50 ${
+                  className={`flex items-center gap-2 px-6 py-3 border-2 border-black font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     moderationAction === 'approve' ? 'bg-green-500 text-black hover:bg-green-400' :
                     moderationAction === 'flag' ? 'bg-orange-500 text-black hover:bg-orange-400' :
                     'bg-red-500 text-white hover:bg-red-400'

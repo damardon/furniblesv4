@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// ✅ Importar desde el lugar correcto
-import type { Product } from '@/types' // o donde esté el tipo correcto
+import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { 
   HeartIcon,
@@ -22,17 +21,52 @@ import {
   EyeIcon,
   BarChartIcon
 } from 'lucide-react'
-import { useAuthStore } from '@/lib/stores/auth-store'
-import { useCartStore } from '@/lib/stores/cart-store'
-import { 
-  getFavoritesByUserId, 
-  getFavoriteStats, 
-  getSimilarProductsToFavorites,
-  toggleFavorite,
-  Favorite 
-} from '@/data/mockFavorites'
-import { ProductCard } from '@/components/products/product-card'
 import { ProductCategory, Difficulty } from '@/types'
+
+// Helper para obtener token JWT
+const getAuthToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token') || sessionStorage.getItem('token')
+  }
+  return null
+}
+
+interface Product {
+  id: string
+  title: string
+  slug: string
+  price: number
+  rating: number
+  viewCount: number
+  downloadCount: number
+  category: ProductCategory
+  difficulty: Difficulty
+  description: string
+  thumbnailFileIds?: string
+  tags?: string | string[]
+  seller?: {
+    firstName?: string
+    lastName?: string
+    sellerProfile?: {
+      storeName?: string
+    }
+  }
+}
+
+interface Favorite {
+  id: string
+  productId: string
+  createdAt: string
+  product: Product
+}
+
+interface FavoriteStats {
+  totalFavorites: number
+  byCategory: Record<string, number>
+  byDifficulty: Record<string, number>
+  byPriceRange: { under10: number; from10to20: number; from20to30: number; over30: number }
+  recentlyAdded: number
+}
 
 export default function FavoritesPage() {
   const t = useTranslations('favorites')
@@ -40,14 +74,13 @@ export default function FavoritesPage() {
   const tProducts = useTranslations('products')
   const router = useRouter()
   
-  // Stores
-  const { isAuthenticated, user, setLoginModalOpen } = useAuthStore()
-  const { addItem } = useCartStore()
-
   // States
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [filteredFavorites, setFilteredFavorites] = useState<Favorite[]>([])
-  const [similarProducts, setSimilarProducts] = useState<any[]>([])
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([])
   const [filterCategory, setFilterCategory] = useState<ProductCategory | 'ALL'>('ALL')
   const [filterDifficulty, setFilterDifficulty] = useState<Difficulty | 'ALL'>('ALL')
   const [filterPriceRange, setFilterPriceRange] = useState<'ALL' | 'under10' | '10-20' | '20-30' | 'over30'>('ALL')
@@ -57,36 +90,78 @@ export default function FavoritesPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [removingFavorites, setRemovingFavorites] = useState<Set<string>>(new Set())
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<FavoriteStats>({
     totalFavorites: 0,
-    byCategory: {} as Record<string, number>,
-    byDifficulty: {} as Record<string, number>,
+    byCategory: {},
+    byDifficulty: {},
     byPriceRange: { under10: 0, from10to20: 0, from20to30: 0, over30: 0 },
     recentlyAdded: 0
   })
 
-  // Redirect if not authenticated
+  // Check authentication
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLoginModalOpen(true)
+    const token = getAuthToken()
+    if (!token) {
       router.push('/productos')
       return
     }
-  }, [isAuthenticated, setLoginModalOpen, router])
+    setIsAuthenticated(true)
+  }, [router])
 
   // Load user favorites
   useEffect(() => {
-    if (user?.id) {
-      const userFavorites = getFavoritesByUserId(user.id)
-      const userStats = getFavoriteStats(user.id)
-      const similar = getSimilarProductsToFavorites(user.id, 6)
-      
-      setFavorites(userFavorites)
-      setFilteredFavorites(userFavorites)
-      setStats(userStats)
-      setSimilarProducts(similar)
+    const loadUserFavorites = async () => {
+      const token = getAuthToken()
+      if (!token || !isAuthenticated) return
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        // Cargar favoritos del usuario
+        const favoritesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favorites`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (!favoritesResponse.ok) throw new Error('Error cargando favoritos')
+        
+        const favoritesData = await favoritesResponse.json()
+        
+        // Cargar estadísticas de favoritos
+        const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favorites/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        const statsData = statsResponse.ok ? await statsResponse.json() : {
+          totalFavorites: favoritesData.length,
+          byCategory: {},
+          byDifficulty: {},
+          byPriceRange: { under10: 0, from10to20: 0, from20to30: 0, over30: 0 },
+          recentlyAdded: 0
+        }
+
+        // Cargar productos similares
+        const similarResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favorites/similar?limit=6`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        const similarData = similarResponse.ok ? await similarResponse.json() : []
+
+        setFavorites(favoritesData.favorites || favoritesData || [])
+        setFilteredFavorites(favoritesData.favorites || favoritesData || [])
+        setStats(statsData)
+        setSimilarProducts(similarData.products || similarData || [])
+
+      } catch (error) {
+        console.error('Error loading favorites:', error)
+        setError(error instanceof Error ? error.message : 'Error desconocido')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [user?.id])
+
+    loadUserFavorites()
+  }, [isAuthenticated])
 
   // Filter and search favorites
   useEffect(() => {
@@ -123,18 +198,17 @@ export default function FavoritesPage() {
         favorite.product.title.toLowerCase().includes(query) ||
         favorite.product.seller?.sellerProfile?.storeName?.toLowerCase().includes(query) ||
         (() => {
-  try {
-    const tags = typeof favorite.product.tags === 'string' 
-      ? JSON.parse(favorite.product.tags) 
-      : favorite.product.tags || []
-    return Array.isArray(tags) 
-      ? tags.some((tag: string) => tag.toLowerCase().includes(query))
-      : false
-  } catch {
-    return false
-  }
-})()
-
+          try {
+            const tags = typeof favorite.product.tags === 'string' 
+              ? JSON.parse(favorite.product.tags) 
+              : favorite.product.tags || []
+            return Array.isArray(tags) 
+              ? tags.some((tag: string) => tag.toLowerCase().includes(query))
+              : false
+          } catch {
+            return false
+          }
+        })()
       )
     }
 
@@ -191,24 +265,27 @@ export default function FavoritesPage() {
   }
 
   const handleRemoveFavorite = async (productId: string) => {
-    if (!user?.id || removingFavorites.has(productId)) return
+    const token = getAuthToken()
+    if (!token || removingFavorites.has(productId)) return
 
     setRemovingFavorites(prev => new Set(prev).add(productId))
 
     try {
-      const result = await toggleFavorite(user.id, productId)
-      
-      if (result.success) {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favorites/${productId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (response.ok) {
         // Actualizar la lista local
         setFavorites(prev => prev.filter(fav => fav.productId !== productId))
         // TODO: Mostrar toast de éxito
       } else {
-        // TODO: Mostrar toast de error
-        console.error('Error removing favorite:', result.message)
+        throw new Error('Error eliminando favorito')
       }
     } catch (error) {
       console.error('Error removing favorite:', error)
-      // TODO: Mostrar toast de error
+      setError(error instanceof Error ? error.message : 'Error eliminando favorito')
     } finally {
       setRemovingFavorites(prev => {
         const newSet = new Set(prev)
@@ -219,7 +296,8 @@ export default function FavoritesPage() {
   }
 
   const handleAddToCart = async (productId: string) => {
-    if (!user?.id || addingToCart.has(productId)) return
+    const token = getAuthToken()
+    if (!token || addingToCart.has(productId)) return
 
     const favorite = favorites.find(fav => fav.productId === productId)
     if (!favorite) return
@@ -227,11 +305,26 @@ export default function FavoritesPage() {
     setAddingToCart(prev => new Set(prev).add(productId))
 
     try {
-      await addItem(favorite.product, 1)
-      // TODO: Mostrar toast de éxito
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          productId: productId,
+          quantity: 1
+        })
+      })
+
+      if (response.ok) {
+        // TODO: Mostrar toast de éxito
+      } else {
+        throw new Error('Error agregando al carrito')
+      }
     } catch (error) {
       console.error('Error adding to cart:', error)
-      // TODO: Mostrar toast de error
+      setError(error instanceof Error ? error.message : 'Error agregando al carrito')
     } finally {
       setAddingToCart(prev => {
         const newSet = new Set(prev)
@@ -241,6 +334,74 @@ export default function FavoritesPage() {
     }
   }
 
+  // Component para mostrar un producto como card
+  const ProductCard = ({ product }: { product: Product }) => (
+    <div className="bg-white border-4 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-300" style={{ boxShadow: '6px 6px 0 #000000' }}>
+      <div className="relative">
+        {/* Product Image */}
+        <div className="relative w-full h-48 border-b-4 border-black overflow-hidden">
+          {product.thumbnailFileIds ? (
+            <Image
+              src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/thumbnail/${JSON.parse(product.thumbnailFileIds)[0]}`}
+              alt={product.title}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-orange-200 to-yellow-200 flex items-center justify-center">
+              <span className="text-6xl">🪵</span>
+            </div>
+          )}
+        </div>
+
+        {/* Product Info */}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`text-xs font-black px-2 py-1 border-2 border-black uppercase ${
+              product.difficulty === 'BEGINNER' ? 'bg-green-400' :
+              product.difficulty === 'INTERMEDIATE' ? 'bg-yellow-400' : 'bg-orange-400'
+            }`}>
+              {product.difficulty}
+            </span>
+            <span className="text-xs font-black px-2 py-1 border-2 border-black bg-blue-400 uppercase">
+              {product.category}
+            </span>
+          </div>
+
+          <Link href={`/productos/${product.slug}`} className="block">
+            <h3 className="text-lg font-black text-black uppercase line-clamp-2 mb-2 hover:text-orange-500 transition-colors">
+              {product.title}
+            </h3>
+          </Link>
+
+          <p className="text-sm text-gray-600 font-medium line-clamp-2 mb-3">
+            {product.description}
+          </p>
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-2xl font-black text-black">
+              {formatPrice(product.price)}
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-black text-black">{product.rating.toFixed(1)}</span>
+              <div className="flex">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <span key={i} className={`text-sm ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-600 font-bold">
+            <span>{product.viewCount} vistas</span>
+            <span>{product.downloadCount} descargas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   // Don't render if not authenticated
   if (!isAuthenticated) {
     return (
@@ -248,6 +409,36 @@ export default function FavoritesPage() {
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
           <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-bold">{t('loading_favorites')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-black text-black uppercase mb-2">{t('error_title')}</h2>
+          <p className="text-gray-600 font-bold mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-orange-500 border-3 border-black px-6 py-3 font-black text-white uppercase hover:bg-yellow-400 hover:text-black transition-all"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            {t('retry')}
+          </button>
         </div>
       </div>
     )
@@ -269,6 +460,19 @@ export default function FavoritesPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-red-100 border-4 border-red-500 p-4 mb-8" style={{ boxShadow: '4px 4px 0 #000000' }}>
+            <p className="text-red-800 font-bold">{error}</p>
+            <button 
+              onClick={() => setError(null)}
+              className="mt-2 text-red-600 font-bold text-sm hover:text-red-800"
+            >
+              {t('dismiss_error')}
+            </button>
+          </div>
+        )}
+
         {/* Page Title */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-6">
@@ -542,7 +746,7 @@ export default function FavoritesPage() {
                   {formatDate(favorite.createdAt)}
                 </div>
 
-                <ProductCard key={favorite.id} product={favorite.product as any} />
+                <ProductCard product={favorite.product} />
               </div>
             ))}
           </div>
@@ -559,10 +763,11 @@ export default function FavoritesPage() {
                   {/* Product Image */}
                   <div className="relative w-32 h-32 border-3 border-black overflow-hidden flex-shrink-0">
                     {favorite.product.thumbnailFileIds ? (
-  <img
-    src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/thumbnail/${JSON.parse(favorite.product.thumbnailFileIds)[0]}`}
+                      <Image
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/api/files/thumbnail/${JSON.parse(favorite.product.thumbnailFileIds)[0]}`}
                         alt={favorite.product.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-orange-200 to-yellow-200 flex items-center justify-center">
@@ -583,7 +788,7 @@ export default function FavoritesPage() {
                         </Link>
                         <p className="text-sm text-gray-600 font-bold mt-1">
                           {favorite.product.seller?.sellerProfile?.storeName || 
- `${favorite.product.seller?.firstName || ''} ${favorite.product.seller?.lastName || ''}`.trim() || 'Vendedor'}
+                           `${favorite.product.seller?.firstName || ''} ${favorite.product.seller?.lastName || ''}`.trim() || 'Vendedor'}
                         </p>
                       </div>
                       

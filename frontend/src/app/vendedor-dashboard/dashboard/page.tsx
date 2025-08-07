@@ -23,97 +23,69 @@ import {
 } from 'lucide-react'
 
 import { useAuthStore } from '@/lib/stores/auth-store'
-import { Product, Order, OrderStatus } from '@/types'
 
-// Mock data - En producción vendrá del backend
-const mockDashboardData = {
-  stats: {
-    totalRevenue: 2450.50,
-    totalSales: 18,
-    totalProducts: 7,
-    averageRating: 4.8,
-    monthlyGrowth: {
-      revenue: 23.5,
-      sales: 15.2,
-      products: 0,
-      rating: 2.1
+// ✅ Tipos coherentes con backend
+interface DashboardStats {
+  totalRevenue: number
+  totalSales: number
+  totalProducts: number
+  averageRating: number
+  monthlyGrowth: {
+    revenue: number
+    sales: number
+    products: number
+    rating: number
+  }
+}
+
+interface RecentSale {
+  id: string
+  orderNumber: string
+  buyerName: string
+  productTitle: string
+  amount: number
+  status: 'PENDING' | 'PROCESSING' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED' | 'DISPUTED'
+  createdAt: string
+}
+
+interface TopProduct {
+  id: string
+  title: string
+  sales: number
+  revenue: number
+  rating: number
+  views: number
+}
+
+interface RecentReview {
+  id: string
+  productTitle: string
+  customerName: string
+  rating: number
+  comment: string
+  createdAt: string
+  responded: boolean
+}
+
+interface DashboardData {
+  stats: DashboardStats
+  recentSales: RecentSale[]
+  topProducts: TopProduct[]
+  recentReviews: RecentReview[]
+}
+
+// ✅ Helper para obtener token de autenticación
+const getAuthToken = (): string | null => {
+  try {
+    const authData = localStorage.getItem('furnibles-auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed.state?.token || parsed.token
     }
-  },
-  recentSales: [
-    {
-      id: '1',
-      orderNumber: 'ORD-2025-001',
-      buyerName: 'María González',
-      productTitle: 'Mesa de Centro Escandinava',
-      amount: 89.99,
-      status: OrderStatus.COMPLETED,
-      createdAt: '2025-01-07T10:30:00Z'
-    },
-    {
-      id: '2', 
-      orderNumber: 'ORD-2025-002',
-      buyerName: 'Carlos Rivera',
-      productTitle: 'Estantería Modular',
-      amount: 149.99,
-      status: OrderStatus.PAID,
-      createdAt: '2025-01-06T15:45:00Z'
-    },
-    {
-      id: '3',
-      orderNumber: 'ORD-2025-003', 
-      buyerName: 'Ana López',
-      productTitle: 'Silla Ergonómica DIY',
-      amount: 75.50,
-      status: OrderStatus.PROCESSING,
-      createdAt: '2025-01-06T09:20:00Z'
-    }
-  ],
-  topProducts: [
-    {
-      id: '1',
-      title: 'Mesa de Centro Escandinava',
-      sales: 8,
-      revenue: 719.92,
-      rating: 4.9,
-      views: 342
-    },
-    {
-      id: '2',
-      title: 'Estantería Modular',
-      sales: 5,
-      revenue: 749.95,
-      rating: 4.8,
-      views: 278
-    },
-    {
-      id: '3',
-      title: 'Silla Ergonómica DIY',
-      sales: 5,
-      revenue: 377.50,
-      rating: 4.7,
-      views: 195
-    }
-  ],
-  recentReviews: [
-    {
-      id: '1',
-      productTitle: 'Mesa de Centro Escandinava',
-      customerName: 'María G.',
-      rating: 5,
-      comment: 'Excelente diseño, muy fácil de seguir las instrucciones.',
-      createdAt: '2025-01-07T08:00:00Z',
-      responded: false
-    },
-    {
-      id: '2',
-      productTitle: 'Estantería Modular',
-      customerName: 'Pedro M.',
-      rating: 4,
-      comment: 'Buen proyecto, aunque algunas medidas podrían ser más claras.',
-      createdAt: '2025-01-06T14:30:00Z',
-      responded: true
-    }
-  ]
+  } catch (error) {
+    console.error('Error parsing auth token:', error)
+  }
+  return null
 }
 
 export default function SellerDashboardPage() {
@@ -121,18 +93,146 @@ export default function SellerDashboardPage() {
   const tCommon = useTranslations('common')
   const tOrders = useTranslations('orders')
   const { user } = useAuthStore()
+  
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [dashboardData, setDashboardData] = useState(mockDashboardData)
+  const [error, setError] = useState<string | null>(null)
 
-  // Simular carga de datos
+  // ✅ Cargar datos del dashboard desde APIs reales
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const token = getAuthToken()
+        if (!token) {
+          setError('No autorizado')
+          return
+        }
 
-  // Formatear moneda
+        console.log('🔍 [SELLER-DASHBOARD] Fetching dashboard data')
+
+        // ✅ API call para estadísticas generales del vendedor
+        const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!statsResponse.ok) {
+          throw new Error(`Error ${statsResponse.status}: ${statsResponse.statusText}`)
+        }
+
+        const statsData = await statsResponse.json()
+        console.log('✅ [SELLER-DASHBOARD] Stats loaded:', statsData)
+
+        // ✅ API call para ventas recientes
+        const salesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/sales?limit=5&sortBy=createdAt&sortOrder=desc`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        let recentSales: RecentSale[] = []
+        if (salesResponse.ok) {
+          const salesData = await salesResponse.json()
+          console.log('✅ [SELLER-DASHBOARD] Recent sales loaded:', salesData.data?.length || 0)
+          
+          // Transformar datos de la API al formato esperado
+          recentSales = salesData.data?.map((order: any) => ({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            buyerName: `${order.buyer?.firstName || ''} ${order.buyer?.lastName || ''}`.trim() || order.buyerEmail,
+            productTitle: order.items?.[0]?.productTitle || 'Producto sin título',
+            amount: order.totalAmount || 0,
+            status: order.status,
+            createdAt: order.createdAt,
+          })) || []
+        }
+
+        // ✅ API call para productos top
+        const productsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/top-products?limit=3`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        let topProducts: TopProduct[] = []
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json()
+          console.log('✅ [SELLER-DASHBOARD] Top products loaded:', productsData.length || 0)
+          topProducts = productsData || []
+        }
+
+        // ✅ API call para reviews recientes
+        const reviewsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews?sellerId=${user?.id}&limit=4&sortBy=createdAt&sortOrder=desc`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        let recentReviews: RecentReview[] = []
+        if (reviewsResponse.ok) {
+          const reviewsData = await reviewsResponse.json()
+          console.log('✅ [SELLER-DASHBOARD] Recent reviews loaded:', reviewsData.data?.length || 0)
+          
+          // Transformar datos de la API al formato esperado
+          recentReviews = reviewsData.data?.map((review: any) => ({
+            id: review.id,
+            productTitle: review.product?.title || 'Producto sin título',
+            customerName: `${review.buyer?.firstName || ''} ${review.buyer?.lastName || ''}`.trim() || 'Usuario anónimo',
+            rating: review.rating || 0,
+            comment: review.comment || '',
+            createdAt: review.createdAt,
+            responded: !!review.response, // Verificar si tiene respuesta
+          })) || []
+        }
+
+        // Construir objeto de datos del dashboard
+        const dashboardData: DashboardData = {
+          stats: {
+            totalRevenue: statsData.totalRevenue || 0,
+            totalSales: statsData.totalSales || 0,
+            totalProducts: statsData.totalProducts || 0,
+            averageRating: statsData.averageRating || 0,
+            monthlyGrowth: {
+              revenue: statsData.monthlyGrowth?.revenue || 0,
+              sales: statsData.monthlyGrowth?.sales || 0,
+              products: statsData.monthlyGrowth?.products || 0,
+              rating: statsData.monthlyGrowth?.rating || 0,
+            }
+          },
+          recentSales,
+          topProducts,
+          recentReviews,
+        }
+
+        setDashboardData(dashboardData)
+        console.log('✅ [SELLER-DASHBOARD] Dashboard data set successfully')
+
+      } catch (err) {
+        console.error('❌ [SELLER-DASHBOARD] Error fetching dashboard data:', err)
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (user?.id) {
+      fetchDashboardData()
+    }
+  }, [user?.id])
+
+  // ✅ Formatear moneda
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
@@ -140,7 +240,7 @@ export default function SellerDashboardPage() {
     }).format(amount)
   }
 
-  // Formatear fecha
+  // ✅ Formatear fecha
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('es-ES', {
       day: '2-digit',
@@ -151,38 +251,39 @@ export default function SellerDashboardPage() {
     }).format(new Date(dateString))
   }
 
-  // Obtener color del estado
-  const getStatusColor = (status: OrderStatus) => {
+  // ✅ Obtener color del estado
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case OrderStatus.COMPLETED:
+      case 'COMPLETED':
         return 'bg-green-500 text-white'
-      case OrderStatus.PAID:
+      case 'PAID':
         return 'bg-blue-500 text-white'
-      case OrderStatus.PROCESSING:
+      case 'PROCESSING':
         return 'bg-yellow-500 text-black'
-      case OrderStatus.PENDING:
+      case 'PENDING':
         return 'bg-gray-500 text-white'
       default:
         return 'bg-gray-500 text-white'
     }
   }
 
-  // Obtener texto del estado
-  const getStatusText = (status: OrderStatus) => {
+  // ✅ Obtener texto del estado
+  const getStatusText = (status: string) => {
     switch (status) {
-      case OrderStatus.COMPLETED:
+      case 'COMPLETED':
         return tOrders('status.completed')
-      case OrderStatus.PAID:
+      case 'PAID':
         return tOrders('status.paid')
-      case OrderStatus.PROCESSING:
+      case 'PROCESSING':
         return tOrders('status.processing')
-      case OrderStatus.PENDING:
+      case 'PENDING':
         return tOrders('status.pending')
       default:
         return tCommon('error')
     }
   }
 
+  // ✅ Estados de loading y error
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -190,6 +291,33 @@ export default function SellerDashboardPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
           <p className="text-gray-600 font-bold">{tCommon('loading')}</p>
         </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white border-[3px] border-black p-8 text-center" style={{ boxShadow: '6px 6px 0 #000000' }}>
+        <div className="text-6xl mb-4">⚠️</div>
+        <h2 className="text-2xl font-black text-black uppercase mb-4">Error</h2>
+        <p className="text-gray-600 font-bold mb-6">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-orange-500 border-2 border-black text-black font-black py-2 px-4 uppercase hover:bg-orange-400 transition-all"
+          style={{ boxShadow: '4px 4px 0 #000000' }}
+        >
+          {tCommon('retry')}
+        </button>
+      </div>
+    )
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="bg-white border-[3px] border-black p-8 text-center" style={{ boxShadow: '6px 6px 0 #000000' }}>
+        <div className="text-6xl mb-4">📊</div>
+        <h2 className="text-2xl font-black text-black uppercase mb-4">Sin datos</h2>
+        <p className="text-gray-600 font-bold">No se pudieron cargar los datos del dashboard</p>
       </div>
     )
   }
@@ -235,7 +363,7 @@ export default function SellerDashboardPage() {
             </div>
             <div className={`flex items-center gap-1 text-sm font-bold ${dashboardData.stats.monthlyGrowth.revenue > 0 ? 'text-green-600' : 'text-red-600'}`}>
               {dashboardData.stats.monthlyGrowth.revenue > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-              {Math.abs(dashboardData.stats.monthlyGrowth.revenue)}%
+              {Math.abs(dashboardData.stats.monthlyGrowth.revenue).toFixed(1)}%
             </div>
           </div>
           <div>
@@ -255,7 +383,7 @@ export default function SellerDashboardPage() {
             </div>
             <div className={`flex items-center gap-1 text-sm font-bold ${dashboardData.stats.monthlyGrowth.sales > 0 ? 'text-green-600' : 'text-red-600'}`}>
               {dashboardData.stats.monthlyGrowth.sales > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-              {Math.abs(dashboardData.stats.monthlyGrowth.sales)}%
+              {Math.abs(dashboardData.stats.monthlyGrowth.sales).toFixed(1)}%
             </div>
           </div>
           <div>
@@ -274,7 +402,14 @@ export default function SellerDashboardPage() {
               <Package className="h-6 w-6 text-black" />
             </div>
             <div className="flex items-center gap-1 text-sm font-bold text-gray-600">
-              <span>{t('no_change')}</span>
+              {dashboardData.stats.monthlyGrowth.products === 0 ? (
+                <span>{t('no_change')}</span>
+              ) : (
+                <>
+                  {dashboardData.stats.monthlyGrowth.products > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                  {Math.abs(dashboardData.stats.monthlyGrowth.products).toFixed(1)}%
+                </>
+              )}
             </div>
           </div>
           <div>
@@ -292,14 +427,14 @@ export default function SellerDashboardPage() {
             <div className="p-3 bg-yellow-500 border-2 border-black">
               <Star className="h-6 w-6 text-black" />
             </div>
-            <div className="flex items-center gap-1 text-sm font-bold text-green-600">
-              <TrendingUp className="h-4 w-4" />
-              {dashboardData.stats.monthlyGrowth.rating}%
+            <div className={`flex items-center gap-1 text-sm font-bold ${dashboardData.stats.monthlyGrowth.rating >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {dashboardData.stats.monthlyGrowth.rating >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              {Math.abs(dashboardData.stats.monthlyGrowth.rating).toFixed(1)}%
             </div>
           </div>
           <div>
             <h3 className="text-2xl font-black text-black mb-1">
-              {dashboardData.stats.averageRating}/5.0
+              {dashboardData.stats.averageRating.toFixed(1)}/5.0
             </h3>
             <p className="text-sm font-bold text-gray-600">{t('average_rating')}</p>
             <div className="flex items-center gap-1 mt-1">
@@ -384,7 +519,7 @@ export default function SellerDashboardPage() {
                     <span className="text-gray-600 font-bold">{product.views} {t('views')}</span>
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                      <span className="text-gray-600 font-bold">{product.rating}</span>
+                      <span className="text-gray-600 font-bold">{product.rating.toFixed(1)}</span>
                     </div>
                   </div>
                 </div>

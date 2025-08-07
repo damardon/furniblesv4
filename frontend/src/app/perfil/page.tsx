@@ -30,11 +30,14 @@ import {
   BarChartIcon,
   DollarSignIcon
 } from 'lucide-react'
-import { useAuthStore } from '@/lib/stores/auth-store'
-import { getOrderStats } from '@/data/mockOrders'
-import { getFavoriteStats } from '@/data/mockFavorites'
-import { getReviewStats } from '@/data/mockReviews'
-import { getDownloadStats } from '@/data/mockDownloads'
+
+// Helper para obtener token JWT
+const getAuthToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token') || sessionStorage.getItem('token')
+  }
+  return null
+}
 
 interface UserProfile {
   firstName: string
@@ -60,18 +63,25 @@ interface NotificationSettings {
   priceDropAlerts: boolean
 }
 
+interface UserStats {
+  orders: { totalOrders: number; totalSpent: number; completedOrders: number; pendingOrders: number }
+  favorites: { totalFavorites: number; recentlyAdded: number }
+  reviews: { totalReviews: number; averageRating: number; helpfulVotes: number }
+  downloads: { totalProducts: number; totalDownloads: number; downloadsThisMonth: number }
+}
+
 export default function ProfilePage() {
   const t = useTranslations('profile')
   const tCommon = useTranslations('common')
   const router = useRouter()
   
-  // Stores
-  const { isAuthenticated, user, setLoginModalOpen } = useAuthStore()
-
   // States
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'personal' | 'notifications' | 'security' | 'stats'>('personal')
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   
   // Profile data
@@ -101,7 +111,7 @@ export default function ProfilePage() {
   })
 
   // Stats
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<UserStats>({
     orders: { totalOrders: 0, totalSpent: 0, completedOrders: 0, pendingOrders: 0 },
     favorites: { totalFavorites: 0, recentlyAdded: 0 },
     reviews: { totalReviews: 0, averageRating: 0, helpfulVotes: 0 },
@@ -120,77 +130,173 @@ export default function ProfilePage() {
     confirm: false
   })
 
-  // Redirect if not authenticated
+  // Check authentication
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLoginModalOpen(true)
+    const token = getAuthToken()
+    if (!token) {
       router.push('/productos')
       return
     }
-  }, [isAuthenticated, setLoginModalOpen, router])
+    setIsAuthenticated(true)
+  }, [router])
 
   // Load user data and stats
   useEffect(() => {
-    if (user?.id) {
-      // Set profile data from user
-      setProfileData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.buyerProfile?.phone || '',
-        dateOfBirth: '',
-        country: 'Chile',
-        city: '',
-        address: '',
-        zipCode: '',
-        avatar: user.buyerProfile?.avatar
-      })
+    const loadUserData = async () => {
+      const token = getAuthToken()
+      if (!token || !isAuthenticated) return
 
-      // Load stats
-      const orderStats = getOrderStats(user.id)
-      const favoriteStats = getFavoriteStats(user.id)
-      const reviewStats = getReviewStats(user.id)
-      const downloadStats = getDownloadStats(user.id)
+      setIsLoading(true)
+      setError(null)
 
-      setStats({
-        orders: orderStats,
-        favorites: favoriteStats,
-        reviews: reviewStats,
-        downloads: downloadStats
-      })
+      try {
+        // Cargar perfil del usuario
+        const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (!profileResponse.ok) throw new Error('Error cargando perfil')
+        
+        const profile = await profileResponse.json()
+
+        setProfileData({
+          firstName: profile.firstName || '',
+          lastName: profile.lastName || '',
+          email: profile.email || '',
+          phone: profile.buyerProfile?.phone || '',
+          dateOfBirth: profile.buyerProfile?.dateOfBirth || '',
+          country: 'Chile',
+          city: '',
+          address: '',
+          zipCode: '',
+          avatar: profile.buyerProfile?.avatar
+        })
+
+        // Cargar preferencias de notificación
+        const notificationsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/preferences`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (notificationsResponse.ok) {
+          const preferences = await notificationsResponse.json()
+          setNotificationSettings({
+            emailEnabled: preferences.emailEnabled ?? true,
+            orderNotifications: preferences.orderNotifications ?? true,
+            paymentNotifications: preferences.paymentNotifications ?? true,
+            reviewNotifications: preferences.reviewNotifications ?? true,
+            marketingEmails: preferences.marketingEmails ?? false,
+            weeklyDigest: preferences.digestFrequency !== 'DISABLED',
+            newProductAlerts: preferences.systemNotifications ?? false,
+            priceDropAlerts: false
+          })
+        }
+
+        // Cargar estadísticas del usuario
+        const [ordersResponse, favoritesResponse, reviewsResponse, downloadsResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/my?summary=true`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/favorites?summary=true`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/my?summary=true`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads?summary=true`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ])
+
+        const ordersData = ordersResponse.ok ? await ordersResponse.json() : { totalOrders: 0, totalSpent: 0, completedOrders: 0, pendingOrders: 0 }
+        const favoritesData = favoritesResponse.ok ? await favoritesResponse.json() : { totalFavorites: 0, recentlyAdded: 0 }
+        const reviewsData = reviewsResponse.ok ? await reviewsResponse.json() : { totalReviews: 0, averageRating: 0, helpfulVotes: 0 }
+        const downloadsData = downloadsResponse.ok ? await downloadsResponse.json() : { totalProducts: 0, totalDownloads: 0, downloadsThisMonth: 0 }
+
+        setStats({
+          orders: ordersData,
+          favorites: favoritesData,
+          reviews: reviewsData,
+          downloads: downloadsData
+        })
+
+      } catch (error) {
+        console.error('Error loading user data:', error)
+        setError(error instanceof Error ? error.message : 'Error desconocido')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [user])
+
+    loadUserData()
+  }, [isAuthenticated])
 
   const handleSaveProfile = async () => {
+    const token = getAuthToken()
+    if (!token) return
+
     setIsSaving(true)
     
     try {
-      // Simular guardado
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // TODO: Aquí iría la llamada al API
-      // await updateUserProfile(profileData)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firstName: profileData.firstName,
+          lastName: profileData.lastName,
+          phone: profileData.phone,
+          dateOfBirth: profileData.dateOfBirth || null,
+          buyerProfile: {
+            phone: profileData.phone,
+            dateOfBirth: profileData.dateOfBirth || null
+          }
+        })
+      })
+
+      if (!response.ok) throw new Error('Error guardando perfil')
       
       setIsEditing(false)
       // TODO: Mostrar toast de éxito
     } catch (error) {
       console.error('Error saving profile:', error)
-      // TODO: Mostrar toast de error
+      setError(error instanceof Error ? error.message : 'Error guardando perfil')
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleSaveNotifications = async () => {
+    const token = getAuthToken()
+    if (!token) return
+
     setIsSaving(true)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      // TODO: await updateNotificationSettings(notificationSettings)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          emailEnabled: notificationSettings.emailEnabled,
+          orderNotifications: notificationSettings.orderNotifications,
+          paymentNotifications: notificationSettings.paymentNotifications,
+          reviewNotifications: notificationSettings.reviewNotifications,
+          marketingEmails: notificationSettings.marketingEmails,
+          systemNotifications: notificationSettings.newProductAlerts,
+          digestFrequency: notificationSettings.weeklyDigest ? 'WEEKLY' : 'DISABLED'
+        })
+      })
+
+      if (!response.ok) throw new Error('Error guardando preferencias')
+      
       // TODO: Mostrar toast de éxito
     } catch (error) {
       console.error('Error saving notifications:', error)
-      // TODO: Mostrar toast de error
+      setError(error instanceof Error ? error.message : 'Error guardando preferencias')
     } finally {
       setIsSaving(false)
     }
@@ -198,26 +304,44 @@ export default function ProfilePage() {
 
   const handlePasswordChange = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      // TODO: Mostrar error
+      setError('Las contraseñas no coinciden')
       return
     }
 
     if (passwordData.newPassword.length < 8) {
-      // TODO: Mostrar error
+      setError('La contraseña debe tener al menos 8 caracteres')
       return
     }
+
+    const token = getAuthToken()
+    if (!token) return
 
     setIsSaving(true)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      // TODO: await changePassword(passwordData)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Error cambiando contraseña')
+      }
       
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setError(null)
       // TODO: Mostrar toast de éxito
     } catch (error) {
       console.error('Error changing password:', error)
-      // TODO: Mostrar toast de error
+      setError(error instanceof Error ? error.message : 'Error cambiando contraseña')
     } finally {
       setIsSaving(false)
     }
@@ -243,6 +367,36 @@ export default function ProfilePage() {
     )
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-bold">{t('loading_profile')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !profileData.email) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-black text-black uppercase mb-2">{t('error_title')}</h2>
+          <p className="text-gray-600 font-bold mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-orange-500 border-3 border-black px-6 py-3 font-black text-white uppercase hover:bg-yellow-400 hover:text-black transition-all"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            {t('retry')}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -259,6 +413,19 @@ export default function ProfilePage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-red-100 border-4 border-red-500 p-4 mb-8" style={{ boxShadow: '4px 4px 0 #000000' }}>
+            <p className="text-red-800 font-bold">{error}</p>
+            <button 
+              onClick={() => setError(null)}
+              className="mt-2 text-red-600 font-bold text-sm hover:text-red-800"
+            >
+              {t('dismiss_error')}
+            </button>
+          </div>
+        )}
+
         {/* Page Title */}
         <div className="flex items-center gap-4 mb-8">
           <Link 
@@ -435,6 +602,23 @@ export default function ProfilePage() {
 
                     <div>
                       <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
+                        <MailIcon className="w-4 h-4" />
+                        {t('personal.email')}
+                      </label>
+                      <input
+                        type="email"
+                        value={profileData.email}
+                        disabled
+                        className="w-full px-4 py-3 bg-gray-100 border-3 border-black font-bold opacity-70 cursor-not-allowed"
+                        style={{ boxShadow: '3px 3px 0 #000000' }}
+                      />
+                      <p className="text-xs text-gray-600 font-bold mt-1">
+                        {t('personal.email_readonly')}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
                         <PhoneIcon className="w-4 h-4" />
                         {t('personal.phone')}
                       </label>
@@ -450,8 +634,23 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Address Info */}
+                  {/* Additional Info */}
                   <div className="space-y-4">
+                    <div>
+                      <label className="flex items-center gap-2 text-black font-black text-sm uppercase mb-2">
+                        <CalendarIcon className="w-4 h-4" />
+                        {t('personal.date_of_birth')}
+                      </label>
+                      <input
+                        type="date"
+                        value={profileData.dateOfBirth}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                        disabled={!isEditing || isSaving}
+                        className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:bg-gray-100 disabled:opacity-70"
+                        style={{ boxShadow: '3px 3px 0 #000000' }}
+                      />
+                    </div>
+
                     <div>
                       <label className="block text-black font-black text-sm uppercase mb-2">
                         {t('personal.country')}
@@ -498,21 +697,6 @@ export default function ProfilePage() {
                         onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
                         disabled={!isEditing || isSaving}
                         placeholder={t('personal.address_placeholder')}
-                        className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:bg-gray-100 disabled:opacity-70"
-                        style={{ boxShadow: '3px 3px 0 #000000' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-black font-black text-sm uppercase mb-2">
-                        {t('personal.zip_code')}
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.zipCode}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, zipCode: e.target.value }))}
-                        disabled={!isEditing || isSaving}
-                        placeholder="12345"
                         className="w-full px-4 py-3 bg-white border-3 border-black font-bold focus:outline-none focus:bg-yellow-400 transition-all disabled:bg-gray-100 disabled:opacity-70"
                         style={{ boxShadow: '3px 3px 0 #000000' }}
                       />

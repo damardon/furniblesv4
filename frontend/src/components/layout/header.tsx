@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { NotificationButton } from '@/components/notifications/notification-button'
 import {
   Search,
   ShoppingCart,
@@ -65,7 +66,7 @@ export function Header() {
   // Stores
   const { user, isAuthenticated, logout, setLoginModalOpen, setRegisterModalOpen } = useAuthStore()
   const { itemCount, isCartOpen, setCartOpen } = useCartStore()
-  const { unreadCount, setNotificationPanelOpen } = useNotificationStore()
+  const { unreadCount, setNotificationPanelOpen, fetchNotifications } = useNotificationStore()
   
   // Admin Store
   const { 
@@ -77,6 +78,13 @@ export function Header() {
     fetchPendingReviews,
     fetchFlaggedContent
   } = useAdminStore()
+
+  // ✅ Cargar notificaciones cuando el usuario se autentica
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications(true)
+    }
+  }, [isAuthenticated, fetchNotifications])
 
   // Calcular total de items pendientes de moderación
   const getPendingModerationCount = () => {
@@ -333,24 +341,9 @@ export function Header() {
               )}
             </button>
 
-            {/* Notificaciones (Solo usuarios autenticados) */}
-            {isAuthenticated && (
-              <button
-                className="relative p-2 bg-white border-2 border-black hover:bg-yellow-400 transition-all"
-                style={{ boxShadow: '3px 3px 0 #000000' }}
-                onClick={() => setNotificationPanelOpen(true)}
-              >
-                <Bell className="h-4 w-4 text-black" />
-                {unreadCount > 0 && (
-                  <span 
-                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-black px-2 py-1 border-2 border-black min-w-[20px] h-[20px] flex items-center justify-center"
-                    style={{ boxShadow: '2px 2px 0 #000000' }}
-                  >
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </button>
-            )}
+            {/* ✅ CORREGIDO: Usar NotificationButton component */}
+            <NotificationButton />
+
             {/* Usuario Menu SABDA */}
             {isAuthenticated && user ? (
               <DropdownMenu>

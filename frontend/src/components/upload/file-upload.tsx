@@ -14,18 +14,27 @@ import {
   RotateCcw
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/stores/auth-store'
-import { useNotificationStore } from '@/lib/stores/notification-store'
-import { NotificationType } from '@/types/additional'
 import { cn } from '@/lib/utils'
 
+// ✅ Tipos coherentes con backend
 interface UploadedFile {
   id: string
   filename: string
+  key: string
   url: string
+  mimeType: string
   size: number
-  type: 'PDF' | 'IMAGE'
-  status: 'uploading' | 'completed' | 'error'
-  progress: number
+  type: 'PDF' | 'IMAGE' | 'THUMBNAIL' | 'REVIEW_IMAGE'
+  status: 'UPLOADING' | 'PROCESSING' | 'ACTIVE' | 'FAILED' | 'DELETED' | 'uploading' | 'completed' | 'error'
+  width?: number
+  height?: number
+  checksum?: string
+  metadata?: any
+  uploadedById: string
+  createdAt: string
+  updatedAt: string
+  // UI states
+  progress?: number
 }
 
 interface FileUploadProps {
@@ -38,6 +47,21 @@ interface FileUploadProps {
   allowMultiple?: boolean
   className?: string
   required?: boolean
+  uploadType?: 'PDF' | 'IMAGE' | 'THUMBNAIL' | 'REVIEW_IMAGE'
+}
+
+// ✅ Helper para obtener token de autenticación
+const getAuthToken = (): string | null => {
+  try {
+    const authData = localStorage.getItem('furnibles-auth-storage')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed.state?.token || parsed.token
+    }
+  } catch (error) {
+    console.error('Error parsing auth token:', error)
+  }
+  return null
 }
 
 export function FileUpload({
@@ -49,44 +73,18 @@ export function FileUpload({
   showPreview = true,
   allowMultiple = true,
   className,
-  required = false
+  required = false,
+  uploadType = 'IMAGE'
 }: FileUploadProps) {
   const t = useTranslations('file_upload')
-  const { user, token } = useAuthStore()
-  const { addNotification } = useNotificationStore()
+  const { user } = useAuthStore()
   
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(initialFiles)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Helper para crear notificaciones
-  const createNotification = (
-    type: NotificationType,
-    title: string,
-    message: string,
-    priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT' = 'NORMAL'
-  ) => ({
-    id: `notif-${Date.now()}-${Math.random()}`,
-    userId: user?.id || '',
-    type,
-    title,
-    message,
-    data: {},
-    isRead: false,
-    readAt: undefined,
-    sentAt: new Date().toISOString(),
-    emailSent: false,
-    orderId: undefined,
-    priority: priority as any,
-    channel: 'IN_APP' as any,
-    groupKey: undefined,
-    expiresAt: undefined,
-    clickedAt: undefined,
-    clickCount: 0,
-    createdAt: new Date().toISOString()
-  })
-
+  // ✅ Validar archivo
   const validateFile = (file: File): string | null => {
     // Validar tipo
     const extension = '.' + file.name.split('.').pop()?.toLowerCase()
@@ -108,48 +106,74 @@ export function FileUpload({
     return null
   }
 
+  // ✅ Upload de archivo real
   const uploadFile = async (file: File): Promise<UploadedFile | null> => {
     const tempId = `temp-${Date.now()}-${Math.random()}`
     const tempFile: UploadedFile = {
       id: tempId,
       filename: file.name,
+      key: '',
       url: '',
+      mimeType: file.type,
       size: file.size,
-      type: file.type.startsWith('image/') ? 'IMAGE' : 'PDF',
+      type: uploadType,
       status: 'uploading',
+      uploadedById: user?.id || '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       progress: 0
     }
 
-    // Agregar archivo temporal
+    // Agregar archivo temporal para UI
     setUploadedFiles(prev => [...prev, tempFile])
 
     try {
+      const token = getAuthToken()
+      if (!token) {
+        throw new Error('No autorizado')
+      }
+
+      console.log('🔍 [FILE-UPLOAD] Uploading file:', file.name)
+      
+      // ✅ Crear FormData
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('type', tempFile.type)
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/files/upload`, {
+      formData.append('type', uploadType)
+      
+      // ✅ API call para upload
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/files/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token || ''}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: formData,
       })
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Upload failed: ${response.status}`)
       }
 
       const result = await response.json()
+      console.log('✅ [FILE-UPLOAD] File uploaded successfully:', result)
       
-      if (result.success && result.data) {
+      if (result && result.id) {
         const uploadedFile: UploadedFile = {
-          id: result.data.id,
-          filename: result.data.filename,
-          url: result.data.url,
-          size: result.data.size,
-          type: result.data.type,
+          id: result.id,
+          filename: result.filename,
+          key: result.key,
+          url: result.url,
+          mimeType: result.mimeType,
+          size: result.size,
+          type: result.type,
           status: 'completed',
+          width: result.width,
+          height: result.height,
+          checksum: result.checksum,
+          metadata: result.metadata,
+          uploadedById: result.uploadedById,
+          createdAt: result.createdAt,
+          updatedAt: result.updatedAt,
           progress: 100
         }
 
@@ -158,37 +182,27 @@ export function FileUpload({
           prev.map(f => f.id === tempId ? uploadedFile : f)
         )
 
+        console.log('✅ [FILE-UPLOAD] File processed successfully')
         return uploadedFile
       } else {
-        throw new Error(result.error || 'Upload failed')
+        throw new Error('Invalid response format')
       }
     } catch (error) {
-      console.error('Upload error:', error)
+      console.error('❌ [FILE-UPLOAD] Error uploading file:', error)
       
       // Marcar como error
       setUploadedFiles(prev => 
-        prev.map(f => f.id === tempId ? { ...f, status: 'error' as const } : f)
+        prev.map(f => f.id === tempId ? { ...f, status: 'error' } : f)
       )
-
-      addNotification(createNotification(
-        'FILE_UPLOAD_ERROR' as NotificationType,
-        t('error.upload_failed'),
-        t('error.upload_failed_message', { filename: file.name }),
-        'HIGH'
-      ))
 
       return null
     }
   }
 
+  // ✅ Manejar múltiples archivos
   const handleFiles = async (files: FileList) => {
     if (!user) {
-      addNotification(createNotification(
-        'AUTH_REQUIRED' as NotificationType,
-        t('error.auth_required'),
-        t('error.auth_required_message'),
-        'HIGH'
-      ))
+      alert('Debes iniciar sesión para subir archivos')
       return
     }
 
@@ -209,12 +223,7 @@ export function FileUpload({
 
     // Mostrar errores de validación
     if (errors.length > 0) {
-      addNotification(createNotification(
-        'VALIDATION_ERROR' as NotificationType,
-        t('error.validation_failed'),
-        errors.join('\n'),
-        'HIGH'
-      ))
+      alert('Errores de validación:\n' + errors.join('\n'))
     }
 
     // Subir archivos válidos
@@ -224,18 +233,14 @@ export function FileUpload({
 
     setIsUploading(false)
 
+    // Notificar archivos subidos
     if (successfulUploads.length > 0) {
-      addNotification(createNotification(
-        'FILE_UPLOAD_SUCCESS' as NotificationType,
-        t('success.upload_completed'),
-        t('success.upload_completed_message', { count: successfulUploads.length }),
-        'NORMAL'
-      ))
-
-      onFilesUploaded?.(uploadedFiles.filter(f => f.status === 'completed'))
+      const completedFiles = uploadedFiles.filter(f => f.status === 'completed' || f.status === 'ACTIVE')
+      onFilesUploaded?.(completedFiles)
     }
   }
 
+  // ✅ Event handlers para drag & drop
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
@@ -261,22 +266,55 @@ export function FileUpload({
     }
   }
 
-  const removeFile = (fileId: string) => {
+  // ✅ Eliminar archivo
+  const removeFile = async (fileId: string) => {
+    const file = uploadedFiles.find(f => f.id === fileId)
+    if (!file) return
+
+    // Si el archivo está en el backend, eliminarlo
+    if (file.status === 'completed' || file.status === 'ACTIVE') {
+      try {
+        const token = getAuthToken()
+        if (token) {
+          console.log('🔍 [FILE-UPLOAD] Deleting file:', fileId)
+          
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/files/${fileId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          })
+
+          if (response.ok) {
+            console.log('✅ [FILE-UPLOAD] File deleted successfully')
+          }
+        }
+      } catch (error) {
+        console.error('❌ [FILE-UPLOAD] Error deleting file:', error)
+      }
+    }
+
+    // Remover de la UI
     setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
-    onFilesUploaded?.(uploadedFiles.filter(f => f.id !== fileId && f.status === 'completed'))
+    
+    // Notificar cambio
+    const remainingFiles = uploadedFiles.filter(f => f.id !== fileId && (f.status === 'completed' || f.status === 'ACTIVE'))
+    onFilesUploaded?.(remainingFiles)
   }
 
+  // ✅ Reintentar upload
   const retryUpload = async (fileId: string) => {
     const fileToRetry = uploadedFiles.find(f => f.id === fileId)
     if (!fileToRetry || fileToRetry.status !== 'error') return
 
-    // Reset status
+    // En una implementación real, necesitarías almacenar el File original
+    // Por ahora, solo simulamos el éxito
     setUploadedFiles(prev => 
       prev.map(f => f.id === fileId ? { ...f, status: 'uploading', progress: 0 } : f)
     )
 
-    // Create a mock file for retry (in real implementation, you'd store the original file)
-    // For now, just simulate success
     setTimeout(() => {
       setUploadedFiles(prev => 
         prev.map(f => f.id === fileId ? { ...f, status: 'completed', progress: 100 } : f)
@@ -284,20 +322,42 @@ export function FileUpload({
     }, 2000)
   }
 
-  const getFileIcon = (type: string, status: string) => {
+  // ✅ Obtener ícono según tipo y estado
+  const getFileIcon = (file: UploadedFile) => {
+    const status = file.status === 'ACTIVE' ? 'completed' : file.status
+    
     if (status === 'uploading') return <Upload className="w-5 h-5 animate-pulse" />
-    if (status === 'error') return <AlertCircle className="w-5 h-5 text-red-600" />
+    if (status === 'error' || status === 'FAILED') return <AlertCircle className="w-5 h-5 text-red-600" />
     if (status === 'completed') return <CheckCircle className="w-5 h-5 text-green-600" />
     
-    return type === 'PDF' ? <FileText className="w-5 h-5" /> : <Image className="w-5 h-5" />
+    return file.type === 'PDF' ? <FileText className="w-5 h-5" /> : <Image className="w-5 h-5" />
   }
 
+  // ✅ Formatear tamaño de archivo
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  // ✅ Obtener estado normalizado
+  const getFileStatus = (file: UploadedFile) => {
+    switch (file.status) {
+      case 'ACTIVE':
+      case 'completed':
+        return 'completed'
+      case 'UPLOADING':
+      case 'PROCESSING':
+      case 'uploading':
+        return 'uploading'
+      case 'FAILED':
+      case 'error':
+        return 'error'
+      default:
+        return file.status
+    }
   }
 
   return (
@@ -359,82 +419,86 @@ export function FileUpload({
           </h4>
           
           <div className="space-y-2">
-            {uploadedFiles.map((file) => (
-              <div
-                key={file.id}
-                className="bg-white border-3 border-black p-4 flex items-center gap-4"
-                style={{ boxShadow: '2px 2px 0 #000000' }}
-              >
-                <div className="flex-shrink-0">
-                  {getFileIcon(file.type, file.status)}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h5 className="font-bold text-black text-sm truncate">
-                      {file.filename}
-                    </h5>
-                    <span className="text-xs text-gray-500 font-medium">
-                      {formatFileSize(file.size)}
-                    </span>
+            {uploadedFiles.map((file) => {
+              const status = getFileStatus(file)
+              
+              return (
+                <div
+                  key={file.id}
+                  className="bg-white border-3 border-black p-4 flex items-center gap-4"
+                  style={{ boxShadow: '2px 2px 0 #000000' }}
+                >
+                  <div className="flex-shrink-0">
+                    {getFileIcon(file)}
                   </div>
                   
-                  {file.status === 'uploading' && (
-                    <div className="w-full bg-gray-200 border border-black h-2">
-                      <div 
-                        className="bg-orange-500 h-full transition-all duration-300"
-                        style={{ width: `${file.progress}%` }}
-                      />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h5 className="font-bold text-black text-sm truncate">
+                        {file.filename}
+                      </h5>
+                      <span className="text-xs text-gray-500 font-medium">
+                        {formatFileSize(file.size)}
+                      </span>
                     </div>
-                  )}
+                    
+                    {status === 'uploading' && (
+                      <div className="w-full bg-gray-200 border border-black h-2">
+                        <div 
+                          className="bg-orange-500 h-full transition-all duration-300"
+                          style={{ width: `${file.progress || 0}%` }}
+                        />
+                      </div>
+                    )}
+                    
+                    {status === 'completed' && (
+                      <p className="text-xs text-green-600 font-bold">
+                        {t('status.completed')}
+                      </p>
+                    )}
+                    
+                    {status === 'error' && (
+                      <p className="text-xs text-red-600 font-bold">
+                        {t('status.error')}
+                      </p>
+                    )}
+                  </div>
                   
-                  {file.status === 'completed' && (
-                    <p className="text-xs text-green-600 font-bold">
-                      {t('status.completed')}
-                    </p>
-                  )}
-                  
-                  {file.status === 'error' && (
-                    <p className="text-xs text-red-600 font-bold">
-                      {t('status.error')}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {file.status === 'completed' && showPreview && file.url && (
+                  <div className="flex items-center gap-2">
+                    {status === 'completed' && showPreview && file.url && (
+                      <button
+                        onClick={() => window.open(file.url, '_blank')}
+                        className="p-1 bg-blue-400 border-2 border-black hover:bg-yellow-400 transition-all"
+                        style={{ boxShadow: '1px 1px 0 #000000' }}
+                        title={t('preview')}
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    )}
+                    
+                    {status === 'error' && (
+                      <button
+                        onClick={() => retryUpload(file.id)}
+                        className="p-1 bg-yellow-400 border-2 border-black hover:bg-green-400 transition-all"
+                        style={{ boxShadow: '1px 1px 0 #000000' }}
+                        title={t('retry')}
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                      </button>
+                    )}
+                    
                     <button
-                      onClick={() => window.open(file.url, '_blank')}
-                      className="p-1 bg-blue-400 border-2 border-black hover:bg-yellow-400 transition-all"
+                      onClick={() => removeFile(file.id)}
+                      className="p-1 bg-red-400 border-2 border-black hover:bg-yellow-400 transition-all"
                       style={{ boxShadow: '1px 1px 0 #000000' }}
-                      title={t('preview')}
+                      title={t('remove')}
                     >
-                      <Eye className="w-3 h-3" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
-                  )}
-                  
-                  {file.status === 'error' && (
-                    <button
-                      onClick={() => retryUpload(file.id)}
-                      className="p-1 bg-yellow-400 border-2 border-black hover:bg-green-400 transition-all"
-                      style={{ boxShadow: '1px 1px 0 #000000' }}
-                      title={t('retry')}
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                    </button>
-                  )}
-                  
-                  <button
-                    onClick={() => removeFile(file.id)}
-                    className="p-1 bg-red-400 border-2 border-black hover:bg-yellow-400 transition-all"
-                    style={{ boxShadow: '1px 1px 0 #000000' }}
-                    title={t('remove')}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -445,7 +509,7 @@ export function FileUpload({
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-lg font-black text-green-600">
-                {uploadedFiles.filter(f => f.status === 'completed').length}
+                {uploadedFiles.filter(f => getFileStatus(f) === 'completed').length}
               </div>
               <div className="text-xs font-bold text-gray-600 uppercase">
                 {t('summary.completed')}
@@ -453,7 +517,7 @@ export function FileUpload({
             </div>
             <div>
               <div className="text-lg font-black text-orange-500">
-                {uploadedFiles.filter(f => f.status === 'uploading').length}
+                {uploadedFiles.filter(f => getFileStatus(f) === 'uploading').length}
               </div>
               <div className="text-xs font-bold text-gray-600 uppercase">
                 {t('summary.uploading')}
@@ -461,7 +525,7 @@ export function FileUpload({
             </div>
             <div>
               <div className="text-lg font-black text-red-600">
-                {uploadedFiles.filter(f => f.status === 'error').length}
+                {uploadedFiles.filter(f => getFileStatus(f) === 'error').length}
               </div>
               <div className="text-xs font-bold text-gray-600 uppercase">
                 {t('summary.errors')}

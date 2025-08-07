@@ -20,7 +20,13 @@ import {
   Clock,
 } from 'lucide-react'
 
-import { useSellerStore } from '@/lib/stores/seller-store'
+// Helper para obtener token JWT
+const getAuthToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token') || sessionStorage.getItem('token')
+  }
+  return null
+}
 
 // Funciones de formato - internacionalizadas
 const formatCurrency = (amount: number, locale: string = 'es-ES') => {
@@ -38,88 +44,147 @@ const formatPercentage = (value: number) => {
   return `${value.toFixed(1)}%`
 }
 
+interface AnalyticsData {
+  revenue: {
+    current: number
+    previous: number
+    trend: number
+  }
+  sales: {
+    current: number
+    previous: number
+    trend: number
+  }
+  customers: {
+    current: number
+    previous: number
+    trend: number
+  }
+  conversionRate: {
+    current: number
+    previous: number
+    trend: number
+  }
+  topProducts: Array<{
+    id: string
+    title: string
+    slug: string
+    price: number
+    rating: number
+    viewCount: number
+    salesCount: number
+    revenue: number
+  }>
+  revenueByMonth: Array<{
+    month: string
+    revenue: number
+    sales: number
+  }>
+  categoryBreakdown: Array<{
+    category: string
+    sales: number
+    percentage: number
+  }>
+}
+
 export default function SellerAnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month')
   const [isLoading, setIsLoading] = useState(true)
-  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
 
   // Traducciones
   const t = useTranslations('seller.analytics')
   const tCommon = useTranslations('common')
 
-  const {
-    dashboardStats,
-    products,
-    loadDashboardStats,
-    loadProducts,
-    loadAnalytics,
-  } = useSellerStore()
-
-  // Cargar datos iniciales
+  // Cargar datos de analytics desde API
   useEffect(() => {
-    const loadData = async () => {
+    const loadAnalyticsData = async () => {
+      const token = getAuthToken()
+      if (!token) {
+        setError('Token no encontrado')
+        setIsLoading(false)
+        return
+      }
+
       setIsLoading(true)
+      setError(null)
+
       try {
-        await Promise.all([
-          loadDashboardStats(selectedPeriod),
-          loadProducts(1),
-          loadAnalytics(selectedPeriod, ['revenue', 'sales', 'products', 'customers'])
+        // Llamadas paralelas a los diferentes endpoints de analytics
+        const [
+          dashboardResponse,
+          productsResponse,
+          revenueResponse,
+          categoriesResponse,
+          customersResponse
+        ] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/dashboard?period=${selectedPeriod}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/top-products?period=${selectedPeriod}&limit=5`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/revenue-by-month?period=${selectedPeriod}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/categories?period=${selectedPeriod}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/customers?period=${selectedPeriod}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
         ])
-        
-        // Simular datos de analytics (en un caso real vendrían del backend)
-        const mockAnalytics = {
+
+        if (!dashboardResponse.ok) throw new Error('Error cargando dashboard stats')
+        if (!productsResponse.ok) throw new Error('Error cargando productos top')
+        if (!revenueResponse.ok) throw new Error('Error cargando datos de ingresos')
+        if (!categoriesResponse.ok) throw new Error('Error cargando categorías')
+        if (!customersResponse.ok) throw new Error('Error cargando datos de clientes')
+
+        const dashboard = await dashboardResponse.json()
+        const topProducts = await productsResponse.json()
+        const revenueByMonth = await revenueResponse.json()
+        const categoryBreakdown = await categoriesResponse.json()
+        const customers = await customersResponse.json()
+
+        const analyticsDataFormatted: AnalyticsData = {
           revenue: {
-            current: dashboardStats?.totalRevenue || 0,
-            previous: (dashboardStats?.totalRevenue || 0) * 0.85,
-            trend: 15.3
+            current: dashboard.totalRevenue || 0,
+            previous: dashboard.previousRevenue || 0,
+            trend: dashboard.revenueTrend || 0
           },
           sales: {
-            current: dashboardStats?.totalSales || 0,
-            previous: (dashboardStats?.totalSales || 0) * 0.92,
-            trend: 8.7
+            current: dashboard.totalSales || 0,
+            previous: dashboard.previousSales || 0,
+            trend: dashboard.salesTrend || 0
           },
           customers: {
-            current: 156,
-            previous: 134,
-            trend: 16.4
+            current: customers.current || 0,
+            previous: customers.previous || 0,
+            trend: customers.trend || 0
           },
           conversionRate: {
-            current: 3.2,
-            previous: 2.8,
-            trend: 14.3
+            current: dashboard.conversionRate || 0,
+            previous: dashboard.previousConversionRate || 0,
+            trend: dashboard.conversionTrend || 0
           },
-          topProducts: products.slice(0, 5).map(p => ({
-            ...p,
-            salesCount: Math.floor(Math.random() * 50) + 10,
-            revenue: p.price * (Math.floor(Math.random() * 50) + 10)
-          })),
-          revenueByMonth: [
-            { month: t('months.jan'), revenue: 1200, sales: 24 },
-            { month: t('months.feb'), revenue: 1800, sales: 36 },
-            { month: t('months.mar'), revenue: 2400, sales: 48 },
-            { month: t('months.apr'), revenue: 1900, sales: 38 },
-            { month: t('months.may'), revenue: 2800, sales: 56 },
-            { month: t('months.jun'), revenue: 3200, sales: 64 },
-          ],
-          categoryBreakdown: [
-            { category: t('categories.nordic'), sales: 45, percentage: 35 },
-            { category: t('categories.kitchen'), sales: 32, percentage: 25 },
-            { category: t('categories.storage'), sales: 28, percentage: 22 },
-            { category: t('categories.decorative'), sales: 15, percentage: 12 },
-            { category: t('categories.bathroom'), sales: 8, percentage: 6 },
-          ]
+          topProducts: topProducts.products || [],
+          revenueByMonth: revenueByMonth.data || [],
+          categoryBreakdown: categoryBreakdown.categories || []
         }
         
-        setAnalyticsData(mockAnalytics)
+        setAnalyticsData(analyticsDataFormatted)
       } catch (error) {
         console.error('Error loading analytics:', error)
+        setError(error instanceof Error ? error.message : 'Error desconocido')
       } finally {
         setIsLoading(false)
       }
     }
 
-    loadData()
-  }, [selectedPeriod, loadDashboardStats, loadProducts, loadAnalytics, dashboardStats, t])
+    loadAnalyticsData()
+  }, [selectedPeriod])
 
   // Componente para mostrar métricas con tendencia
   const MetricCard = ({ 
@@ -174,6 +239,27 @@ export default function SellerAnalyticsPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-black text-black uppercase mb-2">{t('error_title')}</h2>
+          <p className="text-gray-600 font-bold mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-orange-500 border-3 border-black px-6 py-3 font-black text-white uppercase hover:bg-yellow-400 hover:text-black transition-all"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            {t('retry')}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!analyticsData) return null
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
@@ -217,9 +303,9 @@ export default function SellerAnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title={t('metrics.revenue')}
-          value={analyticsData?.revenue.current || 0}
-          previousValue={analyticsData?.revenue.previous || 0}
-          trend={analyticsData?.revenue.trend || 0}
+          value={analyticsData.revenue.current}
+          previousValue={analyticsData.revenue.previous}
+          trend={analyticsData.revenue.trend}
           icon={DollarSign}
           color="bg-green-500"
           formatter={formatCurrency}
@@ -227,27 +313,27 @@ export default function SellerAnalyticsPage() {
         
         <MetricCard
           title={t('metrics.sales')}
-          value={analyticsData?.sales.current || 0}
-          previousValue={analyticsData?.sales.previous || 0}
-          trend={analyticsData?.sales.trend || 0}
+          value={analyticsData.sales.current}
+          previousValue={analyticsData.sales.previous}
+          trend={analyticsData.sales.trend}
           icon={Package}
           color="bg-blue-500"
         />
         
         <MetricCard
           title={t('metrics.customers')}
-          value={analyticsData?.customers.current || 0}
-          previousValue={analyticsData?.customers.previous || 0}
-          trend={analyticsData?.customers.trend || 0}
+          value={analyticsData.customers.current}
+          previousValue={analyticsData.customers.previous}
+          trend={analyticsData.customers.trend}
           icon={Users}
           color="bg-purple-500"
         />
         
         <MetricCard
           title={t('metrics.conversion')}
-          value={analyticsData?.conversionRate.current || 0}
-          previousValue={analyticsData?.conversionRate.previous || 0}
-          trend={analyticsData?.conversionRate.trend || 0}
+          value={analyticsData.conversionRate.current}
+          previousValue={analyticsData.conversionRate.previous}
+          trend={analyticsData.conversionRate.trend}
           icon={Target}
           color="bg-orange-500"
           formatter={formatPercentage}
@@ -263,7 +349,7 @@ export default function SellerAnalyticsPage() {
           </div>
           
           <div className="space-y-4">
-            {analyticsData?.revenueByMonth.map((data: any, index: number) => (
+            {analyticsData.revenueByMonth.map((data: any, index: number) => (
               <div key={index} className="flex items-center gap-4">
                 <div className="w-12 text-sm font-bold text-black">
                   {data.month}
@@ -281,7 +367,7 @@ export default function SellerAnalyticsPage() {
                     <div 
                       className="bg-green-500 h-full border-r border-black transition-all duration-500"
                       style={{ 
-                        width: `${(data.revenue / Math.max(...(analyticsData?.revenueByMonth.map((d: any) => d.revenue) || [1]))) * 100}%` 
+                        width: `${(data.revenue / Math.max(...(analyticsData.revenueByMonth.map((d: any) => d.revenue) || [1]))) * 100}%` 
                       }}
                     />
                   </div>
@@ -299,7 +385,7 @@ export default function SellerAnalyticsPage() {
           </div>
           
           <div className="space-y-4">
-            {analyticsData?.topProducts.map((product: any, index: number) => (
+            {analyticsData.topProducts.map((product: any, index: number) => (
               <div key={product.id} className="flex items-center gap-4 p-3 border-2 border-gray-200 hover:border-orange-500 transition-colors">
                 <div className="w-8 h-8 bg-orange-500 border-2 border-black flex items-center justify-center">
                   <span className="text-xs font-black text-black">#{index + 1}</span>
@@ -348,7 +434,7 @@ export default function SellerAnalyticsPage() {
           </div>
           
           <div className="space-y-3">
-            {analyticsData?.categoryBreakdown.map((category: any, index: number) => {
+            {analyticsData.categoryBreakdown.map((category: any, index: number) => {
               const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-red-500']
               const color = colors[index % colors.length]
               
@@ -395,7 +481,7 @@ export default function SellerAnalyticsPage() {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-gray-600 text-sm">{t('key_metrics.avg_order_value')}</span>
                 <span className="font-black text-black">
-                  {formatCurrency((analyticsData?.revenue.current || 0) / (analyticsData?.sales.current || 1))}
+                  {formatCurrency((analyticsData.revenue.current || 0) / (analyticsData.sales.current || 1))}
                 </span>
               </div>
               <div className="w-full bg-gray-200 h-2 border border-black">
@@ -419,7 +505,7 @@ export default function SellerAnalyticsPage() {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-gray-600 text-sm">{t('key_metrics.total_views')}</span>
                 <span className="font-black text-black">
-                  {formatNumber(products.reduce((sum, p) => sum + p.viewCount, 0))}
+                  {formatNumber(analyticsData.topProducts.reduce((sum, p) => sum + p.viewCount, 0))}
                 </span>
               </div>
               <div className="w-full bg-gray-200 h-2 border border-black">
@@ -432,7 +518,7 @@ export default function SellerAnalyticsPage() {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-gray-600 text-sm">{t('key_metrics.total_downloads')}</span>
                 <span className="font-black text-black">
-                  {formatNumber(products.reduce((sum, p) => sum + p.downloadCount, 0))}
+                  {formatNumber(analyticsData.topProducts.reduce((sum, p) => sum + (p.salesCount * 3), 0))}
                 </span>
               </div>
               <div className="w-full bg-gray-200 h-2 border border-black">
@@ -446,7 +532,7 @@ export default function SellerAnalyticsPage() {
                 <span className="font-bold text-gray-600 text-sm">{t('key_metrics.avg_rating')}</span>
                 <div className="flex items-center gap-1">
                   <span className="font-black text-black">
-                    {(products.reduce((sum, p) => sum + p.rating, 0) / (products.length || 1)).toFixed(1)}
+                    {(analyticsData.topProducts.reduce((sum, p) => sum + p.rating, 0) / (analyticsData.topProducts.length || 1)).toFixed(1)}
                   </span>
                   <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                 </div>
@@ -475,7 +561,7 @@ export default function SellerAnalyticsPage() {
             </div>
             <p className="text-green-700 font-bold text-sm">
               {t('insights.growth.description', { 
-                percentage: analyticsData?.revenue.trend.toFixed(1) 
+                percentage: analyticsData.revenue.trend.toFixed(1) 
               })}
             </p>
           </div>

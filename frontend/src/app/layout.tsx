@@ -9,7 +9,7 @@ import { Header } from '@/components/layout/header'
 import { CartModal } from '@/components/cart/cart-modal'
 import { LoginModal } from '@/components/auth/login-modal'
 import { RegisterModal } from '@/components/auth/register-modal'
-import { NotificationPanel } from '@/components/notifications/notification-panel'
+import { NotificationPanelWrapper } from '@/components/notifications/notification-panel-wrapper'
 import { Footer } from '@/components/layout/footer'
 import { CartProvider } from '@/contexts/cart-context'
 import { PaymentProvider } from '@/contexts/payment-context'
@@ -133,11 +133,11 @@ export default async function RootLayout({
                 {/* Footer i18n Component */}
                 <Footer />
 
-                {/* Modales y overlays globales */}
+                {/* ✅ CORREGIDO: Modales y overlays globales con wrapper que maneja el estado */}
                 <CartModal />
                 <LoginModal />
                 <RegisterModal />
-                <NotificationPanel />
+                <NotificationPanelWrapper />
               </div>
               
               {/* Toast Notifications SABDA Style */}
@@ -177,7 +177,6 @@ export default async function RootLayout({
               </PaymentProvider>
             </CartProvider>
           </AuthProvider>
-          {/* ✅ ELIMINADO: AuthProvider duplicado que estaba aquí */}
         </NextIntlClientProvider>
       </body>
     </html>

@@ -25,7 +25,14 @@ import {
   TrendingUpIcon,
   BarChartIcon
 } from 'lucide-react'
-import { useAuthStore } from '@/lib/stores/auth-store'
+
+// Helper para obtener token JWT
+const getAuthToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token') || sessionStorage.getItem('token')
+  }
+  return null
+}
 
 // Tipos para Reviews
 enum ReviewStatus {
@@ -73,89 +80,14 @@ interface PendingReview {
   }
 }
 
-// Mock data
-const mockReviews: Review[] = [
-  {
-    id: 'review_001',
-    productId: 'product_001',
-    productTitle: 'Mesa de Comedor Moderna Roble',
-    productSlug: 'mesa-comedor-moderna-roble',
-    rating: 5,
-    title: 'Excelente calidad y diseño',
-    comment: 'Muy satisfecho con la compra. Las instrucciones son muy claras y el resultado final quedó perfecto. La madera es de muy buena calidad.',
-    pros: 'Instrucciones claras, materiales de calidad, acabado profesional',
-    cons: 'Requiere más tiempo del estimado',
-    status: ReviewStatus.PUBLISHED,
-    helpfulCount: 12,
-    notHelpfulCount: 1,
-    orderNumber: 'ORD-20241201-001',
-    createdAt: '2024-12-15T10:30:00Z',
-    imageUrls: [
-      'https://picsum.photos/400/300?random=101',
-      'https://picsum.photos/400/300?random=102'
-    ],
-    product: {
-      sellerName: 'Maderas Mendoza',
-      previewImages: ['https://picsum.photos/400/300?random=1']
-    },
-    sellerResponse: {
-      sellerName: 'Carlos Mendoza',
-      comment: '¡Muchas gracias por tu review! Nos alegra saber que quedaste satisfecho con el resultado.',
-      createdAt: '2024-12-16T08:00:00Z'
-    }
-  },
-  {
-    id: 'review_002',
-    productId: 'product_002',
-    productTitle: 'Silla Escandinava Premium',
-    productSlug: 'silla-escandinava-premium',
-    rating: 4,
-    title: 'Muy buena pero con algunos detalles',
-    comment: 'En general estoy contento con el resultado. El diseño es muy bonito y las instrucciones están bien explicadas.',
-    status: ReviewStatus.PUBLISHED,
-    helpfulCount: 8,
-    notHelpfulCount: 0,
-    orderNumber: 'ORD-20241120-002',
-    createdAt: '2024-12-10T15:45:00Z',
-    product: {
-      sellerName: 'Nordic Design Co.',
-      previewImages: ['https://picsum.photos/400/300?random=3']
-    }
-  }
-]
-
-const mockPendingReviews: PendingReview[] = [
-  {
-    orderId: 'order_003',
-    orderNumber: 'ORD-20241218-003',
-    productId: 'product_003',
-    productTitle: 'Estantería Industrial Hierro y Madera',
-    purchaseDate: '2024-12-18T14:30:00Z',
-    product: {
-      previewImages: ['https://picsum.photos/400/300?random=5']
-    }
-  }
-]
-
-// Funciones mock
-const getReviewsByUserId = (userId: string): Review[] => {
-  return mockReviews
-}
-
-const getReviewStats = (userId: string) => {
-  return {
-    totalReviews: mockReviews.length,
-    averageRating: 4.5,
-    helpfulVotes: 20,
-    withImages: 1,
-    withSellerResponse: 1,
-    pendingCount: mockPendingReviews.length,
-    ratingDistribution: { 5: 1, 4: 1, 3: 0, 2: 0, 1: 0 }
-  }
-}
-
-const getPendingReviews = (userId: string): PendingReview[] => {
-  return mockPendingReviews
+interface ReviewStats {
+  totalReviews: number
+  averageRating: number
+  helpfulVotes: number
+  withImages: number
+  withSellerResponse: number
+  pendingCount: number
+  ratingDistribution: { [key: number]: number }
 }
 
 export default function ReviewsPage() {
@@ -164,10 +96,10 @@ export default function ReviewsPage() {
   const tBreadcrumb = useTranslations('breadcrumb')
   const router = useRouter()
   
-  // Stores
-  const { isAuthenticated, user, setLoginModalOpen } = useAuthStore()
-
   // States
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [filteredReviews, setFilteredReviews] = useState<Review[]>([])
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([])
@@ -176,7 +108,7 @@ export default function ReviewsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'date' | 'rating' | 'helpful'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<ReviewStats>({
     totalReviews: 0,
     averageRating: 0,
     helpfulVotes: 0,
@@ -190,28 +122,72 @@ export default function ReviewsPage() {
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedPendingReview, setSelectedPendingReview] = useState<PendingReview | null>(null)
 
-  // Redirect if not authenticated
+  // Check authentication
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLoginModalOpen(true)
+    const token = getAuthToken()
+    if (!token) {
       router.push('/productos')
       return
     }
-  }, [isAuthenticated, setLoginModalOpen, router])
+    setIsAuthenticated(true)
+  }, [router])
 
   // Load user reviews
   useEffect(() => {
-    if (user?.id) {
-      const userReviews = getReviewsByUserId(user.id)
-      const userStats = getReviewStats(user.id)
-      const userPendingReviews = getPendingReviews(user.id)
-      
-      setReviews(userReviews)
-      setFilteredReviews(userReviews)
-      setStats(userStats)
-      setPendingReviews(userPendingReviews)
+    const loadUserReviews = async () => {
+      const token = getAuthToken()
+      if (!token || !isAuthenticated) return
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        // Cargar reviews del usuario
+        const reviewsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/my`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (!reviewsResponse.ok) throw new Error('Error cargando reviews')
+        
+        const reviewsData = await reviewsResponse.json()
+        
+        // Cargar estadísticas de reviews
+        const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/my/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        const statsData = statsResponse.ok ? await statsResponse.json() : {
+          totalReviews: reviewsData.length,
+          averageRating: 0,
+          helpfulVotes: 0,
+          withImages: 0,
+          withSellerResponse: 0,
+          pendingCount: 0,
+          ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        }
+
+        // Cargar pedidos pendientes de review
+        const pendingResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/pending-reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        const pendingData = pendingResponse.ok ? await pendingResponse.json() : []
+
+        setReviews(reviewsData.reviews || reviewsData || [])
+        setFilteredReviews(reviewsData.reviews || reviewsData || [])
+        setStats(statsData)
+        setPendingReviews(pendingData.orders || pendingData || [])
+
+      } catch (error) {
+        console.error('Error loading reviews:', error)
+        setError(error instanceof Error ? error.message : 'Error desconocido')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [user?.id])
+
+    loadUserReviews()
+  }, [isAuthenticated])
 
   // Filter and search reviews
   useEffect(() => {
@@ -277,7 +253,7 @@ export default function ReviewsPage() {
         icon: ClockIcon,
         text: t('status.pending')
       },
-      [ReviewStatus.PUBLISHED]: {
+              [ReviewStatus.PUBLISHED]: {
         color: 'bg-green-500 text-white border-black',
         icon: CheckCircleIcon,
         text: t('status.published')
@@ -321,16 +297,52 @@ export default function ReviewsPage() {
     setShowReviewModal(true)
   }
 
-  const handleReviewSubmitted = () => {
-    if (user?.id) {
-      const userReviews = getReviewsByUserId(user.id)
-      const userStats = getReviewStats(user.id)
-      const userPendingReviews = getPendingReviews(user.id)
-      
-      setReviews(userReviews)
-      setStats(userStats)
-      setPendingReviews(userPendingReviews)
+  const handleReviewSubmitted = async () => {
+    const token = getAuthToken()
+    if (!token || !selectedPendingReview) return
+
+    try {
+      // Simular envío de review (implementar modal de review real)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          orderId: selectedPendingReview.orderId,
+          productId: selectedPendingReview.productId,
+          rating: 5,
+          title: 'Review desde la interfaz',
+          comment: 'Esta es una review de prueba creada desde la interfaz web',
+          pros: 'Excelente calidad',
+          cons: 'Ninguno'
+        })
+      })
+
+      if (response.ok) {
+        // Recargar datos
+        const reviewsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/my`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const pendingResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/pending-reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (reviewsResponse.ok) {
+          const reviewsData = await reviewsResponse.json()
+          setReviews(reviewsData.reviews || reviewsData || [])
+        }
+
+        if (pendingResponse.ok) {
+          const pendingData = await pendingResponse.json()
+          setPendingReviews(pendingData.orders || pendingData || [])
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error)
     }
+
     setShowReviewModal(false)
     setSelectedPendingReview(null)
   }
@@ -342,6 +354,36 @@ export default function ReviewsPage() {
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
           <p className="text-black font-black text-xl uppercase">{t('access_restricted')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-bold">{t('loading_reviews')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-black text-black uppercase mb-2">{t('error_title')}</h2>
+          <p className="text-gray-600 font-bold mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-orange-500 border-3 border-black px-6 py-3 font-black text-white uppercase hover:bg-yellow-400 hover:text-black transition-all"
+            style={{ boxShadow: '4px 4px 0 #000000' }}
+          >
+            {t('retry')}
+          </button>
         </div>
       </div>
     )
@@ -455,7 +497,7 @@ export default function ReviewsPage() {
               </h3>
               <div className="space-y-2">
                 {[5, 4, 3, 2, 1].map(stars => {
-                  const count = stats.ratingDistribution[stars as keyof typeof stats.ratingDistribution]
+                  const count = stats.ratingDistribution[stars] || 0
                   const percentage = stats.totalReviews > 0 ? (count / stats.totalReviews) * 100 : 0
                   
                   return (
