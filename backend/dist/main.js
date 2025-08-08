@@ -33551,13 +33551,19 @@ let CheckoutService = class CheckoutService {
     }
     async validateCheckoutSession(sessionId) {
         try {
-            const order = await this.prisma.order.findFirst({
+            const orders = await this.prisma.order.findMany({
                 where: {
                     metadata: {
-                        path: 'stripeSessionId',
-                        equals: sessionId
+                        not: null
                     }
                 }
+            });
+            const order = orders.find(order => {
+                if (order.metadata && typeof order.metadata === 'object') {
+                    const metadata = order.metadata;
+                    return metadata.stripeSessionId === sessionId;
+                }
+                return false;
             });
             if (!order) {
                 return false;

@@ -92,18 +92,26 @@ export class CheckoutService {
 }
 
   /**
-   * Validar sesión de checkout existente
+   * Validar sesión de checkout existente - CORREGIDO
    */
   async validateCheckoutSession(sessionId: string): Promise<boolean> {
     try {
-      // Buscar orden por session ID en metadata
-      const order = await this.prisma.order.findFirst({
+      // ✅ CORRECCIÓN: Buscar usando JSON path correcto para SQLite
+      const orders = await this.prisma.order.findMany({
         where: {
           metadata: {
-            path: 'stripeSessionId',
-            equals: sessionId
+            not: null
           }
         }
+      });
+
+      // Filtrar manualmente en el código ya que SQLite no soporta JSON path queries complejas
+      const order = orders.find(order => {
+        if (order.metadata && typeof order.metadata === 'object') {
+          const metadata = order.metadata as Record<string, any>;
+          return metadata.stripeSessionId === sessionId;
+        }
+        return false;
       });
 
       if (!order) {
