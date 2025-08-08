@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ['nodejs_18', 'npm']
+
+[phases.install]
+cmd = 'npm ci --legacy-peer-deps'
+
+[phases.build]
+cmd = 'npx prisma generate && npm run build'
+
+[start]
+cmd = 'npx prisma db push --accept-data-loss && node dist/main.js'
