@@ -1,8 +1,8 @@
-# 🏠 Furnibles - Marketplace de Planos de Muebles
+# Furnibles - Marketplace de Planos de Muebles
 
 Marketplace C2C para la compra y venta de planos digitales de muebles con enfoque en carpintería DIY.
 
-## 🚀 Stack Tecnológico
+## Stack Tecnológico
 
 - **Frontend**: Next.js 14 + TypeScript + Tailwind CSS
 - **Backend**: NestJS + TypeScript + Prisma
@@ -12,7 +12,7 @@ Marketplace C2C para la compra y venta de planos digitales de muebles con enfoqu
 - **Real-time**: Socket.IO
 - **Testing**: Jest + Cypress
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 furnibles/
@@ -24,7 +24,7 @@ furnibles/
 └── docker-compose.yml # Development environment
 ```
 
-## 🛠 Setup Inicial
+## Setup Inicial
 
 ### Prerrequisitos
 
@@ -66,7 +66,7 @@ furnibles/
    npm run dev
    ```
 
-## 📋 Comandos Disponibles
+## Comandos Disponibles
 
 ### Desarrollo
 - `npm run dev` - Inicia frontend y backend
@@ -93,7 +93,7 @@ furnibles/
 - `npm run format` - Formatear código
 - `npm run type-check` - Verificación de tipos
 
-## 🏗 Arquitectura
+## Arquitectura
 
 ### Frontend (Next.js 14)
 - **App Router** para navegación
@@ -116,7 +116,7 @@ furnibles/
 - **Redis** para cache y sesiones
 - **Prisma** para migrations y queries
 
-## 🔐 Variables de Entorno
+## Variables de Entorno
 
 ### Backend (.env)
 ```bash
@@ -134,21 +134,21 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-## 🧪 Testing
+## Testing
 
 - **Unit Tests**: Jest para lógica de negocio
 - **Integration Tests**: Supertest para APIs
 - **E2E Tests**: Cypress para flujos completos
 - **Coverage**: >80% requerido
 
-## 📚 Documentación
+## Documentación
 
 - [Plan Maestro](docs/PLAN_MAESTRO.md)
 - [Especificaciones Técnicas](docs/TECHNICAL_SPECS.md)
 - [API Documentation](docs/API.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 
-## 🤝 Contribución
+## Contribución
 
 1. Fork el proyecto
 2. Crea una rama feature (`git checkout -b feature/nueva-feature`)
@@ -156,11 +156,8 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 4. Push a la rama (`git push origin feature/nueva-feature`)
 5. Abre un Pull Request
 
-## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT - ver [LICENSE](LICENSE) para detalles.
-
-## 🆘 Soporte
+## Soporte
 
 Para soporte técnico, abrir un issue en GitHub o contactar al equipo de desarrollo.
 
