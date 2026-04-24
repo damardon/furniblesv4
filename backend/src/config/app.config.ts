@@ -3,13 +3,14 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('app', () => ({
   nodeEnv: process.env.NODE_ENV || 'development',
   port: (() => {
-  const port = parseInt(process.env.PORT, 10);
-  return isNaN(port) ? 3001 : port;
+    const port = parseInt(process.env.PORT, 10);
+    return isNaN(port) ? 3001 : port;
   })(),
   apiPrefix: process.env.API_PREFIX || 'api',
-  frontendUrl: process.env.FRONTEND_URL || 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev',
-  corsOrigin: process.env.CORS_ORIGIN || 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev',
-  
+  backendUrl: process.env.BACKEND_URL || 'http://localhost:3001',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  corsOrigin: process.env.CORS_ORIGIN,
+
   // Rate limiting
   throttle: {
     ttl: parseInt(process.env.THROTTLE_TTL, 10) || 60,
@@ -30,7 +31,7 @@ export default registerAs('app', () => ({
 
   // Security
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
-  
+
   // Logging
   logLevel: process.env.LOG_LEVEL || 'info',
 }));

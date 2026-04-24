@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { WebSocketGateway } from '../websocket/websocket.gateway';
@@ -22,11 +23,16 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class NotificationService {
+  private readonly frontendUrl: string;
+
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
     private webSocketGateway: WebSocketGateway,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+  }
 
   /**
    * Función helper para traducciones (MANTENER EXISTENTE)
@@ -742,7 +748,7 @@ export class NotificationService {
       data: {
         orderId: order.id,
         orderNumber: order.orderNumber,
-        downloadUrl: `${process.env.FRONTEND_URL}/orders/${order.id}/downloads`
+        downloadUrl: `${this.frontendUrl}/orders/${order.id}/downloads`
       },
       orderId: order.id,
       priority: NotificationPriority.HIGH
@@ -799,7 +805,7 @@ export class NotificationService {
           ...emailData,
           orderNumber: notification.data?.orderNumber,
           totalAmount: notification.data?.totalAmount,
-          paymentUrl: `${process.env.FRONTEND_URL}/orders/${notification.data?.orderId}/pay`
+          paymentUrl: `${this.frontendUrl}/orders/${notification.data?.orderId}/pay`
         };
         break;
 
@@ -840,7 +846,7 @@ export class NotificationService {
           rating: notification.data?.rating,
           productTitle: notification.data?.productTitle,
           buyerName: notification.data?.buyerName,
-          reviewUrl: `${process.env.FRONTEND_URL}/products/${notification.data?.productId}/reviews`
+          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`
         };
         break;
 
@@ -850,7 +856,7 @@ export class NotificationService {
           ...emailData,
           productTitle: notification.data?.productTitle,
           sellerName: notification.data?.sellerName,
-          reviewUrl: `${process.env.FRONTEND_URL}/products/${notification.data?.productId}/reviews`
+          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`
         };
         break;
 
@@ -861,7 +867,7 @@ export class NotificationService {
           reviewCount: notification.data?.reviewCount,
           averageRating: notification.data?.averageRating,
           reviews: notification.data?.reviews,
-          dashboardUrl: `${process.env.FRONTEND_URL}/seller/dashboard/reviews`
+          dashboardUrl: `${this.frontendUrl}/seller/dashboard/reviews`
         };
         break;
 
@@ -870,7 +876,7 @@ export class NotificationService {
         emailData = {
           ...emailData,
           productTitle: notification.data?.productTitle,
-          reviewUrl: `${process.env.FRONTEND_URL}/products/${notification.data?.productId}/reviews`
+          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`
         };
         break;
 
@@ -880,7 +886,7 @@ export class NotificationService {
           ...emailData,
           milestone: notification.data?.milestone,
           averageRating: notification.data?.averageRating,
-          dashboardUrl: `${process.env.FRONTEND_URL}/seller/dashboard/reviews`
+          dashboardUrl: `${this.frontendUrl}/seller/dashboard/reviews`
         };
         break;
 

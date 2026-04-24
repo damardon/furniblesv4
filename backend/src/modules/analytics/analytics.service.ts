@@ -1,6 +1,6 @@
 // src/modules/analytics/analytics.service.ts
 
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 
@@ -65,7 +65,7 @@ export class AnalyticsService {
   // ================================
 
   async getSellerDashboard(sellerId: string, dto: GetSellerDashboardDto): Promise<SellerAnalyticsResponseDto> {
-    const cacheKey = this.cache.buildKey('seller', sellerId, 'dashboard', dto.startDate ?? '', dto.endDate ?? '');
+    const cacheKey = this.cache.buildKey('seller', sellerId, 'dashboard', dto.startDate ?? '', dto.endDate ?? '', String(dto.includeActivity ?? true));
     return this.cache.getOrSet(cacheKey, async () => {
       this.logger.log(`Getting seller dashboard for ${sellerId}`);
       const { startDate, endDate, includeActivity = true } = dto;
@@ -182,49 +182,28 @@ export class AnalyticsService {
     };
   }
 
-  async getSellerCustomers(_sellerId: string, dto: GetSellerCustomersDto): Promise<SellerAnalyticsResponseDto> {
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    return {
-      success: true,
-      data: {},
-      meta: {
-        sellerId: _sellerId,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getSellerCustomers(_sellerId: string, _dto: GetSellerCustomersDto): Promise<SellerAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getSellerCustomers called for seller ${_sellerId}`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Seller customers analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getSellerNotifications(_sellerId: string, dto: GetSellerNotificationsDto): Promise<SellerAnalyticsResponseDto> {
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    return {
-      success: true,
-      data: {},
-      meta: {
-        sellerId: _sellerId,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getSellerNotifications(_sellerId: string, _dto: GetSellerNotificationsDto): Promise<SellerAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getSellerNotifications called for seller ${_sellerId}`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Seller notifications analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getSellerConversion(_sellerId: string, dto: GetSellerConversionDto): Promise<SellerAnalyticsResponseDto> {
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    return {
-      success: true,
-      data: {},
-      meta: {
-        sellerId: _sellerId,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getSellerConversion(_sellerId: string, _dto: GetSellerConversionDto): Promise<SellerAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getSellerConversion called for seller ${_sellerId}`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Seller conversion analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
   // ================================
@@ -246,6 +225,8 @@ export class AnalyticsService {
           this.query.getPlatformReviews(timeRange)
         ]);
 
+      // TODO: Implement getTopSellers, getTopProducts, getTopCategories in AnalyticsQueryService
+      // For now, these are fetched as separate endpoints via getTopPerformers
       const platformData: AdminPlatformMetrics = {
         ...userMetrics,
         ...revenueMetrics,
@@ -271,180 +252,96 @@ export class AnalyticsService {
     }, CACHE_TTL.PLATFORM_OVERVIEW);
   }
 
-  async getTopPerformers(dto: GetTopPerformersDto, requestedBy: string): Promise<AdminAnalyticsResponseDto> {
-    this.logger.log(`Getting top performers: ${dto.type}`);
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    return {
-      success: true,
-      data: { performers: [], type: dto.type },
-      meta: {
-        requestedBy,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getTopPerformers(_dto: GetTopPerformersDto, _requestedBy: string): Promise<AdminAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getTopPerformers called for type ${_dto.type}`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Top performers analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getSellerComparison(dto: GetSellerComparisonDto, requestedBy: string): Promise<AdminAnalyticsResponseDto> {
-    this.logger.log(`Getting seller comparison for ${dto.sellerIds.length} sellers`);
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    return {
-      success: true,
-      data: {},
-      meta: {
-        requestedBy,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: dto.sellerIds.length,
-        currency: 'USD'
-      }
-    };
+  async getSellerComparison(_dto: GetSellerComparisonDto, _requestedBy: string): Promise<AdminAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getSellerComparison called for ${_dto.sellerIds.length} sellers`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Seller comparison analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getConversionFunnel(dto: GetConversionFunnelDto, requestedBy: string): Promise<AdminAnalyticsResponseDto> {
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    const funnelData: ConversionFunnelMetrics = {
-      visitors: 0, productViews: 0, cartAdds: 0, checkoutStarts: 0,
-      orders: 0, completedOrders: 0, reviews: 0,
-      productViewRate: 0, cartConversionRate: 0, checkoutConversionRate: 0,
-      orderCompletionRate: 0, reviewRate: 0,
-      dropOffs: { viewToCart: 0, cartToCheckout: 0, checkoutToOrder: 0, orderToCompletion: 0, completionToReview: 0 }
-    };
-    return {
-      success: true,
-      data: funnelData,
-      meta: {
-        requestedBy,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getConversionFunnel(_dto: GetConversionFunnelDto, _requestedBy: string): Promise<AdminAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getConversionFunnel called`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Conversion funnel analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getCohortAnalysis(dto: GetCohortAnalysisDto, requestedBy: string): Promise<AdminAnalyticsResponseDto> {
-    return {
-      success: true,
-      data: { cohorts: [] },
-      meta: {
-        requestedBy,
-        timeRange: { start: dto.startMonth || '2024-01', end: dto.endMonth || '2024-12' },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getCohortAnalysis(_dto: GetCohortAnalysisDto, _requestedBy: string): Promise<AdminAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getCohortAnalysis called`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Cohort analysis endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getNotificationAnalytics(dto: GetNotificationAnalyticsDto, requestedBy: string): Promise<AdminAnalyticsResponseDto> {
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    const notificationData: NotificationEngagementMetrics = {
-      totalSent: 0, deliveryRate: 0, openRate: 0, clickRate: 0, byType: [], byChannel: [], trends: []
-    };
-    return {
-      success: true,
-      data: notificationData,
-      meta: {
-        requestedBy,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getNotificationAnalytics(_dto: GetNotificationAnalyticsDto, _requestedBy: string): Promise<AdminAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getNotificationAnalytics called`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Notification analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getUserBehavior(dto: GetUserBehaviorDto, requestedBy: string): Promise<AdminAnalyticsResponseDto> {
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    return {
-      success: true,
-      data: {},
-      meta: {
-        requestedBy,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getUserBehavior(_dto: GetUserBehaviorDto, _requestedBy: string): Promise<AdminAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getUserBehavior called`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'User behavior analytics endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async getFinancialReport(dto: GetFinancialReportDto, requestedBy: string): Promise<AdminAnalyticsResponseDto> {
-    const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
-    return {
-      success: true,
-      data: {},
-      meta: {
-        requestedBy,
-        timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
-        lastUpdated: new Date().toISOString(),
-        dataPoints: 0,
-        currency: 'USD'
-      }
-    };
+  async getFinancialReport(_dto: GetFinancialReportDto, _requestedBy: string): Promise<AdminAnalyticsResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] getFinancialReport called`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Financial report endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
   // ================================
   // EXPORT AND REPORTING
   // ================================
 
-  async exportData(dto: ExportDataDto, requestedBy: string): Promise<ExportResponseDto> {
-    this.logger.log(`Exporting data: ${dto.type} in ${dto.format} format`);
-    const filename = dto.filename || `analytics_export_${Date.now()}`;
-    return {
-      success: true,
-      data: {
-        filename: `${filename}.${dto.format}`,
-        downloadUrl: `/api/analytics/exports/${filename}.${dto.format}`,
-        size: 0,
-        recordCount: 0,
-        generatedAt: new Date().toISOString()
-      } as any,
-      meta: {
-        type: dto.type,
-        format: dto.format,
-        requestedBy,
-        timeRange: { start: dto.startDate || '', end: dto.endDate || '' },
-        filters: dto
-      }
-    };
+  async exportData(_dto: ExportDataDto, _requestedBy: string): Promise<ExportResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] exportData called for type ${_dto.type}`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Data export endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async generateCustomReport(dto: CustomReportDto, requestedBy: string, _userRole: UserRole): Promise<ExportResponseDto> {
-    this.logger.log(`Generating custom report: ${dto.title}`);
-    const filename = `custom_report_${Date.now()}`;
-    return {
-      success: true,
-      data: {
-        filename: `${filename}.pdf`,
-        downloadUrl: `/api/analytics/reports/${filename}.pdf`,
-        size: 0,
-        recordCount: 0,
-        generatedAt: new Date().toISOString()
-      } as any,
-      meta: {
-        type: ExportType.CUSTOM_REPORT,
-        format: ExportFormat.PDF,
-        requestedBy,
-        timeRange: { start: dto.startDate || '', end: dto.endDate || '' }
-      }
-    };
+  async generateCustomReport(_dto: CustomReportDto, _requestedBy: string, _userRole: UserRole): Promise<ExportResponseDto> {
+    this.logger.warn(`[NOT_IMPLEMENTED] generateCustomReport called for report "${_dto.title}"`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Custom report generation endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
-  async scheduleReport(dto: ScheduleReportDto, _requestedBy: string): Promise<{ success: boolean; message: string; reportId: string }> {
-    const reportId = `scheduled_${Date.now()}`;
-    return {
-      success: true,
-      message: `Report "${dto.name}" scheduled successfully for ${dto.frequency} delivery`,
-      reportId
-    };
+  async scheduleReport(_dto: ScheduleReportDto, _requestedBy: string): Promise<{ success: boolean; message: string; reportId: string }> {
+    this.logger.warn(`[NOT_IMPLEMENTED] scheduleReport called for report "${_dto.name}"`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Report scheduling endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
   async downloadReport(_reportId: string, _requestedBy: string, _userRole: UserRole): Promise<any> {
-    return { success: true, message: 'Report download initiated' };
+    this.logger.warn(`[NOT_IMPLEMENTED] downloadReport called for report "${_reportId}"`);
+    throw new HttpException(
+      { error: 'NOT_IMPLEMENTED', message: 'Report download endpoint is not yet implemented' },
+      HttpStatus.NOT_IMPLEMENTED
+    );
   }
 
   // ================================

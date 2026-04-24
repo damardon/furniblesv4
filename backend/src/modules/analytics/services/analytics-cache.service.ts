@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
@@ -11,7 +11,7 @@ export const CACHE_TTL = {
 } as const;
 
 @Injectable()
-export class AnalyticsCacheService implements OnModuleInit {
+export class AnalyticsCacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AnalyticsCacheService.name);
   private client: Redis | null = null;
   private enabled = false;
@@ -37,6 +37,19 @@ export class AnalyticsCacheService implements OnModuleInit {
       this.client.connect().catch(() => {});
     } catch (err) {
       this.logger.warn(`Failed to init Redis: ${err.message}`);
+    }
+  }
+
+  async onModuleDestroy() {
+    if (!this.client) return;
+    try {
+      await this.client.quit();
+      this.logger.log('Analytics cache disconnected gracefully');
+    } catch {
+      this.client.disconnect();
+    } finally {
+      this.client = null;
+      this.enabled = false;
     }
   }
 

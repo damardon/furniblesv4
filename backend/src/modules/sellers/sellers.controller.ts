@@ -18,9 +18,7 @@ import { SellerProfile } from '@prisma/client';
 @ApiTags('sellers')
 @Controller('sellers')
 export class SellersController {
-  constructor(private readonly sellersService: SellersService) {
-    console.log('🚀 [DEBUG] SellersController initialized successfully!');
-  }
+  constructor(private readonly sellersService: SellersService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new seller' })
@@ -54,8 +52,6 @@ export class SellersController {
   @ApiResponse({ status: 200, description: 'Seller found' })
   @ApiResponse({ status: 404, description: 'Seller not found' })
   async findBySlug(@Param('slug') slug: string) {
-    console.log('🔍 [CONTROLLER] Getting seller by slug:', slug);
-    
     const seller = await this.sellersService.findBySlug(slug);
     if (!seller) {
       throw new NotFoundException(`Seller with slug "${slug}" not found`);
@@ -85,8 +81,6 @@ export class SellersController {
     @Query('sortBy') sortBy?: string,
     @Query('search') search?: string,
   ) {
-    console.log('🔍 [CONTROLLER] Getting products for seller:', slug);
-
     // ✅ Obtener el vendedor por slug
     const seller = await this.sellersService.findBySlug(slug);
     if (!seller) {
@@ -115,13 +109,9 @@ export class SellersController {
       search,
     };
 
-    console.log('🔍 [CONTROLLER] Filters:', filters);
-
     try {
       // ✅ Usar sellerId (que es el userId del vendedor)
-      const result = await this.sellersService.getSellerProducts(seller.userId, filters);
-      console.log('✅ [CONTROLLER] Found products:', result.total);
-      return result;
+      return await this.sellersService.getSellerProducts(seller.userId, filters);
     } catch (error) {
       console.error('❌ [CONTROLLER] Error getting seller products:', error);
       throw new InternalServerErrorException('Error retrieving seller products');

@@ -322,39 +322,25 @@ export class AdminService {
       }
 
       // Obtener archivos de imagen
-      if (product.imageFileIds) {
-        try {
-          const imageIds = JSON.parse(product.imageFileIds);
-          if (Array.isArray(imageIds) && imageIds.length > 0) {
-            const imageFiles = await this.prisma.file.findMany({
-              where: { 
-                id: { in: imageIds },
-                type: 'IMAGE'
-              }
-            });
-            fileInfo.imageFiles = imageFiles;
+      if (Array.isArray(product.imageFileIds) && product.imageFileIds.length > 0) {
+        const imageFiles = await this.prisma.file.findMany({
+          where: { 
+            id: { in: product.imageFileIds },
+            type: 'IMAGE'
           }
-        } catch (error) {
-          this.logger.warn(`Error parsing imageFileIds for product ${product.id}:`, error);
-        }
+        });
+        fileInfo.imageFiles = imageFiles;
       }
 
       // Obtener archivos de thumbnail
-      if (product.thumbnailFileIds) {
-        try {
-          const thumbnailIds = JSON.parse(product.thumbnailFileIds);
-          if (Array.isArray(thumbnailIds) && thumbnailIds.length > 0) {
-            const thumbnailFiles = await this.prisma.file.findMany({
-              where: { 
-                id: { in: thumbnailIds },
-                type: 'THUMBNAIL'
-              }
-            });
-            fileInfo.thumbnailFiles = thumbnailFiles;
+      if (Array.isArray(product.thumbnailFileIds) && product.thumbnailFileIds.length > 0) {
+        const thumbnailFiles = await this.prisma.file.findMany({
+          where: { 
+            id: { in: product.thumbnailFileIds },
+            type: 'THUMBNAIL'
           }
-        } catch (error) {
-          this.logger.warn(`Error parsing thumbnailFileIds for product ${product.id}:`, error);
-        }
+        });
+        fileInfo.thumbnailFiles = thumbnailFiles;
       }
 
       return fileInfo;

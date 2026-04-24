@@ -496,15 +496,15 @@ model Product {
   difficulty  Difficulty
   status      ProductStatus   @default(DRAFT)
 
-  // Simplified file relationships - using JSON for file IDs
+  // File relationships and product metadata
   pdfFileId        String? // Single PDF file ID
-  imageFileIds     String  @default("[]") // JSON array of image file IDs
-  thumbnailFileIds String  @default("[]") // JSON array of thumbnail file IDs
+  imageFileIds     String[] @default([])
+  thumbnailFileIds String[] @default([])
 
-  tags           String  @default("[]") // JSON array
+  tags           String[] @default([])
   estimatedTime  String?
-  toolsRequired  String  @default("[]") // JSON array
-  materials      String  @default("[]") // JSON array
+  toolsRequired  String[] @default([])
+  materials      String[] @default([])
   dimensions     String?
   specifications Json?
 

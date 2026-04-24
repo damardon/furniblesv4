@@ -5,7 +5,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import sharp from 'sharp';
 import * as fs from 'fs/promises';
@@ -49,7 +49,7 @@ export class FilesService {
     this.uploadPath = this.config.get('UPLOAD_PATH', './uploads');
     this.maxFileSize = parseInt(this.config.get('MAX_FILE_SIZE', '10485760')); // 10MB
     this.allowedMimeTypes = this.config.get('ALLOWED_FILE_TYPES', 'pdf,jpg,jpeg,png,webp').split(',');
-    this.baseUrl = this.config.get('BASE_URL', 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev');
+    this.baseUrl = this.config.get('BASE_URL', 'http://localhost:3001');
     
     // Crear directorio de uploads si no existe
     this.ensureUploadDirectory();
@@ -458,37 +458,21 @@ async getStorageStats() {
 
     // Archivos de imágenes usados
     const productsWithImages = await this.prisma.product.findMany({
-      where: { imageFileIds: { not: null } },
       select: { imageFileIds: true }
     });
     productsWithImages.forEach(p => {
-      try {
-        if (p.imageFileIds) {
-          const imageIds = JSON.parse(p.imageFileIds);
-          if (Array.isArray(imageIds)) {
-            imageIds.forEach(id => usedFileIds.add(id));
-          }
-        }
-      } catch (error) {
-        console.warn('Error parsing imageFileIds:', error);
+      if (Array.isArray(p.imageFileIds) && p.imageFileIds.length > 0) {
+        p.imageFileIds.forEach(id => usedFileIds.add(id));
       }
     });
 
     // Archivos de thumbnails usados
     const productsWithThumbnails = await this.prisma.product.findMany({
-      where: { thumbnailFileIds: { not: null } },
       select: { thumbnailFileIds: true }
     });
     productsWithThumbnails.forEach(p => {
-      try {
-        if (p.thumbnailFileIds) {
-          const thumbnailIds = JSON.parse(p.thumbnailFileIds);
-          if (Array.isArray(thumbnailIds)) {
-            thumbnailIds.forEach(id => usedFileIds.add(id));
-          }
-        }
-      } catch (error) {
-        console.warn('Error parsing thumbnailFileIds:', error);
+      if (Array.isArray(p.thumbnailFileIds) && p.thumbnailFileIds.length > 0) {
+        p.thumbnailFileIds.forEach(id => usedFileIds.add(id));
       }
     });
 
@@ -589,41 +573,27 @@ async getStorageStats() {
     }
 
     // Obtener archivos de imágenes
-    if (product.imageFileIds) {
-      try {
-        const imageIds = JSON.parse(product.imageFileIds);
-        if (Array.isArray(imageIds) && imageIds.length > 0) {
-          const imageFiles = await this.prisma.file.findMany({
-            where: { 
-              id: { in: imageIds },
-              status: FileStatus.ACTIVE,
-              type: FileType.IMAGE
-            }
-          });
-          fileInfo.images = imageFiles.map(this.mapFileToResponse);
+    if (Array.isArray(product.imageFileIds) && product.imageFileIds.length > 0) {
+      const imageFiles = await this.prisma.file.findMany({
+        where: { 
+          id: { in: product.imageFileIds },
+          status: FileStatus.ACTIVE,
+          type: FileType.IMAGE
         }
-      } catch (error) {
-        console.warn('Error parsing imageFileIds:', error);
-      }
+      });
+      fileInfo.images = imageFiles.map(this.mapFileToResponse);
     }
 
     // Obtener archivos de thumbnails
-    if (product.thumbnailFileIds) {
-      try {
-        const thumbnailIds = JSON.parse(product.thumbnailFileIds);
-        if (Array.isArray(thumbnailIds) && thumbnailIds.length > 0) {
-          const thumbnailFiles = await this.prisma.file.findMany({
-            where: { 
-              id: { in: thumbnailIds },
-              status: FileStatus.ACTIVE,
-              type: FileType.THUMBNAIL
-            }
-          });
-          fileInfo.thumbnails = thumbnailFiles.map(this.mapFileToResponse);
+    if (Array.isArray(product.thumbnailFileIds) && product.thumbnailFileIds.length > 0) {
+      const thumbnailFiles = await this.prisma.file.findMany({
+        where: { 
+          id: { in: product.thumbnailFileIds },
+          status: FileStatus.ACTIVE,
+          type: FileType.THUMBNAIL
         }
-      } catch (error) {
-        console.warn('Error parsing thumbnailFileIds:', error);
-      }
+      });
+      fileInfo.thumbnails = thumbnailFiles.map(this.mapFileToResponse);
     }
 
     return fileInfo;

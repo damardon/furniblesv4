@@ -202,8 +202,6 @@ export class SellersService {
    * ✅ Buscar vendedor por slug
    */
   async findBySlug(slug: string) {
-    console.log('🔍 [SERVICE] Finding seller by slug:', slug);
-
     const seller = await this.prisma.sellerProfile.findUnique({
       where: { slug },
       include: {
@@ -222,11 +220,8 @@ export class SellersService {
     });
 
     if (!seller) {
-      console.log('❌ [SERVICE] Seller not found with slug:', slug);
       return null;
     }
-
-    console.log('✅ [SERVICE] Found seller:', seller.storeName);
 
     // Obtener estadísticas del vendedor
     const [productCount, avgRating, totalSales, totalReviews] = await Promise.all([
@@ -269,8 +264,6 @@ export class SellersService {
    * ✅ Obtener productos de un vendedor específico
    */
   async getSellerProducts(sellerId: string, filters: any) {
-    console.log('🔍 [SERVICE] Getting products for seller:', sellerId, 'with filters:', filters);
-
     const {
       page = 1,
       limit = 12,
@@ -300,7 +293,7 @@ export class SellersService {
         OR: [
           { title: { contains: search } },
           { description: { contains: search } },
-          { tags: { contains: search } },
+          { tags: { hasSome: [search] } },
         ],
       }),
     };
@@ -350,8 +343,6 @@ export class SellersService {
         where: whereConditions,
       }),
     ]);
-
-    console.log('✅ [SERVICE] Found products:', products.length, 'of', total);
 
     // ✅ Calcular metadata de paginación
     const totalPages = Math.ceil(total / limit);

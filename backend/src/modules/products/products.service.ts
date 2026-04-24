@@ -6,7 +6,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductWithFilesDto } from './dto/create-product-with-files.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -22,15 +22,15 @@ export class ProductsService {
   ) {}
 
   /**
-   * Convierte arrays a JSON strings para SQLite
+   * Normaliza arrays para PostgreSQL/Prisma
    */
   private prepareArrayFields(data: any) {
     return {
-      imageFileIds: data.imageFileIds ? JSON.stringify(data.imageFileIds) : "[]",
-      thumbnailFileIds: data.thumbnailFileIds ? JSON.stringify(data.thumbnailFileIds) : "[]",
-      tags: data.tags ? JSON.stringify(data.tags) : "[]",
-      toolsRequired: data.toolsRequired ? JSON.stringify(data.toolsRequired) : "[]",
-      materials: data.materials ? JSON.stringify(data.materials) : "[]",
+      imageFileIds: data.imageFileIds || [],
+      thumbnailFileIds: data.thumbnailFileIds || [],
+      tags: data.tags || [],
+      toolsRequired: data.toolsRequired || [],
+      materials: data.materials || [],
     };
   }
 
@@ -113,7 +113,7 @@ export class ProductsService {
       where.OR = [
         { title: { contains: q } },
         { description: { contains: q } },
-        { tags: { contains: q } }, // Búsqueda simple en JSON string
+        { tags: { hasSome: [q] } },
       ];
     }
 
@@ -127,7 +127,7 @@ export class ProductsService {
     }
 
     if (tags && tags.length > 0) {
-      where.tags = { contains: tags.join('|') };
+      where.tags = { hasSome: tags };
     }
 
     // Ordenamiento
@@ -552,8 +552,8 @@ export class ProductsService {
       throw new BadRequestException('Product cannot be published');
     }
 
-    // Validar que tenga archivos necesarios (corregido para SQLite)
-    const imageFileIds = JSON.parse(product.imageFileIds || "[]");
+    // Validar que tenga archivos necesarios
+    const imageFileIds = product.imageFileIds || [];
     if (!imageFileIds || imageFileIds.length === 0) {
       throw new BadRequestException('Product must have at least one image');
     }

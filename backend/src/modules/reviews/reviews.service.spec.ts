@@ -48,6 +48,7 @@ describe('ReviewsService', () => {
     reviewVote: {
       upsert: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       deleteMany: jest.fn(),
     },
     reviewReport: {
@@ -207,6 +208,19 @@ describe('ReviewsService', () => {
           pros: createReviewDto.pros,
           cons: createReviewDto.cons,
           status: 'PENDING_MODERATION',
+        },
+        include: {
+          buyer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          product: {
+            select: {
+              title: true,
+            },
+          },
         },
       });
 

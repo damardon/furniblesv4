@@ -139,20 +139,16 @@ export class CartService {
 
     // Helper function para obtener imagen del producto
     const getProductImage = async (product: any): Promise<string | undefined> => {
-      try {
-        const imageFileIds = JSON.parse(product.imageFileIds || '[]');
-        if (imageFileIds.length > 0) {
-          const imageFile = await this.prisma.file.findFirst({
-            where: { 
-              id: { in: imageFileIds },
-              type: 'IMAGE',
-              status: 'ACTIVE'
-            }
-          });
-          return imageFile?.url;
-        }
-      } catch (error) {
-        console.warn('Error parsing imageFileIds:', error);
+      const imageFileIds = product.imageFileIds || [];
+      if (imageFileIds.length > 0) {
+        const imageFile = await this.prisma.file.findFirst({
+          where: { 
+            id: { in: imageFileIds },
+            type: 'IMAGE',
+            status: 'ACTIVE'
+          }
+        });
+        return imageFile?.url;
       }
       return undefined;
     };

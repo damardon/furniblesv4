@@ -6,6 +6,6 @@ export default registerAs('stripe', () => ({
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   currency: 'usd',
   platformFeePercent: 10, // 10% commission
-  successUrl: `${process.env.FRONTEND_URL}/checkout/success`,
-  cancelUrl: `${process.env.FRONTEND_URL}/checkout/cancel`,
+  successUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/success`,
+  cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/cancel`,
 }));

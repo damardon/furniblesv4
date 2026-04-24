@@ -1,5 +1,6 @@
 // src/modules/checkout/checkout.service.ts
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CartService } from '../cart/cart.service';
 import { OrdersService } from '../orders/orders.service';
@@ -13,6 +14,7 @@ export class CheckoutService {
     private cartService: CartService,
     private ordersService: OrdersService,
     private stripeService: StripeService,
+    private configService: ConfigService,
   ) {}
 
   async createCheckoutSession(
@@ -49,6 +51,8 @@ export class CheckoutService {
     billingData: dto.billingData
   });
 
+  const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+
   // Crear sesión de Stripe
   const stripeSession = await this.stripeService.createCheckoutSession({
     orderId: orderDto.id,
@@ -56,8 +60,8 @@ export class CheckoutService {
     amount: totalAmount,
     currency: 'usd',
     customerEmail: dto.buyerEmail,
-    successUrl: dto.successUrl || `${process.env.FRONTEND_URL}/orders/${orderDto.id}/success`,
-    cancelUrl: dto.cancelUrl || `${process.env.FRONTEND_URL}/cart`,
+    successUrl: dto.successUrl || `${frontendUrl}/orders/${orderDto.id}/success`,
+    cancelUrl: dto.cancelUrl || `${frontendUrl}/cart`,
     metadata: {
       orderId: orderDto.id,
       userId,
@@ -178,7 +182,7 @@ export class CheckoutService {
                 title: true,
                 slug: true,
                 category: true,
-                imageFileIds: true // Obtener los IDs de imágenes desde JSON
+                imageFileIds: true
               }
             }
           }
@@ -192,23 +196,17 @@ export class CheckoutService {
 
     // Helper function para obtener imagen del producto
     const getProductImageUrl = async (product: any): Promise<string | null> => {
-      try {
-        if (product.imageFileIds) {
-          const imageIds = JSON.parse(product.imageFileIds);
-          if (Array.isArray(imageIds) && imageIds.length > 0) {
-            const imageFile = await this.prisma.file.findFirst({
-              where: { 
-                id: { in: imageIds },
-                type: 'IMAGE',
-                status: 'ACTIVE'
-              },
-              select: { url: true }
-            });
-            return imageFile?.url || null;
-          }
-        }
-      } catch (error) {
-        console.warn('Error parsing imageFileIds:', error);
+      const imageIds = product.imageFileIds || [];
+      if (Array.isArray(imageIds) && imageIds.length > 0) {
+        const imageFile = await this.prisma.file.findFirst({
+          where: { 
+            id: { in: imageIds },
+            type: 'IMAGE',
+            status: 'ACTIVE'
+          },
+          select: { url: true }
+        });
+        return imageFile?.url || null;
       }
       return null;
     };
@@ -275,6 +273,8 @@ export class CheckoutService {
       throw new BadRequestException('La sesión de checkout ha expirado');
     }
 
+    const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+
     // Crear nueva sesión de Stripe
     const stripeSession = await this.stripeService.createCheckoutSession({
       orderId: order.id,
@@ -282,8 +282,8 @@ export class CheckoutService {
       amount: order.totalAmount,
       currency: 'usd',
       customerEmail: order.buyerEmail,
-      successUrl: `${process.env.FRONTEND_URL}/orders/${order.id}/success`,
-      cancelUrl: `${process.env.FRONTEND_URL}/cart`,
+      successUrl: `${frontendUrl}/orders/${order.id}/success`,
+      cancelUrl: `${frontendUrl}/cart`,
       metadata: {
         orderId: order.id,
         userId,
