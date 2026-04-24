@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -254,6 +254,12 @@ model User {
   notificationAnalytics   NotificationAnalytics[]
 
   @@map("user")
+
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model SellerProfile {
@@ -348,6 +354,11 @@ model Transaction {
   updatedAt DateTime @updatedAt
 
   @@map("transactions")
+
+
+  @@index([orderId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model Invoice {
@@ -442,7 +453,6 @@ model CartItem {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
-  @@index([userId])
   @@map("CartItem")
 }
 
@@ -621,7 +631,6 @@ model OrderItem {
   seller  User    @relation("OrderSeller", fields: [sellerId], references: [id])
 
   @@index([orderId])
-  @@index([sellerId])
   @@map("OrderItem")
 }
 
@@ -744,7 +753,6 @@ model ReviewResponse {
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   seller User   @relation(fields: [sellerId], references: [id])
 
-  @@index([sellerId])
   @@map("review_responses")
 }
 
@@ -776,7 +784,6 @@ model ReviewReport {
   user   User   @relation(fields: [userId], references: [id])
 
   @@index([reviewId, resolved])
-  @@index([userId])
   @@map("review_reports")
 }
 
@@ -938,7 +945,6 @@ model Analytics {
   createdAt DateTime @default(now())
 
   @@index([eventType, createdAt])
-  @@index([userId])
   @@index([productId])
   @@map("Analytics")
 }
@@ -953,7 +959,6 @@ model BlacklistedToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
-  @@index([userId])
   @@map("BlacklistedToken")
 }
 

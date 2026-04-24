@@ -15,8 +15,8 @@ const config_1 = __webpack_require__(3);
 const swagger_1 = __webpack_require__(4);
 const helmet_1 = __importDefault(__webpack_require__(5));
 const app_module_1 = __webpack_require__(6);
-const compression = __webpack_require__(306);
-const cookieParser = __webpack_require__(307);
+const compression = __webpack_require__(310);
+const cookieParser = __webpack_require__(311);
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
@@ -223,8 +223,8 @@ const payouts_module_1 = __webpack_require__(272);
 const transactions_module_1 = __webpack_require__(278);
 const invoices_module_1 = __webpack_require__(282);
 const analytics_module_1 = __webpack_require__(286);
-const health_controller_1 = __webpack_require__(302);
-const sellers_module_1 = __webpack_require__(303);
+const health_controller_1 = __webpack_require__(306);
+const sellers_module_1 = __webpack_require__(307);
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42612,12 +42612,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnalyticsModule = void 0;
 const common_1 = __webpack_require__(2);
+const config_1 = __webpack_require__(3);
 const analytics_service_1 = __webpack_require__(287);
-const analytics_controller_1 = __webpack_require__(290);
+const analytics_controller_1 = __webpack_require__(294);
+const analytics_query_service_1 = __webpack_require__(290);
+const analytics_calculation_service_1 = __webpack_require__(291);
+const analytics_cache_service_1 = __webpack_require__(292);
 const prisma_module_1 = __webpack_require__(9);
 const users_module_1 = __webpack_require__(28);
 const orders_module_1 = __webpack_require__(221);
-const reviews_module_1 = __webpack_require__(293);
+const reviews_module_1 = __webpack_require__(297);
 const notifications_module_1 = __webpack_require__(235);
 const transactions_module_1 = __webpack_require__(278);
 const products_module_1 = __webpack_require__(36);
@@ -42627,6 +42631,7 @@ exports.AnalyticsModule = AnalyticsModule;
 exports.AnalyticsModule = AnalyticsModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            config_1.ConfigModule,
             prisma_module_1.PrismaModule,
             (0, common_1.forwardRef)(() => users_module_1.UsersModule),
             (0, common_1.forwardRef)(() => orders_module_1.OrdersModule),
@@ -42636,7 +42641,12 @@ exports.AnalyticsModule = AnalyticsModule = __decorate([
             (0, common_1.forwardRef)(() => products_module_1.ProductsModule),
         ],
         controllers: [analytics_controller_1.AnalyticsController],
-        providers: [analytics_service_1.AnalyticsService],
+        providers: [
+            analytics_calculation_service_1.AnalyticsCalculationService,
+            analytics_cache_service_1.AnalyticsCacheService,
+            analytics_query_service_1.AnalyticsQueryService,
+            analytics_service_1.AnalyticsService,
+        ],
         exports: [analytics_service_1.AnalyticsService],
     })
 ], AnalyticsModule);
@@ -42658,37 +42668,43 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var AnalyticsService_1;
-var _a;
+var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnalyticsService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(10);
 const client_1 = __webpack_require__(11);
 const export_dto_1 = __webpack_require__(288);
+const analytics_query_service_1 = __webpack_require__(290);
+const analytics_calculation_service_1 = __webpack_require__(291);
+const analytics_cache_service_1 = __webpack_require__(292);
 let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
-    constructor(prisma) {
+    constructor(prisma, query, calc, cache) {
         this.prisma = prisma;
+        this.query = query;
+        this.calc = calc;
+        this.cache = cache;
         this.logger = new common_1.Logger(AnalyticsService_1.name);
     }
     async getSellerDashboard(sellerId, dto) {
-        try {
+        const cacheKey = this.cache.buildKey('seller', sellerId, 'dashboard', dto.startDate ?? '', dto.endDate ?? '');
+        return this.cache.getOrSet(cacheKey, async () => {
             this.logger.log(`Getting seller dashboard for ${sellerId}`);
-            const { startDate, endDate, includeComparison = true, includeActivity = true } = dto;
-            const timeRange = this.getTimeRange(startDate, endDate);
+            const { startDate, endDate, includeActivity = true } = dto;
+            const timeRange = this.calc.getTimeRange(startDate, endDate);
             const seller = await this.prisma.user.findUnique({
                 where: { id: sellerId, role: client_1.UserRole.SELLER },
                 include: { sellerProfile: true }
             });
-            if (!seller) {
+            if (!seller)
                 throw new common_1.NotFoundException('Seller not found');
-            }
             const [revenueData, orderData, productData, reviewData, recentOrders, recentReviews] = await Promise.all([
-                this.calculateSellerRevenue(sellerId, timeRange),
-                this.calculateSellerOrders(sellerId, timeRange),
-                this.calculateSellerProducts(sellerId, timeRange),
-                this.calculateSellerReviews(sellerId, timeRange),
-                includeActivity ? this.getSellerRecentOrders(sellerId, 5) : [],
-                includeActivity ? this.getSellerRecentReviews(sellerId, 5) : []
+                this.query.getSellerRevenue(sellerId, timeRange),
+                this.query.getSellerOrders(sellerId, timeRange),
+                this.query.getSellerProducts(sellerId, timeRange),
+                this.query.getSellerReviews(sellerId, timeRange),
+                includeActivity ? this.query.getSellerRecentOrders(sellerId, 5) : [],
+                includeActivity ? this.query.getSellerRecentReviews(sellerId, 5) : []
             ]);
             const dashboardData = {
                 totalRevenue: revenueData.total,
@@ -42711,232 +42727,123 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 data: dashboardData,
                 meta: {
                     sellerId,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
+                    timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
                     lastUpdated: new Date().toISOString(),
                     dataPoints: recentOrders.length + recentReviews.length,
                     currency: 'USD'
                 }
             };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller dashboard: ${error.message}`, error.stack);
-            throw error;
-        }
+        }, analytics_cache_service_1.CACHE_TTL.SELLER_DASHBOARD);
     }
     async getSellerRevenue(sellerId, dto) {
-        try {
-            this.logger.log(`Getting seller revenue for ${sellerId}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const [revenueMetrics, productBreakdown, feesBreakdown, trends] = await Promise.all([
-                this.calculateSellerRevenue(sellerId, timeRange),
-                dto.includeProductBreakdown ? this.getRevenueByProduct(sellerId, timeRange) : null,
-                dto.includeFees ? this.getSellerFeesBreakdown(sellerId, timeRange) : null,
-                this.getSellerRevenueTrends(sellerId, timeRange, dto.groupBy || 'month')
-            ]);
-            return {
-                success: true,
-                data: {
-                    revenue: revenueMetrics,
-                    productBreakdown,
-                    feesBreakdown,
-                    trends
-                },
-                meta: {
-                    sellerId,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: trends.length,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller revenue: ${error.message}`, error.stack);
-            throw error;
-        }
+        this.logger.log(`Getting seller revenue for ${sellerId}`);
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        const [revenueMetrics, productBreakdown, feesBreakdown, trends] = await Promise.all([
+            this.query.getSellerRevenue(sellerId, timeRange),
+            dto.includeProductBreakdown ? this.query.getSellerRevenueByProduct(sellerId, timeRange) : null,
+            dto.includeFees ? this.query.getSellerFeesBreakdown(sellerId, timeRange) : null,
+            this.query.getSellerRevenueTrends(sellerId, timeRange, dto.groupBy || 'month')
+        ]);
+        return {
+            success: true,
+            data: { revenue: revenueMetrics, productBreakdown, feesBreakdown, trends },
+            meta: {
+                sellerId,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: trends.length,
+                currency: 'USD'
+            }
+        };
     }
     async getSellerProducts(sellerId, dto) {
-        try {
-            this.logger.log(`Getting seller products analytics for ${sellerId}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const [products, summary] = await Promise.all([
-                this.getSellerProductAnalytics(sellerId, timeRange, dto),
-                this.getSellerProductsSummary(sellerId, timeRange)
-            ]);
-            return {
-                success: true,
-                data: {
-                    products,
-                    summary
-                },
-                meta: {
-                    sellerId,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: products.length,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller products: ${error.message}`, error.stack);
-            throw error;
-        }
+        this.logger.log(`Getting seller products analytics for ${sellerId}`);
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        const productData = await this.query.getSellerProducts(sellerId, timeRange);
+        return {
+            success: true,
+            data: { products: productData.topPerforming, summary: { total: productData.total, active: productData.active } },
+            meta: {
+                sellerId,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: productData.topPerforming.length,
+                currency: 'USD'
+            }
+        };
     }
     async getSellerReviews(sellerId, dto) {
-        try {
-            this.logger.log(`Getting seller reviews analytics for ${sellerId}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const [reviewMetrics, distribution, recentReviews, responseMetrics] = await Promise.all([
-                this.calculateSellerReviews(sellerId, timeRange),
-                dto.includeDistribution ? this.getSellerReviewDistribution(sellerId, timeRange) : null,
-                dto.includeRecentReviews ? this.getSellerRecentReviews(sellerId, 10) : [],
-                dto.includeResponseMetrics ? this.getSellerResponseMetrics(sellerId, timeRange) : null
-            ]);
-            return {
-                success: true,
-                data: {
-                    reviews: reviewMetrics,
-                    distribution,
-                    recentReviews,
-                    responseMetrics
-                },
-                meta: {
-                    sellerId,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: recentReviews.length,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller reviews: ${error.message}`, error.stack);
-            throw error;
-        }
+        this.logger.log(`Getting seller reviews analytics for ${sellerId}`);
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        const [reviewMetrics, recentReviews] = await Promise.all([
+            this.query.getSellerReviews(sellerId, timeRange),
+            dto.includeRecentReviews ? this.query.getSellerRecentReviews(sellerId, 10) : []
+        ]);
+        return {
+            success: true,
+            data: { reviews: reviewMetrics, recentReviews },
+            meta: {
+                sellerId,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: recentReviews.length,
+                currency: 'USD'
+            }
+        };
     }
-    async getSellerCustomers(sellerId, dto) {
-        try {
-            this.logger.log(`Getting seller customers analytics for ${sellerId}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const [customerMetrics, repeatAnalysis, lifetimeValue] = await Promise.all([
-                this.calculateSellerCustomers(sellerId, timeRange),
-                dto.includeRepeatAnalysis ? this.getRepeatCustomerAnalysis(sellerId, timeRange) : null,
-                dto.includeLifetimeValue ? this.getCustomerLifetimeValue(sellerId, timeRange) : null
-            ]);
-            return {
-                success: true,
-                data: {
-                    customers: customerMetrics,
-                    repeatAnalysis,
-                    lifetimeValue
-                },
-                meta: {
-                    sellerId,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller customers: ${error.message}`, error.stack);
-            throw error;
-        }
+    async getSellerCustomers(_sellerId, dto) {
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        return {
+            success: true,
+            data: {},
+            meta: {
+                sellerId: _sellerId,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
     }
-    async getSellerNotifications(sellerId, dto) {
-        try {
-            this.logger.log(`Getting seller notifications analytics for ${sellerId}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const [notificationMetrics, engagement, typeBreakdown] = await Promise.all([
-                this.calculateSellerNotifications(sellerId, timeRange),
-                dto.includeEngagement ? this.getSellerNotificationEngagement(sellerId, timeRange) : null,
-                dto.includeTypeBreakdown ? this.getSellerNotificationTypeBreakdown(sellerId, timeRange) : null
-            ]);
-            return {
-                success: true,
-                data: {
-                    notifications: notificationMetrics,
-                    engagement,
-                    typeBreakdown
-                },
-                meta: {
-                    sellerId,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller notifications: ${error.message}`, error.stack);
-            throw error;
-        }
+    async getSellerNotifications(_sellerId, dto) {
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        return {
+            success: true,
+            data: {},
+            meta: {
+                sellerId: _sellerId,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
     }
-    async getSellerConversion(sellerId, dto) {
-        try {
-            this.logger.log(`Getting seller conversion analytics for ${sellerId}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const [conversionMetrics, funnelData, trafficSource] = await Promise.all([
-                this.calculateSellerConversion(sellerId, timeRange),
-                dto.includeFunnel ? this.getSellerConversionFunnel(sellerId, timeRange) : null,
-                dto.includeTrafficSource ? this.getTrafficSourceConversion(sellerId, timeRange) : null
-            ]);
-            return {
-                success: true,
-                data: {
-                    conversion: conversionMetrics,
-                    funnelData,
-                    trafficSource
-                },
-                meta: {
-                    sellerId,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller conversion: ${error.message}`, error.stack);
-            throw error;
-        }
+    async getSellerConversion(_sellerId, dto) {
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        return {
+            success: true,
+            data: {},
+            meta: {
+                sellerId: _sellerId,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
     }
     async getPlatformOverview(dto, requestedBy) {
-        try {
+        const cacheKey = this.cache.buildKey('platform', 'overview', dto.startDate ?? '', dto.endDate ?? '');
+        return this.cache.getOrSet(cacheKey, async () => {
             this.logger.log(`Getting platform overview requested by ${requestedBy}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const [userMetrics, revenueMetrics, orderMetrics, productMetrics, reviewMetrics, topPerformers] = await Promise.all([
-                this.calculatePlatformUsers(timeRange),
-                this.calculatePlatformRevenue(timeRange),
-                this.calculatePlatformOrders(timeRange),
-                this.calculatePlatformProducts(timeRange),
-                this.calculatePlatformReviews(timeRange),
-                this.getPlatformTopPerformers(timeRange)
+            const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+            const [userMetrics, revenueMetrics, orderMetrics, productMetrics, reviewMetrics] = await Promise.all([
+                this.query.getPlatformUsers(timeRange),
+                this.query.getPlatformRevenue(timeRange),
+                this.query.getPlatformOrders(timeRange),
+                this.query.getPlatformProducts(timeRange),
+                this.query.getPlatformReviews(timeRange)
             ]);
             const platformData = {
                 ...userMetrics,
@@ -42944,1093 +42851,238 @@ let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
                 ...orderMetrics,
                 ...productMetrics,
                 ...reviewMetrics,
-                ...topPerformers
+                topSellers: [],
+                topProducts: [],
+                topCategories: []
             };
             return {
                 success: true,
                 data: platformData,
                 meta: {
                     requestedBy,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
+                    timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
                     lastUpdated: new Date().toISOString(),
                     dataPoints: 0,
                     currency: 'USD'
                 }
             };
-        }
-        catch (error) {
-            this.logger.error(`Error getting platform overview: ${error.message}`, error.stack);
-            throw error;
-        }
+        }, analytics_cache_service_1.CACHE_TTL.PLATFORM_OVERVIEW);
     }
     async getTopPerformers(dto, requestedBy) {
-        try {
-            this.logger.log(`Getting top performers: ${dto.type}`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const performers = await this.calculateTopPerformers(dto.type, timeRange, dto);
-            return {
-                success: true,
-                data: {
-                    performers,
-                    type: dto.type
-                },
-                meta: {
-                    requestedBy,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: performers.length,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting top performers: ${error.message}`, error.stack);
-            throw error;
-        }
+        this.logger.log(`Getting top performers: ${dto.type}`);
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        return {
+            success: true,
+            data: { performers: [], type: dto.type },
+            meta: {
+                requestedBy,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
     }
     async getSellerComparison(dto, requestedBy) {
-        try {
-            this.logger.log(`Getting seller comparison for ${dto.sellerIds.length} sellers`);
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const comparison = await this.calculateSellerComparison(dto.sellerIds, timeRange, dto.metrics);
-            return {
-                success: true,
-                data: comparison,
-                meta: {
-                    requestedBy,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: dto.sellerIds.length,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller comparison: ${error.message}`, error.stack);
-            throw error;
-        }
+        this.logger.log(`Getting seller comparison for ${dto.sellerIds.length} sellers`);
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        return {
+            success: true,
+            data: {},
+            meta: {
+                requestedBy,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: dto.sellerIds.length,
+                currency: 'USD'
+            }
+        };
     }
     async getConversionFunnel(dto, requestedBy) {
-        try {
-            this.logger.log('Getting platform conversion funnel');
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const funnelData = await this.calculatePlatformConversionFunnel(timeRange, dto);
-            return {
-                success: true,
-                data: funnelData,
-                meta: {
-                    requestedBy,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting conversion funnel: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getCohortAnalysis(dto, requestedBy) {
-        try {
-            this.logger.log('Getting cohort analysis');
-            const cohortData = await this.calculateCohortAnalysis(dto);
-            return {
-                success: true,
-                data: cohortData,
-                meta: {
-                    requestedBy,
-                    timeRange: {
-                        start: dto.startMonth || '2024-01',
-                        end: dto.endMonth || '2024-12'
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: cohortData.cohorts?.length || 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting cohort analysis: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getNotificationAnalytics(dto, requestedBy) {
-        try {
-            this.logger.log('Getting platform notification analytics');
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const notificationData = await this.calculatePlatformNotificationAnalytics(timeRange, dto);
-            return {
-                success: true,
-                data: notificationData,
-                meta: {
-                    requestedBy,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting notification analytics: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getUserBehavior(dto, requestedBy) {
-        try {
-            this.logger.log('Getting user behavior analytics');
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const behaviorData = await this.calculateUserBehavior(timeRange, dto);
-            return {
-                success: true,
-                data: behaviorData,
-                meta: {
-                    requestedBy,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting user behavior: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getFinancialReport(dto, requestedBy) {
-        try {
-            this.logger.log('Getting financial report');
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const financialData = await this.calculateFinancialReport(timeRange, dto);
-            return {
-                success: true,
-                data: financialData,
-                meta: {
-                    requestedBy,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    },
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0,
-                    currency: 'USD'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting financial report: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async exportData(dto, requestedBy) {
-        try {
-            this.logger.log(`Exporting data: ${dto.type} in ${dto.format} format`);
-            const filename = dto.filename || `analytics_export_${Date.now()}`;
-            const data = await this.prepareExportData(dto);
-            return {
-                success: true,
-                data: {
-                    filename: `${filename}.${dto.format}`,
-                    downloadUrl: `/api/analytics/exports/${filename}.${dto.format}`,
-                    size: 0,
-                    recordCount: Array.isArray(data) ? data.length : 0,
-                    generatedAt: new Date().toISOString()
-                },
-                meta: {
-                    type: dto.type,
-                    format: dto.format,
-                    requestedBy,
-                    timeRange: {
-                        start: dto.startDate || '',
-                        end: dto.endDate || ''
-                    },
-                    filters: dto
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error exporting data: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async generateCustomReport(dto, requestedBy, userRole) {
-        try {
-            this.logger.log(`Generating custom report: ${dto.title}`);
-            const reportData = await this.buildCustomReport(dto, userRole);
-            const filename = `custom_report_${Date.now()}`;
-            return {
-                success: true,
-                data: {
-                    filename: `${filename}.pdf`,
-                    downloadUrl: `/api/analytics/reports/${filename}.pdf`,
-                    size: 0,
-                    recordCount: 0,
-                    generatedAt: new Date().toISOString()
-                },
-                meta: {
-                    type: export_dto_1.ExportType.CUSTOM_REPORT,
-                    format: export_dto_1.ExportFormat.PDF,
-                    requestedBy,
-                    timeRange: {
-                        start: dto.startDate || '',
-                        end: dto.endDate || ''
-                    }
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error generating custom report: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async scheduleReport(dto, requestedBy) {
-        try {
-            this.logger.log(`Scheduling report: ${dto.name} - ${dto.frequency}`);
-            const reportId = `scheduled_${Date.now()}`;
-            return {
-                success: true,
-                message: `Report "${dto.name}" scheduled successfully for ${dto.frequency} delivery`,
-                reportId
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error scheduling report: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async downloadReport(reportId, requestedBy, userRole) {
-        try {
-            this.logger.log(`Downloading report: ${reportId}`);
-            return {
-                success: true,
-                message: 'Report download initiated'
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error downloading report: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getSellerRevenueChart(sellerId, dto) {
-        try {
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            const trends = await this.getSellerRevenueTrends(sellerId, timeRange, dto.groupBy || 'month');
-            const chartData = {
-                data: trends,
-                title: 'Revenue Trends',
-                primaryLabel: 'Revenue',
-                color: '#3B82F6'
-            };
-            return {
-                success: true,
-                data: chartData,
-                meta: {
-                    title: 'Seller Revenue Chart',
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: trends.length,
-                    timeRange: {
-                        start: timeRange.start.toISOString(),
-                        end: timeRange.end.toISOString()
-                    }
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting seller revenue chart: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getPlatformOverviewChart(dto) {
-        try {
-            this.logger.log('Getting platform overview chart data');
-            const timeRange = this.getTimeRange(dto.startDate, dto.endDate);
-            return {
-                success: true,
-                data: {
-                    revenue: [],
-                    users: [],
-                    orders: []
-                },
-                meta: {
-                    title: 'Platform Overview Charts',
-                    lastUpdated: new Date().toISOString(),
-                    dataPoints: 0
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting platform overview chart: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getSystemHealth() {
-        try {
-            const databaseHealth = await this.checkDatabaseHealth();
-            const cacheHealth = await this.checkCacheHealth();
-            const analyticsHealth = await this.checkAnalyticsHealth();
-            const hasAnyFailure = databaseHealth.status === 'unhealthy' ||
-                cacheHealth.status === 'unhealthy' ||
-                analyticsHealth.status === 'unhealthy';
-            const healthData = {
-                status: hasAnyFailure ? 'unhealthy' : 'healthy',
-                uptime: process.uptime(),
-                version: '1.0.0',
-                timestamp: new Date().toISOString(),
-                services: {
-                    database: databaseHealth,
-                    cache: cacheHealth,
-                    analytics: analyticsHealth
-                }
-            };
-            if (hasAnyFailure) {
-                healthData.error = 'One or more services are failing';
-            }
-            return healthData;
-        }
-        catch (error) {
-            this.logger.error(`Error getting system health: ${error.message}`, error.stack);
-            return {
-                status: 'unhealthy',
-                error: error.message,
-                timestamp: new Date().toISOString()
-            };
-        }
-    }
-    async getCacheStatus() {
-        try {
-            return {
-                status: 'not_implemented',
-                message: 'Cache not yet implemented',
-                timestamp: new Date().toISOString()
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting cache status: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculateSellerRevenue(sellerId, timeRange) {
-        try {
-            const orders = await this.prisma.order.findMany({
-                where: {
-                    status: client_1.OrderStatus.COMPLETED,
-                    createdAt: {
-                        gte: timeRange.start,
-                        lte: timeRange.end
-                    },
-                    items: {
-                        some: {
-                            sellerId: sellerId
-                        }
-                    }
-                },
-                include: {
-                    items: {
-                        where: {
-                            sellerId: sellerId
-                        },
-                        select: {
-                            price: true
-                        }
-                    }
-                }
-            });
-            const totalRevenue = orders.reduce((sum, order) => {
-                const sellerRevenue = order.items.reduce((itemSum, item) => itemSum + item.price, 0);
-                return sum + sellerRevenue;
-            }, 0);
-            const prevPeriod = this.getPreviousPeriod(timeRange);
-            const prevOrders = await this.prisma.order.findMany({
-                where: {
-                    status: client_1.OrderStatus.COMPLETED,
-                    createdAt: {
-                        gte: prevPeriod.start,
-                        lte: prevPeriod.end
-                    },
-                    items: {
-                        some: {
-                            sellerId: sellerId
-                        }
-                    }
-                },
-                include: {
-                    items: {
-                        where: {
-                            sellerId: sellerId
-                        },
-                        select: {
-                            price: true
-                        }
-                    }
-                }
-            });
-            const prevRevenue = prevOrders.reduce((sum, order) => {
-                const sellerRevenue = order.items.reduce((itemSum, item) => itemSum + item.price, 0);
-                return sum + sellerRevenue;
-            }, 0);
-            const revenueChange = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
-            const currentMonth = new Date();
-            const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const monthOrders = await this.prisma.order.findMany({
-                where: {
-                    status: client_1.OrderStatus.COMPLETED,
-                    createdAt: { gte: monthStart },
-                    items: {
-                        some: {
-                            sellerId: sellerId
-                        }
-                    }
-                },
-                include: {
-                    items: {
-                        where: {
-                            sellerId: sellerId
-                        },
-                        select: {
-                            price: true
-                        }
-                    }
-                }
-            });
-            const monthlyRevenue = monthOrders.reduce((sum, order) => {
-                const sellerRevenue = order.items.reduce((itemSum, item) => itemSum + item.price, 0);
-                return sum + sellerRevenue;
-            }, 0);
-            const totalOrderItems = orders.reduce((sum, order) => sum + order.items.length, 0);
-            const averageOrderValue = totalOrderItems > 0 ? totalRevenue / totalOrderItems : 0;
-            return {
-                total: {
-                    value: totalRevenue,
-                    change: revenueChange,
-                    changeType: revenueChange > 0 ? 'increase' : revenueChange < 0 ? 'decrease' : 'neutral'
-                },
-                monthly: {
-                    value: monthlyRevenue,
-                    change: 0,
-                    changeType: 'neutral'
-                },
-                averageOrderValue: {
-                    value: averageOrderValue,
-                    change: 0,
-                    changeType: 'neutral'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating seller revenue: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculateSellerOrders(sellerId, timeRange) {
-        try {
-            const orders = await this.prisma.order.findMany({
-                where: {
-                    createdAt: {
-                        gte: timeRange.start,
-                        lte: timeRange.end
-                    },
-                    items: {
-                        some: {
-                            sellerId: sellerId
-                        }
-                    }
-                },
-                select: {
-                    status: true,
-                    createdAt: true
-                }
-            });
-            const totalOrders = orders.length;
-            const completedOrders = orders.filter(o => o.status === client_1.OrderStatus.COMPLETED).length;
-            const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
-            const currentMonth = new Date();
-            const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const monthlyOrdersCount = await this.prisma.order.count({
-                where: {
-                    createdAt: { gte: monthStart },
-                    items: {
-                        some: {
-                            sellerId: sellerId
-                        }
-                    }
-                }
-            });
-            return {
-                total: {
-                    value: totalOrders,
-                    change: 0,
-                    changeType: 'neutral'
-                },
-                monthly: {
-                    value: monthlyOrdersCount,
-                    change: 0,
-                    changeType: 'neutral'
-                },
-                completionRate: {
-                    value: completionRate,
-                    change: 0,
-                    changeType: 'neutral'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating seller orders: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculateSellerProducts(sellerId, timeRange) {
-        try {
-            const products = await this.prisma.product.findMany({
-                where: { sellerId },
-                select: {
-                    id: true,
-                    title: true,
-                    status: true,
-                    createdAt: true,
-                    orderItems: {
-                        where: {
-                            order: {
-                                status: client_1.OrderStatus.COMPLETED,
-                                createdAt: {
-                                    gte: timeRange.start,
-                                    lte: timeRange.end
-                                }
-                            }
-                        },
-                        select: {
-                            price: true
-                        }
-                    },
-                    productRating: {
-                        select: {
-                            averageRating: true,
-                            totalReviews: true
-                        }
-                    }
-                }
-            });
-            const totalProducts = products.length;
-            const activeProducts = products.filter(p => p.status === client_1.ProductStatus.APPROVED).length;
-            const topPerforming = products
-                .map(product => ({
-                id: product.id,
-                title: product.title,
-                revenue: product.orderItems.reduce((sum, item) => sum + item.price, 0),
-                orders: product.orderItems.length,
-                averageRating: Number(product.productRating?.averageRating || 0),
-                reviewCount: product.productRating?.totalReviews || 0,
-                conversionRate: 0
-            }))
-                .sort((a, b) => b.revenue - a.revenue)
-                .slice(0, 5);
-            return {
-                total: {
-                    value: totalProducts
-                },
-                active: {
-                    value: activeProducts
-                },
-                topPerforming
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating seller products: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculateSellerReviews(sellerId, timeRange) {
-        try {
-            const sellerRating = await this.prisma.sellerRating.findUnique({
-                where: { sellerId }
-            });
-            const reviews = await this.prisma.review.findMany({
-                where: {
-                    sellerId,
-                    createdAt: {
-                        gte: timeRange.start,
-                        lte: timeRange.end
-                    }
-                },
-                select: {
-                    id: true,
-                    rating: true,
-                    response: {
-                        select: { id: true }
-                    }
-                }
-            });
-            const totalReviews = reviews.length;
-            const reviewsWithResponse = reviews.filter(r => r.response).length;
-            const responseRate = totalReviews > 0 ? (reviewsWithResponse / totalReviews) * 100 : 0;
-            return {
-                averageRating: {
-                    value: Number(sellerRating?.averageRating || 0),
-                    change: 0,
-                    changeType: 'neutral'
-                },
-                total: {
-                    value: sellerRating?.totalReviews || 0,
-                    change: 0,
-                    changeType: 'neutral'
-                },
-                responseRate: {
-                    value: responseRate,
-                    change: 0,
-                    changeType: 'neutral'
-                }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating seller reviews: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getSellerRecentOrders(sellerId, limit) {
-        try {
-            const orders = await this.prisma.order.findMany({
-                where: {
-                    items: {
-                        some: {
-                            sellerId: sellerId
-                        }
-                    }
-                },
-                orderBy: { createdAt: 'desc' },
-                take: limit,
-                include: {
-                    buyer: {
-                        select: {
-                            firstName: true,
-                            lastName: true
-                        }
-                    },
-                    items: {
-                        where: {
-                            sellerId: sellerId
-                        },
-                        take: 1,
-                        include: {
-                            product: {
-                                select: {
-                                    title: true
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            return orders.map(order => ({
-                id: order.id,
-                buyerName: `${order.buyer.firstName} ${order.buyer.lastName}`,
-                productTitle: order.items[0]?.product?.title || 'Multiple Items',
-                amount: order.items.reduce((sum, item) => sum + item.price, 0),
-                status: order.status,
-                createdAt: order.createdAt.toISOString()
-            }));
-        }
-        catch (error) {
-            this.logger.error(`Error getting recent orders: ${error.message}`, error.stack);
-            return [];
-        }
-    }
-    async getSellerRecentReviews(sellerId, limit) {
-        try {
-            const reviews = await this.prisma.review.findMany({
-                where: { sellerId },
-                orderBy: { createdAt: 'desc' },
-                take: limit,
-                include: {
-                    buyer: {
-                        select: {
-                            firstName: true,
-                            lastName: true
-                        }
-                    },
-                    product: {
-                        select: {
-                            title: true
-                        }
-                    },
-                    response: {
-                        select: { id: true }
-                    }
-                }
-            });
-            return reviews.map(review => ({
-                id: review.id,
-                buyerName: `${review.buyer.firstName} ${review.buyer.lastName}`,
-                productTitle: review.product.title,
-                rating: review.rating,
-                comment: review.comment,
-                createdAt: review.createdAt.toISOString(),
-                hasResponse: !!review.response
-            }));
-        }
-        catch (error) {
-            this.logger.error(`Error getting recent reviews: ${error.message}`, error.stack);
-            return [];
-        }
-    }
-    async getRevenueByProduct(sellerId, timeRange) {
-        try {
-            const productRevenue = await this.prisma.product.findMany({
-                where: { sellerId },
-                select: {
-                    id: true,
-                    title: true,
-                    orderItems: {
-                        where: {
-                            order: {
-                                status: client_1.OrderStatus.COMPLETED,
-                                createdAt: {
-                                    gte: timeRange.start,
-                                    lte: timeRange.end
-                                }
-                            }
-                        },
-                        select: {
-                            price: true
-                        }
-                    }
-                }
-            });
-            return productRevenue.map(product => ({
-                productId: product.id,
-                productTitle: product.title,
-                revenue: product.orderItems.reduce((sum, item) => sum + item.price, 0),
-                orders: product.orderItems.length
-            })).sort((a, b) => b.revenue - a.revenue);
-        }
-        catch (error) {
-            this.logger.error(`Error getting revenue by product: ${error.message}`, error.stack);
-            return [];
-        }
-    }
-    async getSellerFeesBreakdown(sellerId, timeRange) {
-        try {
-            const transactions = await this.prisma.transaction.findMany({
-                where: {
-                    sellerId,
-                    createdAt: {
-                        gte: timeRange.start,
-                        lte: timeRange.end
-                    }
-                },
-                select: {
-                    type: true,
-                    amount: true
-                }
-            });
-            const platformFees = transactions
-                .filter(t => t.type === 'PLATFORM_FEE')
-                .reduce((sum, t) => sum + Number(t.amount), 0);
-            const stripeFees = transactions
-                .filter(t => t.type === 'STRIPE_FEE')
-                .reduce((sum, t) => sum + Number(t.amount), 0);
-            return {
-                platformFees,
-                stripeFees,
-                totalFees: platformFees + stripeFees
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error getting fees breakdown: ${error.message}`, error.stack);
-            return { platformFees: 0, stripeFees: 0, totalFees: 0 };
-        }
-    }
-    async getSellerRevenueTrends(sellerId, timeRange, groupBy) {
-        try {
-            const orders = await this.prisma.order.findMany({
-                where: {
-                    status: client_1.OrderStatus.COMPLETED,
-                    createdAt: {
-                        gte: timeRange.start,
-                        lte: timeRange.end
-                    },
-                    items: {
-                        some: {
-                            sellerId: sellerId
-                        }
-                    }
-                },
-                select: {
-                    createdAt: true,
-                    items: {
-                        where: {
-                            sellerId: sellerId
-                        },
-                        select: {
-                            price: true
-                        }
-                    }
-                },
-                orderBy: { createdAt: 'asc' }
-            });
-            const monthlyData = new Map();
-            orders.forEach(order => {
-                const month = order.createdAt.toISOString().substring(0, 7);
-                const sellerRevenue = order.items.reduce((sum, item) => sum + item.price, 0);
-                const current = monthlyData.get(month) || 0;
-                monthlyData.set(month, current + sellerRevenue);
-            });
-            return Array.from(monthlyData.entries()).map(([date, value]) => ({
-                date,
-                value,
-                label: date
-            }));
-        }
-        catch (error) {
-            this.logger.error(`Error getting revenue trends: ${error.message}`, error.stack);
-            return [];
-        }
-    }
-    async calculatePlatformUsers(timeRange) {
-        try {
-            const [totalUsers, totalSellers, totalBuyers, activeUsers] = await Promise.all([
-                this.prisma.user.count(),
-                this.prisma.user.count({ where: { role: client_1.UserRole.SELLER } }),
-                this.prisma.user.count({ where: { role: client_1.UserRole.BUYER } }),
-                this.prisma.user.count({
-                    where: {
-                        lastLoginAt: {
-                            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                        }
-                    }
-                })
-            ]);
-            return {
-                totalUsers: { value: totalUsers, change: 0, changeType: 'neutral' },
-                totalSellers: { value: totalSellers, change: 0, changeType: 'neutral' },
-                totalBuyers: { value: totalBuyers, change: 0, changeType: 'neutral' },
-                activeUsers: { value: activeUsers, change: 0, changeType: 'neutral' }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating platform users: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculatePlatformRevenue(timeRange) {
-        try {
-            const orders = await this.prisma.order.findMany({
-                where: {
-                    status: client_1.OrderStatus.COMPLETED,
-                    createdAt: {
-                        gte: timeRange.start,
-                        lte: timeRange.end
-                    }
-                },
-                select: { totalAmount: true, platformFeeRate: true }
-            });
-            const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-            const platformRevenue = orders.reduce((sum, order) => {
-                const fee = order.totalAmount * order.platformFeeRate;
-                return sum + fee;
-            }, 0);
-            const currentMonth = new Date();
-            const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const monthlyOrders = await this.prisma.order.findMany({
-                where: {
-                    status: client_1.OrderStatus.COMPLETED,
-                    createdAt: { gte: monthStart }
-                },
-                select: { totalAmount: true, platformFeeRate: true }
-            });
-            const monthlyPlatformRevenue = monthlyOrders.reduce((sum, order) => {
-                const fee = order.totalAmount * order.platformFeeRate;
-                return sum + fee;
-            }, 0);
-            return {
-                totalPlatformRevenue: { value: platformRevenue, change: 0, changeType: 'neutral' },
-                monthlyPlatformRevenue: { value: monthlyPlatformRevenue, change: 0, changeType: 'neutral' },
-                averagePlatformFee: { value: orders.length > 0 ? platformRevenue / orders.length : 0, change: 0, changeType: 'neutral' }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating platform revenue: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculatePlatformOrders(timeRange) {
-        try {
-            const [totalOrders, monthlyOrders] = await Promise.all([
-                this.prisma.order.count({
-                    where: {
-                        createdAt: {
-                            gte: timeRange.start,
-                            lte: timeRange.end
-                        }
-                    }
-                }),
-                this.prisma.order.count({
-                    where: {
-                        createdAt: {
-                            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-                        }
-                    }
-                })
-            ]);
-            const avgOrderValue = await this.prisma.order.aggregate({
-                where: {
-                    status: client_1.OrderStatus.COMPLETED,
-                    createdAt: {
-                        gte: timeRange.start,
-                        lte: timeRange.end
-                    }
-                },
-                _avg: { totalAmount: true }
-            });
-            return {
-                totalOrders: { value: totalOrders, change: 0, changeType: 'neutral' },
-                monthlyOrders: { value: monthlyOrders, change: 0, changeType: 'neutral' },
-                averageOrderValue: { value: Number(avgOrderValue._avg.totalAmount) || 0, change: 0, changeType: 'neutral' }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating platform orders: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculatePlatformProducts(timeRange) {
-        try {
-            const [totalProducts, activeProducts, pendingModeration] = await Promise.all([
-                this.prisma.product.count(),
-                this.prisma.product.count({ where: { status: client_1.ProductStatus.APPROVED } }),
-                this.prisma.product.count({ where: { status: client_1.ProductStatus.PENDING } })
-            ]);
-            return {
-                totalProducts: { value: totalProducts, change: 0, changeType: 'neutral' },
-                activeProducts: { value: activeProducts, change: 0, changeType: 'neutral' },
-                pendingModeration: { value: pendingModeration, change: 0, changeType: 'neutral' }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating platform products: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async calculatePlatformReviews(timeRange) {
-        try {
-            const [totalReviews, avgRating, pendingModeration] = await Promise.all([
-                this.prisma.review.count({
-                    where: {
-                        createdAt: {
-                            gte: timeRange.start,
-                            lte: timeRange.end
-                        }
-                    }
-                }),
-                this.prisma.review.aggregate({
-                    _avg: { rating: true },
-                    where: {
-                        status: client_1.ReviewStatus.PUBLISHED
-                    }
-                }),
-                this.prisma.review.count({ where: { status: client_1.ReviewStatus.PENDING_MODERATION } })
-            ]);
-            return {
-                totalReviews: { value: totalReviews, change: 0, changeType: 'neutral' },
-                averagePlatformRating: { value: Number(avgRating._avg.rating) || 0, change: 0, changeType: 'neutral' },
-                pendingModeration: { value: pendingModeration, change: 0, changeType: 'neutral' }
-            };
-        }
-        catch (error) {
-            this.logger.error(`Error calculating platform reviews: ${error.message}`, error.stack);
-            throw error;
-        }
-    }
-    async getSellerProductAnalytics(sellerId, timeRange, dto) { return []; }
-    async getSellerProductsSummary(sellerId, timeRange) { return {}; }
-    async getSellerReviewDistribution(sellerId, timeRange) { return {}; }
-    async getSellerResponseMetrics(sellerId, timeRange) { return {}; }
-    async calculateSellerCustomers(sellerId, timeRange) { return {}; }
-    async getRepeatCustomerAnalysis(sellerId, timeRange) { return {}; }
-    async getCustomerLifetimeValue(sellerId, timeRange) { return {}; }
-    async calculateSellerNotifications(sellerId, timeRange) { return {}; }
-    async getSellerNotificationEngagement(sellerId, timeRange) { return {}; }
-    async getSellerNotificationTypeBreakdown(sellerId, timeRange) { return {}; }
-    async calculateSellerConversion(sellerId, timeRange) { return {}; }
-    async getSellerConversionFunnel(sellerId, timeRange) { return {}; }
-    async getTrafficSourceConversion(sellerId, timeRange) { return {}; }
-    async getPlatformTopPerformers(timeRange) { return { topSellers: [], topProducts: [], topCategories: [] }; }
-    async calculateTopPerformers(type, timeRange, dto) { return []; }
-    async calculateSellerComparison(sellerIds, timeRange, metrics) { return {}; }
-    async calculatePlatformConversionFunnel(timeRange, dto) {
-        return {
-            visitors: 0, productViews: 0, cartAdds: 0, checkoutStarts: 0, orders: 0, completedOrders: 0, reviews: 0,
-            productViewRate: 0, cartConversionRate: 0, checkoutConversionRate: 0, orderCompletionRate: 0, reviewRate: 0,
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        const funnelData = {
+            visitors: 0, productViews: 0, cartAdds: 0, checkoutStarts: 0,
+            orders: 0, completedOrders: 0, reviews: 0,
+            productViewRate: 0, cartConversionRate: 0, checkoutConversionRate: 0,
+            orderCompletionRate: 0, reviewRate: 0,
             dropOffs: { viewToCart: 0, cartToCheckout: 0, checkoutToOrder: 0, orderToCompletion: 0, completionToReview: 0 }
         };
-    }
-    async calculateCohortAnalysis(dto) { return { cohorts: [] }; }
-    async calculatePlatformNotificationAnalytics(timeRange, dto) {
-        return { totalSent: 0, deliveryRate: 0, openRate: 0, clickRate: 0, byType: [], byChannel: [], trends: [] };
-    }
-    async calculateUserBehavior(timeRange, dto) { return {}; }
-    async calculateFinancialReport(timeRange, dto) { return {}; }
-    async prepareExportData(dto) { return []; }
-    async buildCustomReport(dto, userRole) { return {}; }
-    getTimeRange(startDate, endDate) {
-        const end = endDate ? new Date(endDate) : new Date();
-        const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return { start, end };
-    }
-    getPreviousPeriod(timeRange) {
-        const duration = timeRange.end.getTime() - timeRange.start.getTime();
         return {
-            start: new Date(timeRange.start.getTime() - duration),
-            end: new Date(timeRange.start.getTime())
+            success: true,
+            data: funnelData,
+            meta: {
+                requestedBy,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
         };
     }
-    async checkDatabaseHealth() {
-        try {
-            const start = Date.now();
-            await this.prisma.$queryRaw `SELECT 1`;
-            const responseTime = Date.now() - start;
-            return { status: 'healthy', responseTime };
-        }
-        catch (error) {
-            return { status: 'unhealthy' };
-        }
+    async getCohortAnalysis(dto, requestedBy) {
+        return {
+            success: true,
+            data: { cohorts: [] },
+            meta: {
+                requestedBy,
+                timeRange: { start: dto.startMonth || '2024-01', end: dto.endMonth || '2024-12' },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
     }
-    async checkCacheHealth() {
-        return { status: 'not_implemented' };
+    async getNotificationAnalytics(dto, requestedBy) {
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        const notificationData = {
+            totalSent: 0, deliveryRate: 0, openRate: 0, clickRate: 0, byType: [], byChannel: [], trends: []
+        };
+        return {
+            success: true,
+            data: notificationData,
+            meta: {
+                requestedBy,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
     }
-    async checkAnalyticsHealth() {
-        try {
-            await this.prisma.user.count();
-            return { status: 'healthy', lastCalculation: new Date().toISOString() };
-        }
-        catch (error) {
-            return { status: 'unhealthy' };
-        }
+    async getUserBehavior(dto, requestedBy) {
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        return {
+            success: true,
+            data: {},
+            meta: {
+                requestedBy,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
+    }
+    async getFinancialReport(dto, requestedBy) {
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        return {
+            success: true,
+            data: {},
+            meta: {
+                requestedBy,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() },
+                lastUpdated: new Date().toISOString(),
+                dataPoints: 0,
+                currency: 'USD'
+            }
+        };
+    }
+    async exportData(dto, requestedBy) {
+        this.logger.log(`Exporting data: ${dto.type} in ${dto.format} format`);
+        const filename = dto.filename || `analytics_export_${Date.now()}`;
+        return {
+            success: true,
+            data: {
+                filename: `${filename}.${dto.format}`,
+                downloadUrl: `/api/analytics/exports/${filename}.${dto.format}`,
+                size: 0,
+                recordCount: 0,
+                generatedAt: new Date().toISOString()
+            },
+            meta: {
+                type: dto.type,
+                format: dto.format,
+                requestedBy,
+                timeRange: { start: dto.startDate || '', end: dto.endDate || '' },
+                filters: dto
+            }
+        };
+    }
+    async generateCustomReport(dto, requestedBy, _userRole) {
+        this.logger.log(`Generating custom report: ${dto.title}`);
+        const filename = `custom_report_${Date.now()}`;
+        return {
+            success: true,
+            data: {
+                filename: `${filename}.pdf`,
+                downloadUrl: `/api/analytics/reports/${filename}.pdf`,
+                size: 0,
+                recordCount: 0,
+                generatedAt: new Date().toISOString()
+            },
+            meta: {
+                type: export_dto_1.ExportType.CUSTOM_REPORT,
+                format: export_dto_1.ExportFormat.PDF,
+                requestedBy,
+                timeRange: { start: dto.startDate || '', end: dto.endDate || '' }
+            }
+        };
+    }
+    async scheduleReport(dto, _requestedBy) {
+        const reportId = `scheduled_${Date.now()}`;
+        return {
+            success: true,
+            message: `Report "${dto.name}" scheduled successfully for ${dto.frequency} delivery`,
+            reportId
+        };
+    }
+    async downloadReport(_reportId, _requestedBy, _userRole) {
+        return { success: true, message: 'Report download initiated' };
+    }
+    async getSellerRevenueChart(sellerId, dto) {
+        const timeRange = this.calc.getTimeRange(dto.startDate, dto.endDate);
+        const trends = await this.query.getSellerRevenueTrends(sellerId, timeRange, dto.groupBy || 'month');
+        const chartData = {
+            data: trends,
+            title: 'Revenue Trends',
+            primaryLabel: 'Revenue',
+            color: '#3B82F6'
+        };
+        return {
+            success: true,
+            data: chartData,
+            meta: {
+                title: 'Seller Revenue Chart',
+                lastUpdated: new Date().toISOString(),
+                dataPoints: trends.length,
+                timeRange: { start: timeRange.start.toISOString(), end: timeRange.end.toISOString() }
+            }
+        };
+    }
+    async getPlatformOverviewChart(dto) {
+        return {
+            success: true,
+            data: { revenue: [], users: [], orders: [] },
+            meta: { title: 'Platform Overview Charts', lastUpdated: new Date().toISOString(), dataPoints: 0 }
+        };
+    }
+    async getSystemHealth() {
+        const [databaseHealth, analyticsHealth] = await Promise.all([
+            this.query.checkDatabaseHealth(),
+            this.query.checkAnalyticsHealth()
+        ]);
+        const cacheHealth = { status: this.cache.isEnabled ? 'healthy' : 'not_configured' };
+        const unhealthy = databaseHealth.status === 'unhealthy' || analyticsHealth.status === 'unhealthy';
+        return {
+            status: unhealthy ? 'unhealthy' : 'healthy',
+            uptime: process.uptime(),
+            version: '1.0.0',
+            timestamp: new Date().toISOString(),
+            services: { database: databaseHealth, cache: cacheHealth, analytics: analyticsHealth },
+            ...(unhealthy ? { error: 'One or more services are failing' } : {})
+        };
+    }
+    async getCacheStatus() {
+        return {
+            status: this.cache.isEnabled ? 'healthy' : 'not_configured',
+            timestamp: new Date().toISOString()
+        };
     }
 };
 exports.AnalyticsService = AnalyticsService;
 exports.AnalyticsService = AnalyticsService = AnalyticsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof analytics_query_service_1.AnalyticsQueryService !== "undefined" && analytics_query_service_1.AnalyticsQueryService) === "function" ? _b : Object, typeof (_c = typeof analytics_calculation_service_1.AnalyticsCalculationService !== "undefined" && analytics_calculation_service_1.AnalyticsCalculationService) === "function" ? _c : Object, typeof (_d = typeof analytics_cache_service_1.AnalyticsCacheService !== "undefined" && analytics_cache_service_1.AnalyticsCacheService) === "function" ? _d : Object])
 ], AnalyticsService);
 
 
@@ -44594,6 +43646,572 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AnalyticsQueryService_1;
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnalyticsQueryService = void 0;
+const common_1 = __webpack_require__(2);
+const prisma_service_1 = __webpack_require__(10);
+const client_1 = __webpack_require__(11);
+const analytics_calculation_service_1 = __webpack_require__(291);
+let AnalyticsQueryService = AnalyticsQueryService_1 = class AnalyticsQueryService {
+    constructor(prisma, calc) {
+        this.prisma = prisma;
+        this.calc = calc;
+        this.logger = new common_1.Logger(AnalyticsQueryService_1.name);
+    }
+    async getSellerRevenue(sellerId, timeRange) {
+        const [orders, prevOrders, monthOrders] = await Promise.all([
+            this.fetchSellerCompletedOrders(sellerId, timeRange),
+            this.fetchSellerCompletedOrders(sellerId, this.calc.getPreviousPeriod(timeRange)),
+            this.fetchSellerCompletedOrders(sellerId, {
+                start: this.calc.getCurrentMonthStart(),
+                end: new Date()
+            })
+        ]);
+        const totalRevenue = this.sumSellerRevenue(orders);
+        const prevRevenue = this.sumSellerRevenue(prevOrders);
+        const monthlyRevenue = this.sumSellerRevenue(monthOrders);
+        const totalItems = orders.reduce((s, o) => s + o.items.length, 0);
+        return {
+            total: this.calc.buildMetricValue(totalRevenue, prevRevenue),
+            monthly: this.calc.buildMetricValue(monthlyRevenue),
+            averageOrderValue: this.calc.buildMetricValue(this.calc.calculateAOV(totalRevenue, totalItems))
+        };
+    }
+    async getSellerOrders(sellerId, timeRange) {
+        const [orders, monthlyCount] = await Promise.all([
+            this.prisma.order.findMany({
+                where: {
+                    createdAt: { gte: timeRange.start, lte: timeRange.end },
+                    items: { some: { sellerId } }
+                },
+                select: { status: true }
+            }),
+            this.prisma.order.count({
+                where: {
+                    createdAt: { gte: this.calc.getCurrentMonthStart() },
+                    items: { some: { sellerId } }
+                }
+            })
+        ]);
+        const total = orders.length;
+        const completed = orders.filter(o => o.status === client_1.OrderStatus.COMPLETED).length;
+        return {
+            total: this.calc.buildMetricValue(total),
+            monthly: this.calc.buildMetricValue(monthlyCount),
+            completionRate: this.calc.buildMetricValue(this.calc.calculateConversionRate(completed, total))
+        };
+    }
+    async getSellerProducts(sellerId, timeRange) {
+        const products = await this.prisma.product.findMany({
+            where: { sellerId },
+            select: {
+                id: true,
+                title: true,
+                status: true,
+                orderItems: {
+                    where: {
+                        order: {
+                            status: client_1.OrderStatus.COMPLETED,
+                            createdAt: { gte: timeRange.start, lte: timeRange.end }
+                        }
+                    },
+                    select: { price: true }
+                },
+                productRating: { select: { averageRating: true, totalReviews: true } }
+            }
+        });
+        const topPerforming = products
+            .map(p => ({
+            id: p.id,
+            title: p.title,
+            revenue: p.orderItems.reduce((s, i) => s + i.price, 0),
+            orders: p.orderItems.length,
+            averageRating: Number(p.productRating?.averageRating ?? 0),
+            reviewCount: p.productRating?.totalReviews ?? 0,
+            conversionRate: 0
+        }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5);
+        return {
+            total: { value: products.length },
+            active: { value: products.filter(p => p.status === client_1.ProductStatus.APPROVED).length },
+            topPerforming
+        };
+    }
+    async getSellerReviews(sellerId, timeRange) {
+        const [sellerRating, reviews] = await Promise.all([
+            this.prisma.sellerRating.findUnique({ where: { sellerId } }),
+            this.prisma.review.findMany({
+                where: { sellerId, createdAt: { gte: timeRange.start, lte: timeRange.end } },
+                select: { id: true, rating: true, response: { select: { id: true } } }
+            })
+        ]);
+        const total = reviews.length;
+        const responded = reviews.filter(r => r.response).length;
+        return {
+            averageRating: this.calc.buildMetricValue(Number(sellerRating?.averageRating ?? 0)),
+            total: this.calc.buildMetricValue(sellerRating?.totalReviews ?? 0),
+            responseRate: this.calc.buildMetricValue(this.calc.calculateConversionRate(responded, total))
+        };
+    }
+    async getSellerRecentOrders(sellerId, limit) {
+        const orders = await this.prisma.order.findMany({
+            where: { items: { some: { sellerId } } },
+            orderBy: { createdAt: 'desc' },
+            take: limit,
+            include: {
+                buyer: { select: { firstName: true, lastName: true } },
+                items: {
+                    where: { sellerId },
+                    take: 1,
+                    include: { product: { select: { title: true } } }
+                }
+            }
+        });
+        return orders.map(o => ({
+            id: o.id,
+            buyerName: `${o.buyer.firstName} ${o.buyer.lastName}`,
+            productTitle: o.items[0]?.product?.title ?? 'Multiple Items',
+            amount: o.items.reduce((s, i) => s + i.price, 0),
+            status: o.status,
+            createdAt: o.createdAt.toISOString()
+        }));
+    }
+    async getSellerRecentReviews(sellerId, limit) {
+        const reviews = await this.prisma.review.findMany({
+            where: { sellerId },
+            orderBy: { createdAt: 'desc' },
+            take: limit,
+            include: {
+                buyer: { select: { firstName: true, lastName: true } },
+                product: { select: { title: true } },
+                response: { select: { id: true } }
+            }
+        });
+        return reviews.map(r => ({
+            id: r.id,
+            buyerName: `${r.buyer.firstName} ${r.buyer.lastName}`,
+            productTitle: r.product.title,
+            rating: r.rating,
+            comment: r.comment,
+            createdAt: r.createdAt.toISOString(),
+            hasResponse: !!r.response
+        }));
+    }
+    async getSellerRevenueByProduct(sellerId, timeRange) {
+        const products = await this.prisma.product.findMany({
+            where: { sellerId },
+            select: {
+                id: true,
+                title: true,
+                orderItems: {
+                    where: {
+                        order: {
+                            status: client_1.OrderStatus.COMPLETED,
+                            createdAt: { gte: timeRange.start, lte: timeRange.end }
+                        }
+                    },
+                    select: { price: true }
+                }
+            }
+        });
+        return products
+            .map(p => ({
+            productId: p.id,
+            productTitle: p.title,
+            revenue: p.orderItems.reduce((s, i) => s + i.price, 0),
+            orders: p.orderItems.length
+        }))
+            .sort((a, b) => b.revenue - a.revenue);
+    }
+    async getSellerFeesBreakdown(sellerId, timeRange) {
+        const transactions = await this.prisma.transaction.findMany({
+            where: { sellerId, createdAt: { gte: timeRange.start, lte: timeRange.end } },
+            select: { type: true, amount: true }
+        });
+        const platformFees = transactions
+            .filter(t => t.type === 'PLATFORM_FEE')
+            .reduce((s, t) => s + Number(t.amount), 0);
+        const stripeFees = transactions
+            .filter(t => t.type === 'STRIPE_FEE')
+            .reduce((s, t) => s + Number(t.amount), 0);
+        return { platformFees, stripeFees, totalFees: platformFees + stripeFees };
+    }
+    async getSellerRevenueTrends(sellerId, timeRange, groupBy = 'month') {
+        const orders = await this.prisma.order.findMany({
+            where: {
+                status: client_1.OrderStatus.COMPLETED,
+                createdAt: { gte: timeRange.start, lte: timeRange.end },
+                items: { some: { sellerId } }
+            },
+            select: {
+                createdAt: true,
+                items: { where: { sellerId }, select: { price: true } }
+            },
+            orderBy: { createdAt: 'asc' }
+        });
+        const mapped = orders.map(o => ({
+            createdAt: o.createdAt,
+            sellerRevenue: o.items.reduce((s, i) => s + i.price, 0)
+        }));
+        return this.calc.groupRevenueByPeriod(mapped, groupBy);
+    }
+    async getPlatformUsers(timeRange) {
+        const [total, sellers, buyers, active] = await Promise.all([
+            this.prisma.user.count(),
+            this.prisma.user.count({ where: { role: client_1.UserRole.SELLER } }),
+            this.prisma.user.count({ where: { role: client_1.UserRole.BUYER } }),
+            this.prisma.user.count({
+                where: { lastLoginAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
+            })
+        ]);
+        return {
+            totalUsers: this.calc.buildMetricValue(total),
+            totalSellers: this.calc.buildMetricValue(sellers),
+            totalBuyers: this.calc.buildMetricValue(buyers),
+            activeUsers: this.calc.buildMetricValue(active)
+        };
+    }
+    async getPlatformRevenue(timeRange) {
+        const [orders, monthOrders] = await Promise.all([
+            this.prisma.order.findMany({
+                where: { status: client_1.OrderStatus.COMPLETED, createdAt: { gte: timeRange.start, lte: timeRange.end } },
+                select: { totalAmount: true, platformFeeRate: true }
+            }),
+            this.prisma.order.findMany({
+                where: { status: client_1.OrderStatus.COMPLETED, createdAt: { gte: this.calc.getCurrentMonthStart() } },
+                select: { totalAmount: true, platformFeeRate: true }
+            })
+        ]);
+        const platformRevenue = orders.reduce((s, o) => s + o.totalAmount * o.platformFeeRate, 0);
+        const monthlyPlatformRevenue = monthOrders.reduce((s, o) => s + o.totalAmount * o.platformFeeRate, 0);
+        return {
+            totalPlatformRevenue: this.calc.buildMetricValue(platformRevenue),
+            monthlyPlatformRevenue: this.calc.buildMetricValue(monthlyPlatformRevenue),
+            averagePlatformFee: this.calc.buildMetricValue(this.calc.calculateAOV(platformRevenue, orders.length))
+        };
+    }
+    async getPlatformOrders(timeRange) {
+        const [total, monthly, avgResult] = await Promise.all([
+            this.prisma.order.count({
+                where: { createdAt: { gte: timeRange.start, lte: timeRange.end } }
+            }),
+            this.prisma.order.count({
+                where: { createdAt: { gte: this.calc.getCurrentMonthStart() } }
+            }),
+            this.prisma.order.aggregate({
+                where: { status: client_1.OrderStatus.COMPLETED, createdAt: { gte: timeRange.start, lte: timeRange.end } },
+                _avg: { totalAmount: true }
+            })
+        ]);
+        return {
+            totalOrders: this.calc.buildMetricValue(total),
+            monthlyOrders: this.calc.buildMetricValue(monthly),
+            averageOrderValue: this.calc.buildMetricValue(Number(avgResult._avg.totalAmount) || 0)
+        };
+    }
+    async getPlatformProducts(_timeRange) {
+        const [total, active, pending] = await Promise.all([
+            this.prisma.product.count(),
+            this.prisma.product.count({ where: { status: client_1.ProductStatus.APPROVED } }),
+            this.prisma.product.count({ where: { status: client_1.ProductStatus.PENDING } })
+        ]);
+        return {
+            totalProducts: this.calc.buildMetricValue(total),
+            activeProducts: this.calc.buildMetricValue(active),
+            pendingModeration: this.calc.buildMetricValue(pending)
+        };
+    }
+    async getPlatformReviews(timeRange) {
+        const [total, avgResult, pending] = await Promise.all([
+            this.prisma.review.count({ where: { createdAt: { gte: timeRange.start, lte: timeRange.end } } }),
+            this.prisma.review.aggregate({
+                _avg: { rating: true },
+                where: { status: client_1.ReviewStatus.PUBLISHED }
+            }),
+            this.prisma.review.count({ where: { status: client_1.ReviewStatus.PENDING_MODERATION } })
+        ]);
+        return {
+            totalReviews: this.calc.buildMetricValue(total),
+            averagePlatformRating: this.calc.buildMetricValue(Number(avgResult._avg.rating) || 0),
+            pendingModeration: this.calc.buildMetricValue(pending)
+        };
+    }
+    async checkDatabaseHealth() {
+        try {
+            const start = Date.now();
+            await this.prisma.$queryRaw `SELECT 1`;
+            return { status: 'healthy', responseTime: Date.now() - start };
+        }
+        catch {
+            return { status: 'unhealthy' };
+        }
+    }
+    async checkAnalyticsHealth() {
+        try {
+            await this.prisma.user.count();
+            return { status: 'healthy', lastCalculation: new Date().toISOString() };
+        }
+        catch {
+            return { status: 'unhealthy' };
+        }
+    }
+    fetchSellerCompletedOrders(sellerId, timeRange) {
+        return this.prisma.order.findMany({
+            where: {
+                status: client_1.OrderStatus.COMPLETED,
+                createdAt: { gte: timeRange.start, lte: timeRange.end },
+                items: { some: { sellerId } }
+            },
+            select: { items: { where: { sellerId }, select: { price: true } } }
+        });
+    }
+    sumSellerRevenue(orders) {
+        return orders.reduce((s, o) => s + o.items.reduce((is, i) => is + i.price, 0), 0);
+    }
+};
+exports.AnalyticsQueryService = AnalyticsQueryService;
+exports.AnalyticsQueryService = AnalyticsQueryService = AnalyticsQueryService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof analytics_calculation_service_1.AnalyticsCalculationService !== "undefined" && analytics_calculation_service_1.AnalyticsCalculationService) === "function" ? _b : Object])
+], AnalyticsQueryService);
+
+
+/***/ }),
+/* 291 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnalyticsCalculationService = void 0;
+const common_1 = __webpack_require__(2);
+let AnalyticsCalculationService = class AnalyticsCalculationService {
+    buildMetricValue(value, previous) {
+        const change = previous != null && previous > 0
+            ? ((value - previous) / previous) * 100
+            : 0;
+        return {
+            value,
+            change,
+            changeType: change > 0 ? 'increase' : change < 0 ? 'decrease' : 'neutral'
+        };
+    }
+    calculateGrowthRate(current, previous) {
+        if (previous === 0)
+            return 0;
+        return ((current - previous) / previous) * 100;
+    }
+    calculateConversionRate(conversions, total) {
+        if (total === 0)
+            return 0;
+        return (conversions / total) * 100;
+    }
+    calculateAOV(totalRevenue, orderCount) {
+        if (orderCount === 0)
+            return 0;
+        return totalRevenue / orderCount;
+    }
+    getTimeRange(startDate, endDate) {
+        const end = endDate ? new Date(endDate) : new Date();
+        const start = startDate
+            ? new Date(startDate)
+            : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return { start, end };
+    }
+    getPreviousPeriod(timeRange) {
+        const duration = timeRange.end.getTime() - timeRange.start.getTime();
+        return {
+            start: new Date(timeRange.start.getTime() - duration),
+            end: new Date(timeRange.start.getTime())
+        };
+    }
+    getCurrentMonthStart() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    groupRevenueByPeriod(orders, groupBy = 'month') {
+        const buckets = new Map();
+        for (const order of orders) {
+            const key = this.getPeriodKey(order.createdAt, groupBy);
+            buckets.set(key, (buckets.get(key) ?? 0) + order.sellerRevenue);
+        }
+        return Array.from(buckets.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, value]) => ({ date, value, label: date }));
+    }
+    getPeriodKey(date, groupBy) {
+        if (groupBy === 'day')
+            return date.toISOString().substring(0, 10);
+        if (groupBy === 'month')
+            return date.toISOString().substring(0, 7);
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+    }
+};
+exports.AnalyticsCalculationService = AnalyticsCalculationService;
+exports.AnalyticsCalculationService = AnalyticsCalculationService = __decorate([
+    (0, common_1.Injectable)()
+], AnalyticsCalculationService);
+
+
+/***/ }),
+/* 292 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var AnalyticsCacheService_1;
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnalyticsCacheService = exports.CACHE_TTL = void 0;
+const common_1 = __webpack_require__(2);
+const config_1 = __webpack_require__(3);
+const ioredis_1 = __importDefault(__webpack_require__(293));
+exports.CACHE_TTL = {
+    SELLER_DASHBOARD: 300,
+    SELLER_REVENUE: 600,
+    PLATFORM_OVERVIEW: 120,
+    TOP_PERFORMERS: 300,
+    HEALTH: 30,
+};
+let AnalyticsCacheService = AnalyticsCacheService_1 = class AnalyticsCacheService {
+    constructor(config) {
+        this.config = config;
+        this.logger = new common_1.Logger(AnalyticsCacheService_1.name);
+        this.client = null;
+        this.enabled = false;
+    }
+    onModuleInit() {
+        const redisUrl = this.config.get('REDIS_URL');
+        if (!redisUrl) {
+            this.logger.warn('REDIS_URL not set — analytics cache disabled');
+            return;
+        }
+        try {
+            this.client = new ioredis_1.default(redisUrl, { lazyConnect: true, enableOfflineQueue: false });
+            this.client.on('ready', () => {
+                this.enabled = true;
+                this.logger.log('Analytics cache connected');
+            });
+            this.client.on('error', (err) => {
+                this.logger.warn(`Redis error: ${err.message}`);
+                this.enabled = false;
+            });
+            this.client.connect().catch(() => { });
+        }
+        catch (err) {
+            this.logger.warn(`Failed to init Redis: ${err.message}`);
+        }
+    }
+    async get(key) {
+        if (!this.enabled || !this.client)
+            return null;
+        try {
+            const raw = await this.client.get(key);
+            return raw ? JSON.parse(raw) : null;
+        }
+        catch {
+            return null;
+        }
+    }
+    async set(key, value, ttlSeconds) {
+        if (!this.enabled || !this.client)
+            return;
+        try {
+            await this.client.setex(key, ttlSeconds, JSON.stringify(value));
+        }
+        catch {
+        }
+    }
+    async del(key) {
+        if (!this.enabled || !this.client)
+            return;
+        try {
+            await this.client.del(key);
+        }
+        catch {
+        }
+    }
+    async getOrSet(key, factory, ttlSeconds) {
+        const cached = await this.get(key);
+        if (cached !== null)
+            return cached;
+        const value = await factory();
+        await this.set(key, value, ttlSeconds);
+        return value;
+    }
+    async invalidatePattern(pattern) {
+        if (!this.enabled || !this.client)
+            return;
+        try {
+            const keys = await this.client.keys(pattern);
+            if (keys.length > 0) {
+                await this.client.del(...keys);
+            }
+        }
+        catch {
+        }
+    }
+    buildKey(...parts) {
+        return `analytics:${parts.join(':')}`;
+    }
+    get isEnabled() {
+        return this.enabled;
+    }
+};
+exports.AnalyticsCacheService = AnalyticsCacheService;
+exports.AnalyticsCacheService = AnalyticsCacheService = AnalyticsCacheService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _a : Object])
+], AnalyticsCacheService);
+
+
+/***/ }),
+/* 293 */
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("ioredis");
+
+/***/ }),
+/* 294 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
@@ -44609,8 +44227,8 @@ const public_decorator_1 = __webpack_require__(25);
 const client_1 = __webpack_require__(11);
 const prisma_service_1 = __webpack_require__(10);
 const analytics_service_1 = __webpack_require__(287);
-const seller_analytics_dto_1 = __webpack_require__(291);
-const admin_analytics_dto_1 = __webpack_require__(292);
+const seller_analytics_dto_1 = __webpack_require__(295);
+const admin_analytics_dto_1 = __webpack_require__(296);
 const export_dto_1 = __webpack_require__(288);
 let AnalyticsController = class AnalyticsController {
     constructor(analyticsService, prisma) {
@@ -45281,7 +44899,7 @@ exports.AnalyticsController = AnalyticsController = __decorate([
 
 
 /***/ }),
-/* 291 */
+/* 295 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -45564,7 +45182,7 @@ __decorate([
 
 
 /***/ }),
-/* 292 */
+/* 296 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -45585,7 +45203,7 @@ const class_validator_1 = __webpack_require__(23);
 const class_transformer_1 = __webpack_require__(40);
 const swagger_1 = __webpack_require__(4);
 const filters_dto_1 = __webpack_require__(289);
-const seller_analytics_dto_1 = __webpack_require__(291);
+const seller_analytics_dto_1 = __webpack_require__(295);
 var PlatformMetric;
 (function (PlatformMetric) {
     PlatformMetric["USERS"] = "users";
@@ -45894,7 +45512,7 @@ __decorate([
 
 
 /***/ }),
-/* 293 */
+/* 297 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -45908,7 +45526,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ReviewsModule = void 0;
 const common_1 = __webpack_require__(2);
-const reviews_controller_1 = __webpack_require__(294);
+const reviews_controller_1 = __webpack_require__(298);
 const reviews_service_1 = __webpack_require__(230);
 const prisma_module_1 = __webpack_require__(9);
 const notifications_module_1 = __webpack_require__(235);
@@ -45929,7 +45547,7 @@ exports.ReviewsModule = ReviewsModule = __decorate([
 
 
 /***/ }),
-/* 294 */
+/* 298 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -45957,7 +45575,7 @@ const roles_guard_1 = __webpack_require__(30);
 const roles_decorator_1 = __webpack_require__(31);
 const current_user_decorator_1 = __webpack_require__(26);
 const client_1 = __webpack_require__(11);
-const dto_1 = __webpack_require__(295);
+const dto_1 = __webpack_require__(299);
 let ReviewsController = class ReviewsController {
     constructor(reviewsService) {
         this.reviewsService = reviewsService;
@@ -46186,30 +45804,30 @@ exports.ReviewsController = ReviewsController = __decorate([
 
 
 /***/ }),
-/* 295 */
+/* 299 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ModerateReviewDto = exports.FilterReviewDto = exports.ReportReviewDto = exports.ReviewVoteDto = exports.CreateReviewResponseDto = exports.UpdateReviewDto = exports.CreateReviewDto = void 0;
-var create_review_dto_1 = __webpack_require__(296);
+var create_review_dto_1 = __webpack_require__(300);
 Object.defineProperty(exports, "CreateReviewDto", ({ enumerable: true, get: function () { return create_review_dto_1.CreateReviewDto; } }));
-var update_review_dto_1 = __webpack_require__(297);
+var update_review_dto_1 = __webpack_require__(301);
 Object.defineProperty(exports, "UpdateReviewDto", ({ enumerable: true, get: function () { return update_review_dto_1.UpdateReviewDto; } }));
 Object.defineProperty(exports, "CreateReviewResponseDto", ({ enumerable: true, get: function () { return update_review_dto_1.CreateReviewResponseDto; } }));
-var review_vote_dto_1 = __webpack_require__(298);
+var review_vote_dto_1 = __webpack_require__(302);
 Object.defineProperty(exports, "ReviewVoteDto", ({ enumerable: true, get: function () { return review_vote_dto_1.ReviewVoteDto; } }));
-var report_review_dto_1 = __webpack_require__(299);
+var report_review_dto_1 = __webpack_require__(303);
 Object.defineProperty(exports, "ReportReviewDto", ({ enumerable: true, get: function () { return report_review_dto_1.ReportReviewDto; } }));
-var filter_review_dto_1 = __webpack_require__(300);
+var filter_review_dto_1 = __webpack_require__(304);
 Object.defineProperty(exports, "FilterReviewDto", ({ enumerable: true, get: function () { return filter_review_dto_1.FilterReviewDto; } }));
-var moderate_review_dto_1 = __webpack_require__(301);
+var moderate_review_dto_1 = __webpack_require__(305);
 Object.defineProperty(exports, "ModerateReviewDto", ({ enumerable: true, get: function () { return moderate_review_dto_1.ModerateReviewDto; } }));
 
 
 /***/ }),
-/* 296 */
+/* 300 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46321,7 +45939,7 @@ __decorate([
 
 
 /***/ }),
-/* 297 */
+/* 301 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46338,7 +45956,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CreateReviewResponseDto = exports.UpdateReviewDto = void 0;
 const swagger_1 = __webpack_require__(4);
-const create_review_dto_1 = __webpack_require__(296);
+const create_review_dto_1 = __webpack_require__(300);
 class UpdateReviewDto extends (0, swagger_1.PartialType)((0, swagger_1.OmitType)(create_review_dto_1.CreateReviewDto, ['orderId', 'productId'])) {
 }
 exports.UpdateReviewDto = UpdateReviewDto;
@@ -46363,7 +45981,7 @@ __decorate([
 
 
 /***/ }),
-/* 298 */
+/* 302 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46399,7 +46017,7 @@ __decorate([
 
 
 /***/ }),
-/* 299 */
+/* 303 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46446,7 +46064,7 @@ __decorate([
 
 
 /***/ }),
-/* 300 */
+/* 304 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46560,7 +46178,7 @@ __decorate([
 
 
 /***/ }),
-/* 301 */
+/* 305 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46609,7 +46227,7 @@ __decorate([
 
 
 /***/ }),
-/* 302 */
+/* 306 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46649,7 +46267,7 @@ exports.HealthController = HealthController = __decorate([
 
 
 /***/ }),
-/* 303 */
+/* 307 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46666,8 +46284,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SellersModule = void 0;
 const common_1 = __webpack_require__(2);
-const sellers_controller_1 = __webpack_require__(304);
-const sellers_service_1 = __webpack_require__(305);
+const sellers_controller_1 = __webpack_require__(308);
+const sellers_service_1 = __webpack_require__(309);
 const prisma_service_1 = __webpack_require__(17);
 let SellersModule = class SellersModule {
     constructor() {
@@ -46686,7 +46304,7 @@ exports.SellersModule = SellersModule = __decorate([
 
 
 /***/ }),
-/* 304 */
+/* 308 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -46708,7 +46326,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SellersController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const sellers_service_1 = __webpack_require__(305);
+const sellers_service_1 = __webpack_require__(309);
 let SellersController = class SellersController {
     constructor(sellersService) {
         this.sellersService = sellersService;
@@ -46878,7 +46496,7 @@ exports.SellersController = SellersController = __decorate([
 
 
 /***/ }),
-/* 305 */
+/* 309 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -47243,14 +46861,14 @@ exports.SellersService = SellersService = __decorate([
 
 
 /***/ }),
-/* 306 */
+/* 310 */
 /***/ ((module) => {
 
 "use strict";
 module.exports = require("compression");
 
 /***/ }),
-/* 307 */
+/* 311 */
 /***/ ((module) => {
 
 "use strict";
