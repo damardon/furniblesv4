@@ -165,20 +165,20 @@ const files_module_1 = __webpack_require__(43);
 const cart_module_1 = __webpack_require__(210);
 const fees_module_1 = __webpack_require__(218);
 const orders_module_1 = __webpack_require__(220);
-const checkout_module_1 = __webpack_require__(239);
-const downloads_module_1 = __webpack_require__(246);
+const checkout_module_1 = __webpack_require__(248);
+const downloads_module_1 = __webpack_require__(255);
 const notifications_module_1 = __webpack_require__(234);
-const webhook_module_1 = __webpack_require__(250);
-const stripe_module_1 = __webpack_require__(245);
+const webhook_module_1 = __webpack_require__(259);
+const stripe_module_1 = __webpack_require__(254);
 const websocket_module_1 = __webpack_require__(238);
 const email_module_1 = __webpack_require__(237);
-const cron_module_1 = __webpack_require__(260);
-const admin_module_1 = __webpack_require__(262);
-const payments_module_1 = __webpack_require__(254);
-const payouts_module_1 = __webpack_require__(271);
-const transactions_module_1 = __webpack_require__(277);
-const invoices_module_1 = __webpack_require__(281);
-const analytics_module_1 = __webpack_require__(285);
+const cron_module_1 = __webpack_require__(269);
+const admin_module_1 = __webpack_require__(271);
+const payments_module_1 = __webpack_require__(263);
+const payouts_module_1 = __webpack_require__(280);
+const transactions_module_1 = __webpack_require__(286);
+const invoices_module_1 = __webpack_require__(290);
+const analytics_module_1 = __webpack_require__(294);
 const health_controller_1 = __webpack_require__(305);
 const sellers_module_1 = __webpack_require__(306);
 let AppModule = class AppModule {
@@ -435,6 +435,7 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AuthService_1;
 var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuthService = void 0;
@@ -445,12 +446,13 @@ const users_service_1 = __webpack_require__(16);
 const bcrypt = __importStar(__webpack_require__(17));
 const uuid_1 = __webpack_require__(18);
 const token_blacklist_service_1 = __webpack_require__(19);
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     constructor(usersService, jwtService, configService, tokenBlacklistService) {
         this.usersService = usersService;
         this.jwtService = jwtService;
         this.configService = configService;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.logger = new common_1.Logger(AuthService_1.name);
     }
     async validateUser(email, password) {
         const user = await this.usersService.findByEmailWithPassword(email);
@@ -507,9 +509,9 @@ let AuthService = class AuthService {
             emailVerificationToken,
         });
         const fullUser = await this.usersService.findByEmail(registerDto.email);
-        console.log(`Verification token for ${registerDto.email}: ${emailVerificationToken}`);
+        this.logger.debug(`Email verification token for ${registerDto.email}: ${emailVerificationToken}`);
         return {
-            message: 'User registered successfully. Check console for verification token.',
+            message: 'User registered successfully. Please check your email to verify your account.',
             userId: fullUser.id,
         };
     }
@@ -555,7 +557,7 @@ let AuthService = class AuthService {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 1);
         await this.usersService.savePasswordResetToken(user.id, resetToken, expiresAt);
-        console.log(`Password reset token for ${user.email}: ${resetToken}`);
+        this.logger.debug(`Password reset token for ${user.email}: ${resetToken}`);
         return {
             message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña',
         };
@@ -589,7 +591,7 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof users_service_1.UsersService !== "undefined" && users_service_1.UsersService) === "function" ? _a : Object, typeof (_b = typeof jwt_1.JwtService !== "undefined" && jwt_1.JwtService) === "function" ? _b : Object, typeof (_c = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _c : Object, typeof (_d = typeof token_blacklist_service_1.TokenBlacklistService !== "undefined" && token_blacklist_service_1.TokenBlacklistService) === "function" ? _d : Object])
 ], AuthService);
@@ -902,14 +904,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var TokenBlacklistService_1;
 var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TokenBlacklistService = void 0;
 const common_1 = __webpack_require__(2);
 const jwt_1 = __webpack_require__(13);
-let TokenBlacklistService = class TokenBlacklistService {
+let TokenBlacklistService = TokenBlacklistService_1 = class TokenBlacklistService {
     constructor(jwtService) {
         this.jwtService = jwtService;
+        this.logger = new common_1.Logger(TokenBlacklistService_1.name);
         this.blacklistedTokens = new Map();
         setInterval(() => this.cleanupExpiredTokens(), 60 * 60 * 1000);
     }
@@ -926,7 +930,7 @@ let TokenBlacklistService = class TokenBlacklistService {
             }
         }
         catch (error) {
-            console.error('Error blacklisting token:', error);
+            this.logger.error('Error blacklisting token', error.stack);
         }
     }
     async isTokenBlacklisted(token) {
@@ -942,7 +946,7 @@ let TokenBlacklistService = class TokenBlacklistService {
             return true;
         }
         catch (error) {
-            console.error('Error checking blacklist:', error);
+            this.logger.error('Error checking blacklist', error.stack);
             return false;
         }
     }
@@ -959,11 +963,11 @@ let TokenBlacklistService = class TokenBlacklistService {
                 this.blacklistedTokens.delete(token);
             });
             if (expiredTokens.length > 0) {
-                console.log(`Cleaned up ${expiredTokens.length} expired tokens`);
+                this.logger.debug(`Cleaned up ${expiredTokens.length} expired tokens`);
             }
         }
         catch (error) {
-            console.error('Error cleaning up expired tokens:', error);
+            this.logger.error('Error cleaning up expired tokens', error.stack);
         }
     }
     getBlacklistSize() {
@@ -974,7 +978,7 @@ let TokenBlacklistService = class TokenBlacklistService {
     }
 };
 exports.TokenBlacklistService = TokenBlacklistService;
-exports.TokenBlacklistService = TokenBlacklistService = __decorate([
+exports.TokenBlacklistService = TokenBlacklistService = TokenBlacklistService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof jwt_1.JwtService !== "undefined" && jwt_1.JwtService) === "function" ? _a : Object])
 ], TokenBlacklistService);
@@ -3780,6 +3784,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var FilesService_1;
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.FilesService = void 0;
@@ -3791,10 +3796,11 @@ const fs = __importStar(__webpack_require__(47));
 const path = __importStar(__webpack_require__(48));
 const crypto = __importStar(__webpack_require__(49));
 const client_1 = __webpack_require__(11);
-let FilesService = class FilesService {
+let FilesService = FilesService_1 = class FilesService {
     constructor(prisma, config) {
         this.prisma = prisma;
         this.config = config;
+        this.logger = new common_1.Logger(FilesService_1.name);
         this.mapFileToResponse = (file) => {
             return {
                 id: file.id,
@@ -4047,7 +4053,7 @@ let FilesService = class FilesService {
             await fs.unlink(filePath);
         }
         catch (error) {
-            console.error('Error deleting physical file:', error);
+            this.logger.error('Error deleting physical file', error.stack);
         }
     }
     async getUserFiles(userId, type) {
@@ -4142,44 +4148,32 @@ let FilesService = class FilesService {
                 }
             }
         });
+        const eligibleFiles = orphanedFiles.filter((f) => f.type === client_1.FileType.PDF || f.type === client_1.FileType.IMAGE || f.type === client_1.FileType.THUMBNAIL);
+        await this.prisma.file.updateMany({
+            where: { id: { in: eligibleFiles.map((f) => f.id) } },
+            data: { status: client_1.FileStatus.DELETED },
+        });
         let totalSize = 0;
         let deletedCount = 0;
-        for (const file of orphanedFiles) {
+        const failedIds = [];
+        for (const file of eligibleFiles) {
+            const typeDir = file.type === client_1.FileType.PDF ? 'pdfs' : file.type === client_1.FileType.IMAGE ? 'images' : 'thumbnails';
+            const filePath = path.join(this.uploadPath, typeDir, file.key);
             try {
-                await this.prisma.file.update({
-                    where: { id: file.id },
-                    data: { status: client_1.FileStatus.DELETED }
-                });
-                let filePath;
-                switch (file.type) {
-                    case client_1.FileType.PDF:
-                        filePath = path.join(this.uploadPath, 'pdfs', file.key);
-                        break;
-                    case client_1.FileType.IMAGE:
-                        filePath = path.join(this.uploadPath, 'images', file.key);
-                        break;
-                    case client_1.FileType.THUMBNAIL:
-                        filePath = path.join(this.uploadPath, 'thumbnails', file.key);
-                        break;
-                    default:
-                        continue;
-                }
-                try {
-                    await fs.unlink(filePath);
-                    totalSize += file.size;
-                    deletedCount++;
-                }
-                catch (error) {
-                    console.error(`Error deleting file ${filePath}:`, error);
-                    await this.prisma.file.update({
-                        where: { id: file.id },
-                        data: { status: client_1.FileStatus.ACTIVE }
-                    });
-                }
+                await fs.unlink(filePath);
+                totalSize += file.size;
+                deletedCount++;
             }
             catch (error) {
-                console.error(`Error processing orphaned file ${file.id}:`, error);
+                this.logger.error(`Error deleting file ${filePath}`, error.stack);
+                failedIds.push(file.id);
             }
+        }
+        if (failedIds.length > 0) {
+            await this.prisma.file.updateMany({
+                where: { id: { in: failedIds } },
+                data: { status: client_1.FileStatus.ACTIVE },
+            });
         }
         return {
             deletedFiles: deletedCount,
@@ -4244,7 +4238,7 @@ let FilesService = class FilesService {
             await fs.mkdir(path.join(this.uploadPath, 'thumbnails'), { recursive: true });
         }
         catch (error) {
-            console.error('Error creating upload directories:', error);
+            this.logger.error('Error creating upload directories', error.stack);
         }
     }
     async ensureDirectoryExists(dirPath) {
@@ -4252,7 +4246,7 @@ let FilesService = class FilesService {
             await fs.mkdir(dirPath, { recursive: true });
         }
         catch (error) {
-            console.error('Error creating directory:', error);
+            this.logger.error('Error creating directory', error.stack);
         }
     }
     generateFileKey(originalname, prefix) {
@@ -4301,7 +4295,7 @@ let FilesService = class FilesService {
     }
 };
 exports.FilesService = FilesService;
-exports.FilesService = FilesService = __decorate([
+exports.FilesService = FilesService = FilesService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object])
 ], FilesService);
@@ -26774,6 +26768,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var CartService_1;
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CartService = void 0;
@@ -26782,10 +26777,11 @@ const prisma_service_1 = __webpack_require__(10);
 const fees_service_1 = __webpack_require__(213);
 const translation_helper_1 = __webpack_require__(214);
 const client_1 = __webpack_require__(11);
-let CartService = class CartService {
+let CartService = CartService_1 = class CartService {
     constructor(prisma, feesService) {
         this.prisma = prisma;
         this.feesService = feesService;
+        this.logger = new common_1.Logger(CartService_1.name);
     }
     async addToCart(userId, dto, lang = 'en') {
         const user = await this.prisma.user.findUnique({
@@ -26955,7 +26951,7 @@ let CartService = class CartService {
                 await this.addToCart(userId, { productId }, lang);
             }
             catch (error) {
-                console.warn(`Failed to migrate product ${productId}:`, error.message);
+                this.logger.warn(`Failed to migrate product ${productId}: ${error.message}`);
             }
         }
         return this.getCart(userId, lang);
@@ -27059,7 +27055,7 @@ let CartService = class CartService {
     }
 };
 exports.CartService = CartService;
-exports.CartService = CartService = __decorate([
+exports.CartService = CartService = CartService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof fees_service_1.FeesService !== "undefined" && fees_service_1.FeesService) === "function" ? _b : Object])
 ], CartService);
@@ -28055,6 +28051,7 @@ const prisma_module_1 = __webpack_require__(9);
 const cart_module_1 = __webpack_require__(210);
 const fees_module_1 = __webpack_require__(218);
 const notifications_module_1 = __webpack_require__(234);
+const reviews_module_1 = __webpack_require__(239);
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
@@ -28064,7 +28061,8 @@ exports.OrdersModule = OrdersModule = __decorate([
             prisma_module_1.PrismaModule,
             cart_module_1.CartModule,
             fees_module_1.FeesModule,
-            notifications_module_1.NotificationModule
+            notifications_module_1.NotificationModule,
+            (0, common_1.forwardRef)(() => reviews_module_1.ReviewsModule),
         ],
         controllers: [orders_controller_1.OrdersController],
         providers: [orders_service_1.OrdersService],
@@ -28261,49 +28259,20 @@ exports.OrdersController = OrdersController = __decorate([
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a, _b, _c, _d;
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var OrdersService_1;
+var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.OrdersService = void 0;
 const common_1 = __webpack_require__(2);
@@ -28311,13 +28280,16 @@ const prisma_service_1 = __webpack_require__(10);
 const cart_service_1 = __webpack_require__(212);
 const fees_service_1 = __webpack_require__(213);
 const notifications_service_1 = __webpack_require__(223);
+const reviews_service_1 = __webpack_require__(229);
 const client_1 = __webpack_require__(11);
-let OrdersService = class OrdersService {
-    constructor(prisma, cartService, feesService, notificationService) {
+let OrdersService = OrdersService_1 = class OrdersService {
+    constructor(prisma, cartService, feesService, notificationService, reviewsService) {
         this.prisma = prisma;
         this.cartService = cartService;
         this.feesService = feesService;
         this.notificationService = notificationService;
+        this.reviewsService = reviewsService;
+        this.logger = new common_1.Logger(OrdersService_1.name);
     }
     async handleSuccessfulPayment(params, tx) {
         const prisma = tx || this.prisma;
@@ -28764,13 +28736,11 @@ let OrdersService = class OrdersService {
         await this.updateProductStatistics(order.items);
         await this.notificationService.sendOrderCompletedNotification(order);
         try {
-            const { ReviewsService } = await Promise.resolve().then(() => __importStar(__webpack_require__(229)));
-            const reviewsService = new ReviewsService(this.prisma, this.notificationService);
-            await reviewsService.scheduleReviewReminders(order.id, order.buyerId);
-            console.log(`Review reminders scheduled for order ${order.orderNumber}`);
+            await this.reviewsService.scheduleReviewReminders(order.id, order.buyerId);
+            this.logger.log(`Review reminders scheduled for order ${order.orderNumber}`);
         }
         catch (error) {
-            console.error('Error scheduling review reminders:', error);
+            this.logger.error('Error scheduling review reminders', error.stack);
         }
     }
     async cancelOrder(orderId, reason) {
@@ -28788,39 +28758,31 @@ let OrdersService = class OrdersService {
     async generateDownloadTokens(order) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 30);
-        for (const item of order.items) {
-            if (item.product.pdfFileId) {
-                await this.prisma.downloadToken.create({
-                    data: {
-                        orderId: order.id,
-                        productId: item.productId,
-                        buyerId: order.buyerId,
-                        downloadLimit: 5,
-                        expiresAt
-                    }
-                });
-            }
-        }
+        const itemsWithPdf = order.items.filter((item) => item.product.pdfFileId);
+        if (itemsWithPdf.length === 0)
+            return;
+        await this.prisma.downloadToken.createMany({
+            data: itemsWithPdf.map((item) => ({
+                orderId: order.id,
+                productId: item.productId,
+                buyerId: order.buyerId,
+                downloadLimit: 5,
+                expiresAt,
+            })),
+            skipDuplicates: true,
+        });
     }
     async updateProductStatistics(orderItems) {
-        for (const item of orderItems) {
-            await this.prisma.product.update({
+        await Promise.all(orderItems.map((item) => Promise.all([
+            this.prisma.product.update({
                 where: { id: item.productId },
-                data: {
-                    downloadCount: {
-                        increment: 1
-                    }
-                }
-            });
-            await this.prisma.sellerProfile.update({
+                data: { downloadCount: { increment: 1 } },
+            }),
+            this.prisma.sellerProfile.update({
                 where: { userId: item.sellerId },
-                data: {
-                    totalSales: {
-                        increment: 1
-                    }
-                }
-            });
-        }
+                data: { totalSales: { increment: 1 } },
+            }),
+        ])));
     }
     async generateOrderNumber() {
         const today = new Date();
@@ -29051,13 +29013,11 @@ let OrdersService = class OrdersService {
             await this.generateDownloadTokens(updatedOrder);
             await this.notificationService.sendOrderCompletedNotification(updatedOrder);
             try {
-                const { ReviewsService } = await Promise.resolve().then(() => __importStar(__webpack_require__(229)));
-                const reviewsService = new ReviewsService(this.prisma, this.notificationService);
-                await reviewsService.scheduleReviewReminders(updatedOrder.id, updatedOrder.buyerId);
-                console.log(`Review reminders scheduled for order ${updatedOrder.orderNumber} (manual completion)`);
+                await this.reviewsService.scheduleReviewReminders(updatedOrder.id, updatedOrder.buyerId);
+                this.logger.log(`Review reminders scheduled for order ${updatedOrder.orderNumber} (manual completion)`);
             }
             catch (error) {
-                console.error('Error scheduling review reminders on manual completion:', error);
+                this.logger.error('Error scheduling review reminders on manual completion', error.stack);
             }
         }
         return updatedOrder;
@@ -29081,9 +29041,10 @@ let OrdersService = class OrdersService {
     }
 };
 exports.OrdersService = OrdersService;
-exports.OrdersService = OrdersService = __decorate([
+exports.OrdersService = OrdersService = OrdersService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof cart_service_1.CartService !== "undefined" && cart_service_1.CartService) === "function" ? _b : Object, typeof (_c = typeof fees_service_1.FeesService !== "undefined" && fees_service_1.FeesService) === "function" ? _c : Object, typeof (_d = typeof notifications_service_1.NotificationService !== "undefined" && notifications_service_1.NotificationService) === "function" ? _d : Object])
+    __param(4, (0, common_1.Inject)((0, common_1.forwardRef)(() => reviews_service_1.ReviewsService))),
+    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof cart_service_1.CartService !== "undefined" && cart_service_1.CartService) === "function" ? _b : Object, typeof (_c = typeof fees_service_1.FeesService !== "undefined" && fees_service_1.FeesService) === "function" ? _c : Object, typeof (_d = typeof notifications_service_1.NotificationService !== "undefined" && notifications_service_1.NotificationService) === "function" ? _d : Object, typeof (_e = typeof reviews_service_1.ReviewsService !== "undefined" && reviews_service_1.ReviewsService) === "function" ? _e : Object])
 ], OrdersService);
 
 
@@ -29102,6 +29063,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var NotificationService_1;
 var _a, _b, _c, _d, _e, _f, _g;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.NotificationService = void 0;
@@ -29112,12 +29074,13 @@ const email_service_1 = __webpack_require__(224);
 const websocket_gateway_1 = __webpack_require__(226);
 const client_1 = __webpack_require__(11);
 const schedule_1 = __webpack_require__(8);
-let NotificationService = class NotificationService {
+let NotificationService = NotificationService_1 = class NotificationService {
     constructor(prisma, emailService, webSocketGateway, configService) {
         this.prisma = prisma;
         this.emailService = emailService;
         this.webSocketGateway = webSocketGateway;
         this.configService = configService;
+        this.logger = new common_1.Logger(NotificationService_1.name);
         this.frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
     }
     getTranslation(key, lang, args) {
@@ -29188,7 +29151,7 @@ let NotificationService = class NotificationService {
     async createNotification(dto) {
         const preferences = await this.getUserPreferences(dto.userId);
         if (!this.shouldSendNotification(dto.type, preferences)) {
-            console.log(`Notification skipped due to user preferences: ${dto.type} for user ${dto.userId}`);
+            this.logger.debug(`Notification skipped due to user preferences: ${dto.type} for user ${dto.userId}`);
             return;
         }
         if (this.isInQuietHours(preferences)) {
@@ -29225,7 +29188,7 @@ let NotificationService = class NotificationService {
         }
         if (preferences.emailEnabled) {
             this.sendEmailNotification(notification).catch(error => {
-                console.error('Error sending email notification:', error);
+                this.logger.error('Error sending email notification', error.stack);
             });
         }
         await this.trackNotificationAnalytics(notification.id, dto.userId, dto.type, client_1.NotificationChannel.IN_APP);
@@ -29482,7 +29445,7 @@ let NotificationService = class NotificationService {
                 });
             }
             catch (error) {
-                console.error(`Error processing scheduled notification ${scheduled.id}:`, error);
+                this.logger.error(`Error processing scheduled notification ${scheduled.id}`, error.stack);
                 const newAttempts = scheduled.attempts + 1;
                 if (newAttempts >= scheduled.maxAttempts) {
                     await this.prisma.scheduledNotification.update({
@@ -29822,7 +29785,7 @@ let NotificationService = class NotificationService {
             await this.trackNotificationAnalytics(notification.id, notification.userId, notification.type, client_1.NotificationChannel.EMAIL);
         }
         catch (error) {
-            console.error(`Error sending email notification ${notification.id}:`, error);
+            this.logger.error(`Error sending email notification ${notification.id}`, error.stack);
         }
     }
     async getNotificationAnalytics(filters) {
@@ -29919,7 +29882,7 @@ let NotificationService = class NotificationService {
                 isRead: true
             }
         });
-        console.log('Expired notifications cleanup completed');
+        this.logger.log('Expired notifications cleanup completed');
     }
     async sendReviewReminders() {
         const threeDaysAgo = new Date();
@@ -30020,7 +29983,7 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", typeof (_g = typeof Promise !== "undefined" && Promise) === "function" ? _g : Object)
 ], NotificationService.prototype, "cleanupExpiredNotifications", null);
-exports.NotificationService = NotificationService = __decorate([
+exports.NotificationService = NotificationService = NotificationService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof email_service_1.EmailService !== "undefined" && email_service_1.EmailService) === "function" ? _b : Object, typeof (_c = typeof websocket_gateway_1.WebSocketGateway !== "undefined" && websocket_gateway_1.WebSocketGateway) === "function" ? _c : Object, typeof (_d = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _d : Object])
 ], NotificationService);
@@ -30357,16 +30320,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var ReviewsService_1;
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ReviewsService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(10);
 const notifications_service_1 = __webpack_require__(223);
-let ReviewsService = class ReviewsService {
+let ReviewsService = ReviewsService_1 = class ReviewsService {
     constructor(prisma, notificationService) {
         this.prisma = prisma;
         this.notificationService = notificationService;
+        this.logger = new common_1.Logger(ReviewsService_1.name);
     }
     async createReview(userId, createReviewDto) {
         const { orderId, productId, rating, title, comment, pros, cons, images } = createReviewDto;
@@ -30488,7 +30453,7 @@ let ReviewsService = class ReviewsService {
                 });
             }
             catch (error) {
-                console.error('Error sending review notification:', error);
+                this.logger.error('Error sending review notification', error.stack);
             }
         }
         await this.updateProductRating(productId);
@@ -30496,7 +30461,7 @@ let ReviewsService = class ReviewsService {
             await this.notificationService.checkReviewMilestones(product.sellerId);
         }
         catch (error) {
-            console.error('Error checking review milestones:', error);
+            this.logger.error('Error checking review milestones', error.stack);
         }
         return this.findOne(review.id);
     }
@@ -30721,7 +30686,7 @@ let ReviewsService = class ReviewsService {
                 });
             }
             catch (error) {
-                console.error('Error sending review update notification:', error);
+                this.logger.error('Error sending review update notification', error.stack);
             }
         }
         await this.updateProductRating(review.productId);
@@ -30794,7 +30759,7 @@ let ReviewsService = class ReviewsService {
             });
         }
         catch (error) {
-            console.error('Error sending review response notification:', error);
+            this.logger.error('Error sending review response notification', error.stack);
         }
         return response;
     }
@@ -30872,7 +30837,7 @@ let ReviewsService = class ReviewsService {
                 });
             }
             catch (error) {
-                console.error('Error sending review helpful notification:', error);
+                this.logger.error('Error sending review helpful notification', error.stack);
             }
         }
         return { success: true };
@@ -30937,7 +30902,7 @@ let ReviewsService = class ReviewsService {
                 });
             }
             catch (error) {
-                console.error('Error sending review flagged notification:', error);
+                this.logger.error('Error sending review flagged notification', error.stack);
             }
         }
         return report;
@@ -31000,7 +30965,7 @@ let ReviewsService = class ReviewsService {
             }
         }
         catch (error) {
-            console.error('Error sending moderation notification:', error);
+            this.logger.error('Error sending moderation notification', error.stack);
         }
         if (['PUBLISHED', 'REMOVED'].includes(moderateDto.status)) {
             await this.updateProductRating(review.productId);
@@ -31009,7 +30974,7 @@ let ReviewsService = class ReviewsService {
                     await this.notificationService.checkReviewMilestones(review.product.sellerId);
                 }
                 catch (error) {
-                    console.error('Error checking review milestones:', error);
+                    this.logger.error('Error checking review milestones', error.stack);
                 }
             }
         }
@@ -31157,7 +31122,7 @@ let ReviewsService = class ReviewsService {
             });
         }
         catch (error) {
-            console.error('Error sending review deletion notification:', error);
+            this.logger.error('Error sending review deletion notification', error.stack);
         }
         await this.updateProductRating(review.productId);
         return { success: true };
@@ -31351,7 +31316,7 @@ let ReviewsService = class ReviewsService {
             }
         }
         catch (error) {
-            console.error('Error sending rating improvement notification:', error);
+            this.logger.error('Error sending rating improvement notification', error.stack);
         }
     }
     async scheduleReviewReminders(orderId, buyerId) {
@@ -31402,7 +31367,7 @@ let ReviewsService = class ReviewsService {
             }
         }
         catch (error) {
-            console.error('Error scheduling review reminders:', error);
+            this.logger.error('Error scheduling review reminders', error.stack);
         }
     }
     async checkProductRatingMilestone(productId) {
@@ -31446,12 +31411,12 @@ let ReviewsService = class ReviewsService {
             }
         }
         catch (error) {
-            console.error('Error checking product rating milestone:', error);
+            this.logger.error('Error checking product rating milestone', error.stack);
         }
     }
 };
 exports.ReviewsService = ReviewsService;
-exports.ReviewsService = ReviewsService = __decorate([
+exports.ReviewsService = ReviewsService = ReviewsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof notifications_service_1.NotificationService !== "undefined" && notifications_service_1.NotificationService) === "function" ? _b : Object])
 ], ReviewsService);
@@ -33150,14 +33115,729 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReviewsModule = void 0;
+const common_1 = __webpack_require__(2);
+const reviews_controller_1 = __webpack_require__(240);
+const reviews_service_1 = __webpack_require__(229);
+const prisma_module_1 = __webpack_require__(9);
+const notifications_module_1 = __webpack_require__(234);
+let ReviewsModule = class ReviewsModule {
+};
+exports.ReviewsModule = ReviewsModule;
+exports.ReviewsModule = ReviewsModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            prisma_module_1.PrismaModule,
+            notifications_module_1.NotificationModule
+        ],
+        controllers: [reviews_controller_1.ReviewsController],
+        providers: [reviews_service_1.ReviewsService],
+        exports: [reviews_service_1.ReviewsService]
+    })
+], ReviewsModule);
+
+
+/***/ }),
+/* 240 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReviewsController = void 0;
+const common_1 = __webpack_require__(2);
+const swagger_1 = __webpack_require__(4);
+const reviews_service_1 = __webpack_require__(229);
+const jwt_auth_guard_1 = __webpack_require__(23);
+const roles_guard_1 = __webpack_require__(29);
+const roles_decorator_1 = __webpack_require__(30);
+const current_user_decorator_1 = __webpack_require__(25);
+const client_1 = __webpack_require__(11);
+const dto_1 = __webpack_require__(241);
+let ReviewsController = class ReviewsController {
+    constructor(reviewsService) {
+        this.reviewsService = reviewsService;
+    }
+    async findAll(filters) {
+        return this.reviewsService.findAll(filters);
+    }
+    async getProductStats(productId) {
+        return this.reviewsService.getProductStats(productId);
+    }
+    async getSellerStats(sellerId) {
+        return this.reviewsService.getSellerStats(sellerId);
+    }
+    async findOne(id) {
+        return this.reviewsService.findOne(id);
+    }
+    async create(userId, createReviewDto) {
+        return this.reviewsService.createReview(userId, createReviewDto);
+    }
+    async update(userId, id, updateReviewDto) {
+        return this.reviewsService.updateReview(userId, id, updateReviewDto);
+    }
+    async createResponse(userId, reviewId, responseDto) {
+        return this.reviewsService.createResponse(userId, reviewId, responseDto);
+    }
+    async voteReview(userId, reviewId, voteDto) {
+        return this.reviewsService.voteReview(userId, reviewId, voteDto);
+    }
+    async reportReview(userId, reviewId, reportDto) {
+        return this.reviewsService.reportReview(userId, reviewId, reportDto);
+    }
+    async getAdminStats() {
+        return this.reviewsService.getAdminStats();
+    }
+    async getPendingReviews(page, limit) {
+        return this.reviewsService.getPendingReviews(page, limit);
+    }
+    async moderateReview(adminId, reviewId, moderateDto) {
+        return this.reviewsService.moderateReview(adminId, reviewId, moderateDto);
+    }
+    async deleteReview(reviewId) {
+        return this.reviewsService.deleteReview(reviewId);
+    }
+};
+exports.ReviewsController = ReviewsController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get reviews with filters' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Reviews retrieved successfully' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof dto_1.FilterReviewDto !== "undefined" && dto_1.FilterReviewDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('products/:productId/stats'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get product review statistics' }),
+    (0, swagger_1.ApiParam)({ name: 'productId', description: 'Product ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Product stats retrieved' }),
+    __param(0, (0, common_1.Param)('productId', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "getProductStats", null);
+__decorate([
+    (0, common_1.Get)('sellers/:sellerId/stats'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get seller review statistics' }),
+    (0, swagger_1.ApiParam)({ name: 'sellerId', description: 'Seller ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Seller stats retrieved' }),
+    __param(0, (0, common_1.Param)('sellerId', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "getSellerStats", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get review by ID' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review found' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.BUYER),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a review' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Review created successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid input' }),
+    (0, swagger_1.ApiResponse)({ status: 409, description: 'Review already exists' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_c = typeof dto_1.CreateReviewDto !== "undefined" && dto_1.CreateReviewDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Update own review' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review updated successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Not authorized to update this review' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, typeof (_d = typeof dto_1.UpdateReviewDto !== "undefined" && dto_1.UpdateReviewDto) === "function" ? _d : Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Post)(':id/response'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SELLER),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Respond to a review' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Response created successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Not authorized to respond to this review' }),
+    (0, swagger_1.ApiResponse)({ status: 409, description: 'Response already exists' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, typeof (_e = typeof dto_1.CreateReviewResponseDto !== "undefined" && dto_1.CreateReviewResponseDto) === "function" ? _e : Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "createResponse", null);
+__decorate([
+    (0, common_1.Post)(':id/vote'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Vote on review helpfulness' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Vote recorded successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Cannot vote on own review' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, typeof (_f = typeof dto_1.ReviewVoteDto !== "undefined" && dto_1.ReviewVoteDto) === "function" ? _f : Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "voteReview", null);
+__decorate([
+    (0, common_1.Post)(':id/report'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Report inappropriate review' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Report submitted successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 409, description: 'Already reported this review' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, typeof (_g = typeof dto_1.ReportReviewDto !== "undefined" && dto_1.ReportReviewDto) === "function" ? _g : Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "reportReview", null);
+__decorate([
+    (0, common_1.Get)('admin/stats'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get admin review statistics' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Admin stats retrieved successfully' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "getAdminStats", null);
+__decorate([
+    (0, common_1.Get)('admin/pending'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get pending reviews for moderation' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Pending reviews retrieved successfully' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "getPendingReviews", null);
+__decorate([
+    (0, common_1.Put)('admin/:id/moderate'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Moderate a review' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review moderated successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, typeof (_h = typeof dto_1.ModerateReviewDto !== "undefined" && dto_1.ModerateReviewDto) === "function" ? _h : Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "moderateReview", null);
+__decorate([
+    (0, common_1.Delete)('admin/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a review' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review deleted successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "deleteReview", null);
+exports.ReviewsController = ReviewsController = __decorate([
+    (0, swagger_1.ApiTags)('Reviews'),
+    (0, common_1.Controller)('reviews'),
+    __metadata("design:paramtypes", [typeof (_a = typeof reviews_service_1.ReviewsService !== "undefined" && reviews_service_1.ReviewsService) === "function" ? _a : Object])
+], ReviewsController);
+
+
+/***/ }),
+/* 241 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ModerateReviewDto = exports.FilterReviewDto = exports.ReportReviewDto = exports.ReviewVoteDto = exports.CreateReviewResponseDto = exports.UpdateReviewDto = exports.CreateReviewDto = void 0;
+var create_review_dto_1 = __webpack_require__(242);
+Object.defineProperty(exports, "CreateReviewDto", ({ enumerable: true, get: function () { return create_review_dto_1.CreateReviewDto; } }));
+var update_review_dto_1 = __webpack_require__(243);
+Object.defineProperty(exports, "UpdateReviewDto", ({ enumerable: true, get: function () { return update_review_dto_1.UpdateReviewDto; } }));
+Object.defineProperty(exports, "CreateReviewResponseDto", ({ enumerable: true, get: function () { return update_review_dto_1.CreateReviewResponseDto; } }));
+var review_vote_dto_1 = __webpack_require__(244);
+Object.defineProperty(exports, "ReviewVoteDto", ({ enumerable: true, get: function () { return review_vote_dto_1.ReviewVoteDto; } }));
+var report_review_dto_1 = __webpack_require__(245);
+Object.defineProperty(exports, "ReportReviewDto", ({ enumerable: true, get: function () { return report_review_dto_1.ReportReviewDto; } }));
+var filter_review_dto_1 = __webpack_require__(246);
+Object.defineProperty(exports, "FilterReviewDto", ({ enumerable: true, get: function () { return filter_review_dto_1.FilterReviewDto; } }));
+var moderate_review_dto_1 = __webpack_require__(247);
+Object.defineProperty(exports, "ModerateReviewDto", ({ enumerable: true, get: function () { return moderate_review_dto_1.ModerateReviewDto; } }));
+
+
+/***/ }),
+/* 242 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CreateReviewDto = void 0;
+const class_validator_1 = __webpack_require__(22);
+const swagger_1 = __webpack_require__(4);
+class CreateReviewDto {
+}
+exports.CreateReviewDto = CreateReviewDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Order ID for verified purchase',
+        example: 'clp1234567890'
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'orderId.required' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'orderId.invalid' }),
+    __metadata("design:type", String)
+], CreateReviewDto.prototype, "orderId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Product being reviewed',
+        example: 'clp0987654321'
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'productId.required' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'productId.invalid' }),
+    __metadata("design:type", String)
+], CreateReviewDto.prototype, "productId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Rating from 1 to 5 stars',
+        minimum: 1,
+        maximum: 5,
+        example: 5
+    }),
+    (0, class_validator_1.IsInt)({ message: 'rating.mustBeInteger' }),
+    (0, class_validator_1.Min)(1, { message: 'rating.tooLow' }),
+    (0, class_validator_1.Max)(5, { message: 'rating.tooHigh' }),
+    __metadata("design:type", Number)
+], CreateReviewDto.prototype, "rating", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Review title',
+        maxLength: 100,
+        example: 'Great furniture design!'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'title.mustBeString' }),
+    (0, class_validator_1.MaxLength)(100, { message: 'title.tooLong' }),
+    __metadata("design:type", String)
+], CreateReviewDto.prototype, "title", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Review comment',
+        minLength: 10,
+        maxLength: 2000,
+        example: 'This furniture design exceeded my expectations...'
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'comment.required' }),
+    (0, class_validator_1.IsString)({ message: 'comment.mustBeString' }),
+    (0, class_validator_1.MinLength)(10, { message: 'comment.tooShort' }),
+    (0, class_validator_1.MaxLength)(2000, { message: 'comment.tooLong' }),
+    __metadata("design:type", String)
+], CreateReviewDto.prototype, "comment", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Positive aspects (pros)',
+        maxLength: 500,
+        example: 'Easy to follow instructions, beautiful result'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'pros.mustBeString' }),
+    (0, class_validator_1.MaxLength)(500, { message: 'pros.tooLong' }),
+    __metadata("design:type", String)
+], CreateReviewDto.prototype, "pros", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Negative aspects (cons)',
+        maxLength: 500,
+        example: 'Some measurements could be clearer'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'cons.mustBeString' }),
+    (0, class_validator_1.MaxLength)(500, { message: 'cons.tooLong' }),
+    __metadata("design:type", String)
+], CreateReviewDto.prototype, "cons", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Review images (file IDs)',
+        type: [String],
+        maxItems: 5,
+        example: ['clp1111111111', 'clp2222222222']
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)({ message: 'images.mustBeArray' }),
+    (0, class_validator_1.IsUUID)('4', { each: true, message: 'images.invalidId' }),
+    __metadata("design:type", Array)
+], CreateReviewDto.prototype, "images", void 0);
+
+
+/***/ }),
+/* 243 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CreateReviewResponseDto = exports.UpdateReviewDto = void 0;
+const swagger_1 = __webpack_require__(4);
+const create_review_dto_1 = __webpack_require__(242);
+class UpdateReviewDto extends (0, swagger_1.PartialType)((0, swagger_1.OmitType)(create_review_dto_1.CreateReviewDto, ['orderId', 'productId'])) {
+}
+exports.UpdateReviewDto = UpdateReviewDto;
+const class_validator_1 = __webpack_require__(22);
+const swagger_2 = __webpack_require__(4);
+class CreateReviewResponseDto {
+}
+exports.CreateReviewResponseDto = CreateReviewResponseDto;
+__decorate([
+    (0, swagger_2.ApiProperty)({
+        description: 'Seller response to the review',
+        minLength: 10,
+        maxLength: 1000,
+        example: 'Thank you for your feedback! We really appreciate...'
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'comment.required' }),
+    (0, class_validator_1.IsString)({ message: 'comment.mustBeString' }),
+    (0, class_validator_1.MinLength)(10, { message: 'comment.tooShort' }),
+    (0, class_validator_1.MaxLength)(1000, { message: 'comment.tooLong' }),
+    __metadata("design:type", String)
+], CreateReviewResponseDto.prototype, "comment", void 0);
+
+
+/***/ }),
+/* 244 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReviewVoteDto = void 0;
+const class_validator_1 = __webpack_require__(22);
+const swagger_1 = __webpack_require__(4);
+const client_1 = __webpack_require__(11);
+class ReviewVoteDto {
+}
+exports.ReviewVoteDto = ReviewVoteDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Vote type',
+        enum: client_1.ReviewHelpfulness,
+        example: 'HELPFUL'
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'vote.required' }),
+    (0, class_validator_1.IsIn)(['HELPFUL', 'NOT_HELPFUL'], { message: 'vote.invalid' }),
+    __metadata("design:type", typeof (_a = typeof client_1.ReviewHelpfulness !== "undefined" && client_1.ReviewHelpfulness) === "function" ? _a : Object)
+], ReviewVoteDto.prototype, "vote", void 0);
+
+
+/***/ }),
+/* 245 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReportReviewDto = void 0;
+const class_validator_1 = __webpack_require__(22);
+const swagger_1 = __webpack_require__(4);
+class ReportReviewDto {
+}
+exports.ReportReviewDto = ReportReviewDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Reason for reporting',
+        enum: ['spam', 'inappropriate', 'fake', 'harassment', 'other'],
+        example: 'inappropriate'
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'reason.required' }),
+    (0, class_validator_1.IsIn)(['spam', 'inappropriate', 'fake', 'harassment', 'other'], {
+        message: 'reason.invalid'
+    }),
+    __metadata("design:type", String)
+], ReportReviewDto.prototype, "reason", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Additional details about the report',
+        maxLength: 500,
+        example: 'This review contains offensive language...'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'details.mustBeString' }),
+    (0, class_validator_1.MaxLength)(500, { message: 'details.tooLong' }),
+    __metadata("design:type", String)
+], ReportReviewDto.prototype, "details", void 0);
+
+
+/***/ }),
+/* 246 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FilterReviewDto = void 0;
+const class_validator_1 = __webpack_require__(22);
+const class_transformer_1 = __webpack_require__(39);
+const swagger_1 = __webpack_require__(4);
+const client_1 = __webpack_require__(11);
+class FilterReviewDto {
+    constructor() {
+        this.sortBy = 'newest';
+        this.page = 1;
+        this.limit = 12;
+    }
+}
+exports.FilterReviewDto = FilterReviewDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Product ID to filter reviews',
+        example: 'clp0987654321'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { message: 'productId.invalid' }),
+    __metadata("design:type", String)
+], FilterReviewDto.prototype, "productId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Seller ID to filter reviews',
+        example: 'clp1234567890'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { message: 'sellerId.invalid' }),
+    __metadata("design:type", String)
+], FilterReviewDto.prototype, "sellerId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Filter by rating',
+        minimum: 1,
+        maximum: 5,
+        example: 5
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)({ message: 'rating.mustBeInteger' }),
+    (0, class_validator_1.Min)(1, { message: 'rating.tooLow' }),
+    (0, class_validator_1.Max)(5, { message: 'rating.tooHigh' }),
+    __metadata("design:type", Number)
+], FilterReviewDto.prototype, "rating", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Filter by review status',
+        enum: client_1.ReviewStatus,
+        example: 'PUBLISHED'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(['PENDING_MODERATION', 'PUBLISHED', 'FLAGGED', 'REMOVED'], {
+        message: 'status.invalid'
+    }),
+    __metadata("design:type", typeof (_a = typeof client_1.ReviewStatus !== "undefined" && client_1.ReviewStatus) === "function" ? _a : Object)
+], FilterReviewDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Sort by',
+        enum: ['newest', 'oldest', 'highest', 'lowest', 'helpful'],
+        example: 'newest'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(['newest', 'oldest', 'highest', 'lowest', 'helpful'], {
+        message: 'sortBy.invalid'
+    }),
+    __metadata("design:type", String)
+], FilterReviewDto.prototype, "sortBy", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Page number',
+        minimum: 1,
+        example: 1
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)({ message: 'page.mustBeInteger' }),
+    (0, class_validator_1.Min)(1, { message: 'page.tooLow' }),
+    __metadata("design:type", Number)
+], FilterReviewDto.prototype, "page", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Items per page',
+        minimum: 1,
+        maximum: 50,
+        example: 12
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)({ message: 'limit.mustBeInteger' }),
+    (0, class_validator_1.Min)(1, { message: 'limit.tooLow' }),
+    (0, class_validator_1.Max)(50, { message: 'limit.tooHigh' }),
+    __metadata("design:type", Number)
+], FilterReviewDto.prototype, "limit", void 0);
+
+
+/***/ }),
+/* 247 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ModerateReviewDto = void 0;
+const class_validator_1 = __webpack_require__(22);
+const swagger_1 = __webpack_require__(4);
+const client_1 = __webpack_require__(11);
+class ModerateReviewDto {
+}
+exports.ModerateReviewDto = ModerateReviewDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'New review status',
+        enum: client_1.ReviewStatus,
+        example: 'PUBLISHED'
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'status.required' }),
+    (0, class_validator_1.IsIn)(['PENDING_MODERATION', 'PUBLISHED', 'FLAGGED', 'REMOVED'], {
+        message: 'status.invalid'
+    }),
+    __metadata("design:type", typeof (_a = typeof client_1.ReviewStatus !== "undefined" && client_1.ReviewStatus) === "function" ? _a : Object)
+], ModerateReviewDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Reason for moderation action',
+        maxLength: 500,
+        example: 'Review contains inappropriate language'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'reason.mustBeString' }),
+    (0, class_validator_1.MaxLength)(500, { message: 'reason.tooLong' }),
+    __metadata("design:type", String)
+], ModerateReviewDto.prototype, "reason", void 0);
+
+
+/***/ }),
+/* 248 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CheckoutModule = void 0;
 const common_1 = __webpack_require__(2);
-const checkout_controller_1 = __webpack_require__(240);
-const checkout_service_1 = __webpack_require__(241);
+const checkout_controller_1 = __webpack_require__(249);
+const checkout_service_1 = __webpack_require__(250);
 const prisma_module_1 = __webpack_require__(9);
 const cart_module_1 = __webpack_require__(210);
 const orders_module_1 = __webpack_require__(220);
-const stripe_module_1 = __webpack_require__(245);
+const stripe_module_1 = __webpack_require__(254);
 let CheckoutModule = class CheckoutModule {
 };
 exports.CheckoutModule = CheckoutModule;
@@ -33177,7 +33857,7 @@ exports.CheckoutModule = CheckoutModule = __decorate([
 
 
 /***/ }),
-/* 240 */
+/* 249 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -33199,11 +33879,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CheckoutController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const checkout_service_1 = __webpack_require__(241);
+const checkout_service_1 = __webpack_require__(250);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
-const checkout_dto_1 = __webpack_require__(244);
+const checkout_dto_1 = __webpack_require__(253);
 const client_1 = __webpack_require__(11);
 let CheckoutController = class CheckoutController {
     constructor(checkoutService) {
@@ -33362,7 +34042,7 @@ exports.CheckoutController = CheckoutController = __decorate([
 
 
 /***/ }),
-/* 241 */
+/* 250 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -33376,6 +34056,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var CheckoutService_1;
 var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CheckoutService = void 0;
@@ -33384,14 +34065,15 @@ const config_1 = __webpack_require__(3);
 const prisma_service_1 = __webpack_require__(10);
 const cart_service_1 = __webpack_require__(212);
 const orders_service_1 = __webpack_require__(222);
-const stripe_service_1 = __webpack_require__(242);
-let CheckoutService = class CheckoutService {
+const stripe_service_1 = __webpack_require__(251);
+let CheckoutService = CheckoutService_1 = class CheckoutService {
     constructor(prisma, cartService, ordersService, stripeService, configService) {
         this.prisma = prisma;
         this.cartService = cartService;
         this.ordersService = ordersService;
         this.stripeService = stripeService;
         this.configService = configService;
+        this.logger = new common_1.Logger(CheckoutService_1.name);
     }
     async createCheckoutSession(userId, dto) {
         const cart = await this.cartService.getCart(userId);
@@ -33472,7 +34154,7 @@ let CheckoutService = class CheckoutService {
             return new Date() < expirationTime && order.status === 'PENDING';
         }
         catch (error) {
-            console.error('Error validating checkout session:', error);
+            this.logger.error('Error validating checkout session', error.stack);
             return false;
         }
     }
@@ -33654,14 +34336,14 @@ let CheckoutService = class CheckoutService {
     }
 };
 exports.CheckoutService = CheckoutService;
-exports.CheckoutService = CheckoutService = __decorate([
+exports.CheckoutService = CheckoutService = CheckoutService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object, typeof (_b = typeof cart_service_1.CartService !== "undefined" && cart_service_1.CartService) === "function" ? _b : Object, typeof (_c = typeof orders_service_1.OrdersService !== "undefined" && orders_service_1.OrdersService) === "function" ? _c : Object, typeof (_d = typeof stripe_service_1.StripeService !== "undefined" && stripe_service_1.StripeService) === "function" ? _d : Object, typeof (_e = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _e : Object])
 ], CheckoutService);
 
 
 /***/ }),
-/* 242 */
+/* 251 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -33687,7 +34369,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.StripeService = void 0;
 const common_1 = __webpack_require__(2);
 const config_1 = __webpack_require__(3);
-const stripe_1 = __importDefault(__webpack_require__(243));
+const stripe_1 = __importDefault(__webpack_require__(252));
 let StripeService = StripeService_1 = class StripeService {
     constructor(stripe, configService) {
         this.stripe = stripe;
@@ -34165,14 +34847,14 @@ exports.StripeService = StripeService = StripeService_1 = __decorate([
 
 
 /***/ }),
-/* 243 */
+/* 252 */
 /***/ ((module) => {
 
 "use strict";
 module.exports = require("stripe");
 
 /***/ }),
-/* 244 */
+/* 253 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -34381,7 +35063,7 @@ __decorate([
 
 
 /***/ }),
-/* 245 */
+/* 254 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -34396,7 +35078,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.StripeModule = void 0;
 const common_1 = __webpack_require__(2);
 const config_1 = __webpack_require__(3);
-const stripe_service_1 = __webpack_require__(242);
+const stripe_service_1 = __webpack_require__(251);
 let StripeModule = class StripeModule {
 };
 exports.StripeModule = StripeModule;
@@ -34407,7 +35089,7 @@ exports.StripeModule = StripeModule = __decorate([
             {
                 provide: 'STRIPE_CLIENT',
                 useFactory: (configService) => {
-                    const Stripe = __webpack_require__(243);
+                    const Stripe = __webpack_require__(252);
                     return new Stripe(configService.get('STRIPE_SECRET_KEY'), {
                         apiVersion: '2023-10-16',
                     });
@@ -34422,7 +35104,7 @@ exports.StripeModule = StripeModule = __decorate([
 
 
 /***/ }),
-/* 246 */
+/* 255 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -34436,8 +35118,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DownloadsModule = void 0;
 const common_1 = __webpack_require__(2);
-const downloads_controller_1 = __webpack_require__(247);
-const downloads_service_1 = __webpack_require__(248);
+const downloads_controller_1 = __webpack_require__(256);
+const downloads_service_1 = __webpack_require__(257);
 const prisma_module_1 = __webpack_require__(9);
 let DownloadsModule = class DownloadsModule {
 };
@@ -34453,7 +35135,7 @@ exports.DownloadsModule = DownloadsModule = __decorate([
 
 
 /***/ }),
-/* 247 */
+/* 256 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -34475,11 +35157,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DownloadsController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const downloads_service_1 = __webpack_require__(248);
+const downloads_service_1 = __webpack_require__(257);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
-const download_response_dto_1 = __webpack_require__(249);
+const download_response_dto_1 = __webpack_require__(258);
 const client_1 = __webpack_require__(11);
 const express_1 = __webpack_require__(51);
 let DownloadsController = class DownloadsController {
@@ -34563,7 +35245,7 @@ exports.DownloadsController = DownloadsController = __decorate([
 
 
 /***/ }),
-/* 248 */
+/* 257 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -34860,7 +35542,7 @@ exports.DownloadsService = DownloadsService = __decorate([
 
 
 /***/ }),
-/* 249 */
+/* 258 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -34943,7 +35625,7 @@ __decorate([
 
 
 /***/ }),
-/* 250 */
+/* 259 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -34957,12 +35639,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WebhookModule = void 0;
 const common_1 = __webpack_require__(2);
-const webhook_controller_1 = __webpack_require__(251);
-const stripe_webhook_service_1 = __webpack_require__(252);
-const stripe_module_1 = __webpack_require__(245);
+const webhook_controller_1 = __webpack_require__(260);
+const stripe_webhook_service_1 = __webpack_require__(261);
+const stripe_module_1 = __webpack_require__(254);
 const orders_module_1 = __webpack_require__(220);
 const prisma_module_1 = __webpack_require__(9);
-const payments_module_1 = __webpack_require__(254);
+const payments_module_1 = __webpack_require__(263);
 let WebhookModule = class WebhookModule {
 };
 exports.WebhookModule = WebhookModule;
@@ -34982,7 +35664,7 @@ exports.WebhookModule = WebhookModule = __decorate([
 
 
 /***/ }),
-/* 251 */
+/* 260 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -35005,7 +35687,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WebhookController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const stripe_webhook_service_1 = __webpack_require__(252);
+const stripe_webhook_service_1 = __webpack_require__(261);
 let WebhookController = WebhookController_1 = class WebhookController {
     constructor(stripeWebhookService) {
         this.stripeWebhookService = stripeWebhookService;
@@ -35151,7 +35833,7 @@ exports.WebhookController = WebhookController = WebhookController_1 = __decorate
 
 
 /***/ }),
-/* 252 */
+/* 261 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -35170,10 +35852,10 @@ var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.StripeWebhookService = void 0;
 const common_1 = __webpack_require__(2);
-const stripe_service_1 = __webpack_require__(242);
+const stripe_service_1 = __webpack_require__(251);
 const orders_service_1 = __webpack_require__(222);
 const prisma_service_1 = __webpack_require__(10);
-const payments_service_1 = __webpack_require__(253);
+const payments_service_1 = __webpack_require__(262);
 let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
     constructor(stripeService, ordersService, prisma, paymentsService) {
         this.stripeService = stripeService;
@@ -35627,7 +36309,7 @@ exports.StripeWebhookService = StripeWebhookService = StripeWebhookService_1 = _
 
 
 /***/ }),
-/* 253 */
+/* 262 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -35648,7 +36330,7 @@ exports.PaymentsService = void 0;
 const common_1 = __webpack_require__(2);
 const config_1 = __webpack_require__(3);
 const prisma_service_1 = __webpack_require__(10);
-const stripe_service_1 = __webpack_require__(242);
+const stripe_service_1 = __webpack_require__(251);
 let PaymentsService = PaymentsService_1 = class PaymentsService {
     constructor(prisma, stripeService, configService) {
         this.prisma = prisma;
@@ -36070,7 +36752,7 @@ exports.PaymentsService = PaymentsService = PaymentsService_1 = __decorate([
 
 
 /***/ }),
-/* 254 */
+/* 263 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -36084,11 +36766,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PaymentsModule = void 0;
 const common_1 = __webpack_require__(2);
-const payments_service_1 = __webpack_require__(253);
-const payments_controller_1 = __webpack_require__(255);
-const payment_checkout_controller_1 = __webpack_require__(259);
-const paypal_service_1 = __webpack_require__(258);
-const stripe_module_1 = __webpack_require__(245);
+const payments_service_1 = __webpack_require__(262);
+const payments_controller_1 = __webpack_require__(264);
+const payment_checkout_controller_1 = __webpack_require__(268);
+const paypal_service_1 = __webpack_require__(267);
+const stripe_module_1 = __webpack_require__(254);
 const prisma_module_1 = __webpack_require__(9);
 let PaymentsModule = class PaymentsModule {
 };
@@ -36116,7 +36798,7 @@ exports.PaymentsModule = PaymentsModule = __decorate([
 
 
 /***/ }),
-/* 255 */
+/* 264 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -36139,16 +36821,16 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PaymentsController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const payments_service_1 = __webpack_require__(253);
-const seller_onboarding_dto_1 = __webpack_require__(256);
-const payment_setup_dto_1 = __webpack_require__(257);
+const payments_service_1 = __webpack_require__(262);
+const seller_onboarding_dto_1 = __webpack_require__(265);
+const payment_setup_dto_1 = __webpack_require__(266);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
 const current_user_decorator_1 = __webpack_require__(25);
 const client_1 = __webpack_require__(11);
-const stripe_service_1 = __webpack_require__(242);
-const paypal_service_1 = __webpack_require__(258);
+const stripe_service_1 = __webpack_require__(251);
+const paypal_service_1 = __webpack_require__(267);
 let PaymentsController = PaymentsController_1 = class PaymentsController {
     constructor(paymentsService, stripeService, paypalService) {
         this.paymentsService = paymentsService;
@@ -36555,7 +37237,7 @@ exports.PaymentsController = PaymentsController = PaymentsController_1 = __decor
 
 
 /***/ }),
-/* 256 */
+/* 265 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -36682,7 +37364,7 @@ __decorate([
 
 
 /***/ }),
-/* 257 */
+/* 266 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -36790,7 +37472,7 @@ __decorate([
 
 
 /***/ }),
-/* 258 */
+/* 267 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -36993,7 +37675,7 @@ exports.PayPalService = PayPalService = PayPalService_1 = __decorate([
 
 
 /***/ }),
-/* 259 */
+/* 268 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -37018,8 +37700,8 @@ const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const current_user_decorator_1 = __webpack_require__(25);
-const stripe_service_1 = __webpack_require__(242);
-const paypal_service_1 = __webpack_require__(258);
+const stripe_service_1 = __webpack_require__(251);
+const paypal_service_1 = __webpack_require__(267);
 const prisma_service_1 = __webpack_require__(10);
 let PaymentCheckoutController = PaymentCheckoutController_1 = class PaymentCheckoutController {
     constructor(stripeService, paypalService, prisma) {
@@ -37153,30 +37835,28 @@ let PaymentCheckoutController = PaymentCheckoutController_1 = class PaymentCheck
             await this.prisma.cartItem.deleteMany({
                 where: { userId: user.id }
             });
-            const downloadTokens = [];
-            for (const item of order.items) {
-                const downloadToken = await this.prisma.downloadToken.create({
-                    data: {
-                        token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-                        orderId: order.id,
-                        productId: item.productId,
-                        buyerId: user.id,
-                        downloadLimit: 5,
-                        downloadCount: 0,
-                        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                        isActive: true,
-                    }
-                });
-                downloadTokens.push(downloadToken);
-            }
-            this.logger.log(`Stripe payment completed for order ${order.id} with ${downloadTokens.length} download tokens`);
+            const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const { count: downloadTokenCount } = await this.prisma.downloadToken.createMany({
+                data: order.items.map((item) => ({
+                    token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                    orderId: order.id,
+                    productId: item.productId,
+                    buyerId: user.id,
+                    downloadLimit: 5,
+                    downloadCount: 0,
+                    expiresAt,
+                    isActive: true,
+                })),
+                skipDuplicates: true,
+            });
+            this.logger.log(`Stripe payment completed for order ${order.id} with ${downloadTokenCount} download tokens`);
             return {
                 success: true,
                 status: 'COMPLETED',
                 paymentId: paymentIntent.id,
                 orderId: order.id,
                 orderNumber: order.orderNumber,
-                downloadTokensCount: downloadTokens.length,
+                downloadTokensCount: downloadTokenCount,
             };
         }
         catch (error) {
@@ -37315,30 +37995,28 @@ let PaymentCheckoutController = PaymentCheckoutController_1 = class PaymentCheck
             await this.prisma.cartItem.deleteMany({
                 where: { userId: user.id }
             });
-            const downloadTokens = [];
-            for (const item of order.items) {
-                const downloadToken = await this.prisma.downloadToken.create({
-                    data: {
-                        token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-                        orderId: order.id,
-                        productId: item.productId,
-                        buyerId: user.id,
-                        downloadLimit: 5,
-                        downloadCount: 0,
-                        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                        isActive: true,
-                    }
-                });
-                downloadTokens.push(downloadToken);
-            }
-            this.logger.log(`PayPal payment completed for order ${order.id} with ${downloadTokens.length} download tokens`);
+            const paypalExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const { count: paypalTokenCount } = await this.prisma.downloadToken.createMany({
+                data: order.items.map((item) => ({
+                    token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                    orderId: order.id,
+                    productId: item.productId,
+                    buyerId: user.id,
+                    downloadLimit: 5,
+                    downloadCount: 0,
+                    expiresAt: paypalExpiresAt,
+                    isActive: true,
+                })),
+                skipDuplicates: true,
+            });
+            this.logger.log(`PayPal payment completed for order ${order.id} with ${paypalTokenCount} download tokens`);
             return {
                 success: true,
                 status: 'COMPLETED',
                 paymentId: captureResult.paymentId,
                 orderId: order.id,
                 orderNumber: order.orderNumber,
-                downloadTokensCount: downloadTokens.length,
+                downloadTokensCount: paypalTokenCount,
             };
         }
         catch (error) {
@@ -37466,7 +38144,7 @@ exports.PaymentCheckoutController = PaymentCheckoutController = PaymentCheckoutC
 
 
 /***/ }),
-/* 260 */
+/* 269 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -37481,10 +38159,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CronModule = void 0;
 const common_1 = __webpack_require__(2);
 const schedule_1 = __webpack_require__(8);
-const cron_service_1 = __webpack_require__(261);
+const cron_service_1 = __webpack_require__(270);
 const cart_module_1 = __webpack_require__(210);
 const orders_module_1 = __webpack_require__(220);
-const downloads_module_1 = __webpack_require__(246);
+const downloads_module_1 = __webpack_require__(255);
 let CronModule = class CronModule {
 };
 exports.CronModule = CronModule;
@@ -37502,7 +38180,7 @@ exports.CronModule = CronModule = __decorate([
 
 
 /***/ }),
-/* 261 */
+/* 270 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -37524,7 +38202,7 @@ const common_1 = __webpack_require__(2);
 const schedule_1 = __webpack_require__(8);
 const cart_service_1 = __webpack_require__(212);
 const orders_service_1 = __webpack_require__(222);
-const downloads_service_1 = __webpack_require__(248);
+const downloads_service_1 = __webpack_require__(257);
 let CronService = CronService_1 = class CronService {
     constructor(cartService, ordersService, downloadsService) {
         this.cartService = cartService;
@@ -37604,7 +38282,7 @@ exports.CronService = CronService = CronService_1 = __decorate([
 
 
 /***/ }),
-/* 262 */
+/* 271 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -37618,10 +38296,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AdminModule = void 0;
 const common_1 = __webpack_require__(2);
-const admin_analytics_module_1 = __webpack_require__(263);
-const admin_orders_controller_1 = __webpack_require__(268);
-const admin_controller_1 = __webpack_require__(269);
-const admin_service_1 = __webpack_require__(270);
+const admin_analytics_module_1 = __webpack_require__(272);
+const admin_orders_controller_1 = __webpack_require__(277);
+const admin_controller_1 = __webpack_require__(278);
+const admin_service_1 = __webpack_require__(279);
 const orders_module_1 = __webpack_require__(220);
 const users_module_1 = __webpack_require__(27);
 const products_module_1 = __webpack_require__(35);
@@ -37654,7 +38332,7 @@ exports.AdminModule = AdminModule = __decorate([
 
 
 /***/ }),
-/* 263 */
+/* 272 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -37668,8 +38346,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AdminAnalyticsModule = void 0;
 const common_1 = __webpack_require__(2);
-const admin_analytics_controller_1 = __webpack_require__(264);
-const admin_analytics_service_1 = __webpack_require__(265);
+const admin_analytics_controller_1 = __webpack_require__(273);
+const admin_analytics_service_1 = __webpack_require__(274);
 const prisma_module_1 = __webpack_require__(9);
 let AdminAnalyticsModule = class AdminAnalyticsModule {
 };
@@ -37685,7 +38363,7 @@ exports.AdminAnalyticsModule = AdminAnalyticsModule = __decorate([
 
 
 /***/ }),
-/* 264 */
+/* 273 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -37707,12 +38385,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AdminAnalyticsController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const admin_analytics_service_1 = __webpack_require__(265);
+const admin_analytics_service_1 = __webpack_require__(274);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
-const admin_analytics_dto_1 = __webpack_require__(266);
-const analytics_response_dto_1 = __webpack_require__(267);
+const admin_analytics_dto_1 = __webpack_require__(275);
+const analytics_response_dto_1 = __webpack_require__(276);
 const client_1 = __webpack_require__(11);
 let AdminAnalyticsController = class AdminAnalyticsController {
     constructor(analyticsService) {
@@ -37815,7 +38493,7 @@ exports.AdminAnalyticsController = AdminAnalyticsController = __decorate([
 
 
 /***/ }),
-/* 265 */
+/* 274 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -38148,7 +38826,7 @@ exports.AdminAnalyticsService = AdminAnalyticsService = __decorate([
 
 
 /***/ }),
-/* 266 */
+/* 275 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -38241,7 +38919,7 @@ __decorate([
 
 
 /***/ }),
-/* 267 */
+/* 276 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -38405,7 +39083,7 @@ __decorate([
 
 
 /***/ }),
-/* 268 */
+/* 277 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -38595,7 +39273,7 @@ exports.AdminOrdersController = AdminOrdersController = __decorate([
 
 
 /***/ }),
-/* 269 */
+/* 278 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -38617,7 +39295,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AdminController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const admin_service_1 = __webpack_require__(270);
+const admin_service_1 = __webpack_require__(279);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
@@ -38782,7 +39460,7 @@ exports.AdminController = AdminController = __decorate([
 
 
 /***/ }),
-/* 270 */
+/* 279 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -39156,7 +39834,7 @@ exports.AdminService = AdminService = AdminService_1 = __decorate([
 
 
 /***/ }),
-/* 271 */
+/* 280 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -39170,10 +39848,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PayoutsModule = void 0;
 const common_1 = __webpack_require__(2);
-const payouts_controller_1 = __webpack_require__(272);
-const payouts_service_1 = __webpack_require__(273);
+const payouts_controller_1 = __webpack_require__(281);
+const payouts_service_1 = __webpack_require__(282);
 const prisma_module_1 = __webpack_require__(9);
-const stripe_module_1 = __webpack_require__(245);
+const stripe_module_1 = __webpack_require__(254);
 let PayoutsModule = class PayoutsModule {
 };
 exports.PayoutsModule = PayoutsModule;
@@ -39191,7 +39869,7 @@ exports.PayoutsModule = PayoutsModule = __decorate([
 
 
 /***/ }),
-/* 272 */
+/* 281 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -39214,10 +39892,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PayoutsController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const payouts_service_1 = __webpack_require__(273);
-const request_payout_dto_1 = __webpack_require__(274);
-const payout_filter_dto_1 = __webpack_require__(275);
-const update_payout_dto_1 = __webpack_require__(276);
+const payouts_service_1 = __webpack_require__(282);
+const request_payout_dto_1 = __webpack_require__(283);
+const payout_filter_dto_1 = __webpack_require__(284);
+const update_payout_dto_1 = __webpack_require__(285);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
@@ -39494,7 +40172,7 @@ exports.PayoutsController = PayoutsController = PayoutsController_1 = __decorate
 
 
 /***/ }),
-/* 273 */
+/* 282 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -39518,7 +40196,7 @@ exports.PayoutsService = void 0;
 const common_1 = __webpack_require__(2);
 const config_1 = __webpack_require__(3);
 const prisma_service_1 = __webpack_require__(10);
-const stripe_service_1 = __webpack_require__(242);
+const stripe_service_1 = __webpack_require__(251);
 let PayoutsService = PayoutsService_1 = class PayoutsService {
     constructor(prisma, stripeService, configService) {
         this.prisma = prisma;
@@ -40020,7 +40698,7 @@ exports.PayoutsService = PayoutsService = PayoutsService_1 = __decorate([
 
 
 /***/ }),
-/* 274 */
+/* 283 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -40100,7 +40778,7 @@ __decorate([
 
 
 /***/ }),
-/* 275 */
+/* 284 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -40257,7 +40935,7 @@ __decorate([
 
 
 /***/ }),
-/* 276 */
+/* 285 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -40353,7 +41031,7 @@ __decorate([
 
 
 /***/ }),
-/* 277 */
+/* 286 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -40367,10 +41045,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TransactionsModule = void 0;
 const common_1 = __webpack_require__(2);
-const transactions_controller_1 = __webpack_require__(278);
-const transactions_service_1 = __webpack_require__(279);
+const transactions_controller_1 = __webpack_require__(287);
+const transactions_service_1 = __webpack_require__(288);
 const prisma_module_1 = __webpack_require__(9);
-const stripe_module_1 = __webpack_require__(245);
+const stripe_module_1 = __webpack_require__(254);
 let TransactionsModule = class TransactionsModule {
 };
 exports.TransactionsModule = TransactionsModule;
@@ -40388,7 +41066,7 @@ exports.TransactionsModule = TransactionsModule = __decorate([
 
 
 /***/ }),
-/* 278 */
+/* 287 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -40411,8 +41089,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TransactionsController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
-const transactions_service_1 = __webpack_require__(279);
-const transaction_filter_dto_1 = __webpack_require__(280);
+const transactions_service_1 = __webpack_require__(288);
+const transaction_filter_dto_1 = __webpack_require__(289);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
@@ -40647,7 +41325,7 @@ exports.TransactionsController = TransactionsController = TransactionsController
 
 
 /***/ }),
-/* 279 */
+/* 288 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -40670,7 +41348,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TransactionsService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(10);
-const stripe_service_1 = __webpack_require__(242);
+const stripe_service_1 = __webpack_require__(251);
 let TransactionsService = TransactionsService_1 = class TransactionsService {
     constructor(prisma, stripeService) {
         this.prisma = prisma;
@@ -41158,7 +41836,7 @@ exports.TransactionsService = TransactionsService = TransactionsService_1 = __de
 
 
 /***/ }),
-/* 280 */
+/* 289 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -41357,7 +42035,7 @@ __decorate([
 
 
 /***/ }),
-/* 281 */
+/* 290 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -41371,10 +42049,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.InvoicesModule = void 0;
 const common_1 = __webpack_require__(2);
-const invoices_controller_1 = __webpack_require__(282);
-const invoices_service_1 = __webpack_require__(283);
+const invoices_controller_1 = __webpack_require__(291);
+const invoices_service_1 = __webpack_require__(292);
 const prisma_module_1 = __webpack_require__(9);
-const stripe_module_1 = __webpack_require__(245);
+const stripe_module_1 = __webpack_require__(254);
 let InvoicesModule = class InvoicesModule {
 };
 exports.InvoicesModule = InvoicesModule;
@@ -41392,7 +42070,7 @@ exports.InvoicesModule = InvoicesModule = __decorate([
 
 
 /***/ }),
-/* 282 */
+/* 291 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -41416,8 +42094,8 @@ exports.InvoicesController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
 const express_1 = __webpack_require__(51);
-const invoices_service_1 = __webpack_require__(283);
-const generate_invoice_dto_1 = __webpack_require__(284);
+const invoices_service_1 = __webpack_require__(292);
+const generate_invoice_dto_1 = __webpack_require__(293);
 const jwt_auth_guard_1 = __webpack_require__(23);
 const roles_guard_1 = __webpack_require__(29);
 const roles_decorator_1 = __webpack_require__(30);
@@ -41771,7 +42449,7 @@ exports.InvoicesController = InvoicesController = InvoicesController_1 = __decor
 
 
 /***/ }),
-/* 283 */
+/* 292 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -42384,7 +43062,7 @@ exports.InvoicesService = InvoicesService = InvoicesService_1 = __decorate([
 
 
 /***/ }),
-/* 284 */
+/* 293 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -42583,7 +43261,7 @@ __decorate([
 
 
 /***/ }),
-/* 285 */
+/* 294 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -42598,17 +43276,17 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnalyticsModule = void 0;
 const common_1 = __webpack_require__(2);
 const config_1 = __webpack_require__(3);
-const analytics_service_1 = __webpack_require__(286);
-const analytics_controller_1 = __webpack_require__(291);
-const analytics_query_service_1 = __webpack_require__(287);
-const analytics_calculation_service_1 = __webpack_require__(288);
-const analytics_cache_service_1 = __webpack_require__(289);
+const analytics_service_1 = __webpack_require__(295);
+const analytics_controller_1 = __webpack_require__(300);
+const analytics_query_service_1 = __webpack_require__(296);
+const analytics_calculation_service_1 = __webpack_require__(297);
+const analytics_cache_service_1 = __webpack_require__(298);
 const prisma_module_1 = __webpack_require__(9);
 const users_module_1 = __webpack_require__(27);
 const orders_module_1 = __webpack_require__(220);
-const reviews_module_1 = __webpack_require__(296);
+const reviews_module_1 = __webpack_require__(239);
 const notifications_module_1 = __webpack_require__(234);
-const transactions_module_1 = __webpack_require__(277);
+const transactions_module_1 = __webpack_require__(286);
 const products_module_1 = __webpack_require__(35);
 let AnalyticsModule = class AnalyticsModule {
 };
@@ -42638,7 +43316,7 @@ exports.AnalyticsModule = AnalyticsModule = __decorate([
 
 
 /***/ }),
-/* 286 */
+/* 295 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -42659,9 +43337,9 @@ exports.AnalyticsService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(10);
 const client_1 = __webpack_require__(11);
-const analytics_query_service_1 = __webpack_require__(287);
-const analytics_calculation_service_1 = __webpack_require__(288);
-const analytics_cache_service_1 = __webpack_require__(289);
+const analytics_query_service_1 = __webpack_require__(296);
+const analytics_calculation_service_1 = __webpack_require__(297);
+const analytics_cache_service_1 = __webpack_require__(298);
 let AnalyticsService = AnalyticsService_1 = class AnalyticsService {
     constructor(prisma, query, calc, cache) {
         this.prisma = prisma;
@@ -42924,7 +43602,7 @@ exports.AnalyticsService = AnalyticsService = AnalyticsService_1 = __decorate([
 
 
 /***/ }),
-/* 287 */
+/* 296 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -42945,7 +43623,7 @@ exports.AnalyticsQueryService = void 0;
 const common_1 = __webpack_require__(2);
 const prisma_service_1 = __webpack_require__(10);
 const client_1 = __webpack_require__(11);
-const analytics_calculation_service_1 = __webpack_require__(288);
+const analytics_calculation_service_1 = __webpack_require__(297);
 let AnalyticsQueryService = AnalyticsQueryService_1 = class AnalyticsQueryService {
     constructor(prisma, calc) {
         this.prisma = prisma;
@@ -43057,7 +43735,6 @@ let AnalyticsQueryService = AnalyticsQueryService_1 = class AnalyticsQueryServic
                 buyer: { select: { firstName: true, lastName: true } },
                 items: {
                     where: { sellerId },
-                    take: 1,
                     include: { product: { select: { title: true } } }
                 }
             }
@@ -43065,7 +43742,9 @@ let AnalyticsQueryService = AnalyticsQueryService_1 = class AnalyticsQueryServic
         return orders.map(o => ({
             id: o.id,
             buyerName: `${o.buyer.firstName} ${o.buyer.lastName}`,
-            productTitle: o.items[0]?.product?.title ?? 'Multiple Items',
+            productTitle: o.items.length > 1
+                ? 'Multiple Items'
+                : o.items[0]?.product?.title ?? 'Multiple Items',
             amount: o.items.reduce((s, i) => s + i.price, 0),
             status: o.status,
             createdAt: o.createdAt.toISOString()
@@ -43272,7 +43951,7 @@ exports.AnalyticsQueryService = AnalyticsQueryService = AnalyticsQueryService_1 
 
 
 /***/ }),
-/* 288 */
+/* 297 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -43359,7 +44038,7 @@ exports.AnalyticsCalculationService = AnalyticsCalculationService = __decorate([
 
 
 /***/ }),
-/* 289 */
+/* 298 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -43382,7 +44061,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnalyticsCacheService = exports.CACHE_TTL = void 0;
 const common_1 = __webpack_require__(2);
 const config_1 = __webpack_require__(3);
-const ioredis_1 = __importDefault(__webpack_require__(290));
+const ioredis_1 = __importDefault(__webpack_require__(299));
 exports.CACHE_TTL = {
     SELLER_DASHBOARD: 300,
     SELLER_REVENUE: 600,
@@ -43475,9 +44154,11 @@ let AnalyticsCacheService = AnalyticsCacheService_1 = class AnalyticsCacheServic
         if (!this.enabled || !this.client)
             return;
         try {
-            const keys = await this.client.keys(pattern);
-            if (keys.length > 0) {
-                await this.client.del(...keys);
+            const stream = this.client.scanStream({ match: pattern, count: 100 });
+            for await (const keys of stream) {
+                if (keys.length > 0) {
+                    await this.client.unlink(...keys);
+                }
             }
         }
         catch {
@@ -43498,14 +44179,14 @@ exports.AnalyticsCacheService = AnalyticsCacheService = AnalyticsCacheService_1 
 
 
 /***/ }),
-/* 290 */
+/* 299 */
 /***/ ((module) => {
 
 "use strict";
 module.exports = require("ioredis");
 
 /***/ }),
-/* 291 */
+/* 300 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -43533,10 +44214,10 @@ const roles_decorator_1 = __webpack_require__(30);
 const public_decorator_1 = __webpack_require__(24);
 const client_1 = __webpack_require__(11);
 const prisma_service_1 = __webpack_require__(10);
-const analytics_service_1 = __webpack_require__(286);
-const seller_analytics_dto_1 = __webpack_require__(292);
-const admin_analytics_dto_1 = __webpack_require__(294);
-const export_dto_1 = __webpack_require__(295);
+const analytics_service_1 = __webpack_require__(295);
+const seller_analytics_dto_1 = __webpack_require__(301);
+const admin_analytics_dto_1 = __webpack_require__(303);
+const export_dto_1 = __webpack_require__(304);
 let AnalyticsController = class AnalyticsController {
     constructor(analyticsService, prisma) {
         this.analyticsService = analyticsService;
@@ -44206,7 +44887,7 @@ exports.AnalyticsController = AnalyticsController = __decorate([
 
 
 /***/ }),
-/* 292 */
+/* 301 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -44225,7 +44906,7 @@ exports.SellerAnalyticsResponseDto = exports.GetSellerConversionDto = exports.Ge
 const class_validator_1 = __webpack_require__(22);
 const class_transformer_1 = __webpack_require__(39);
 const swagger_1 = __webpack_require__(4);
-const filters_dto_1 = __webpack_require__(293);
+const filters_dto_1 = __webpack_require__(302);
 var DashboardMetric;
 (function (DashboardMetric) {
     DashboardMetric["REVENUE"] = "revenue";
@@ -44489,7 +45170,7 @@ __decorate([
 
 
 /***/ }),
-/* 293 */
+/* 302 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -44762,7 +45443,7 @@ __decorate([
 
 
 /***/ }),
-/* 294 */
+/* 303 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -44782,8 +45463,8 @@ exports.AdminAnalyticsResponseDto = exports.GetFinancialReportDto = exports.GetU
 const class_validator_1 = __webpack_require__(22);
 const class_transformer_1 = __webpack_require__(39);
 const swagger_1 = __webpack_require__(4);
-const filters_dto_1 = __webpack_require__(293);
-const seller_analytics_dto_1 = __webpack_require__(292);
+const filters_dto_1 = __webpack_require__(302);
+const seller_analytics_dto_1 = __webpack_require__(301);
 var PlatformMetric;
 (function (PlatformMetric) {
     PlatformMetric["USERS"] = "users";
@@ -45092,7 +45773,7 @@ __decorate([
 
 
 /***/ }),
-/* 295 */
+/* 304 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -45112,7 +45793,7 @@ exports.ExportResponseDto = exports.ScheduleReportDto = exports.CustomReportDto 
 const class_validator_1 = __webpack_require__(22);
 const class_transformer_1 = __webpack_require__(39);
 const swagger_1 = __webpack_require__(4);
-const filters_dto_1 = __webpack_require__(293);
+const filters_dto_1 = __webpack_require__(302);
 var ExportFormat;
 (function (ExportFormat) {
     ExportFormat["CSV"] = "csv";
@@ -45364,721 +46045,6 @@ __decorate([
 
 
 /***/ }),
-/* 296 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ReviewsModule = void 0;
-const common_1 = __webpack_require__(2);
-const reviews_controller_1 = __webpack_require__(297);
-const reviews_service_1 = __webpack_require__(229);
-const prisma_module_1 = __webpack_require__(9);
-const notifications_module_1 = __webpack_require__(234);
-let ReviewsModule = class ReviewsModule {
-};
-exports.ReviewsModule = ReviewsModule;
-exports.ReviewsModule = ReviewsModule = __decorate([
-    (0, common_1.Module)({
-        imports: [
-            prisma_module_1.PrismaModule,
-            notifications_module_1.NotificationModule
-        ],
-        controllers: [reviews_controller_1.ReviewsController],
-        providers: [reviews_service_1.ReviewsService],
-        exports: [reviews_service_1.ReviewsService]
-    })
-], ReviewsModule);
-
-
-/***/ }),
-/* 297 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
-var _a, _b, _c, _d, _e, _f, _g, _h;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ReviewsController = void 0;
-const common_1 = __webpack_require__(2);
-const swagger_1 = __webpack_require__(4);
-const reviews_service_1 = __webpack_require__(229);
-const jwt_auth_guard_1 = __webpack_require__(23);
-const roles_guard_1 = __webpack_require__(29);
-const roles_decorator_1 = __webpack_require__(30);
-const current_user_decorator_1 = __webpack_require__(25);
-const client_1 = __webpack_require__(11);
-const dto_1 = __webpack_require__(298);
-let ReviewsController = class ReviewsController {
-    constructor(reviewsService) {
-        this.reviewsService = reviewsService;
-    }
-    async findAll(filters) {
-        return this.reviewsService.findAll(filters);
-    }
-    async getProductStats(productId) {
-        return this.reviewsService.getProductStats(productId);
-    }
-    async getSellerStats(sellerId) {
-        return this.reviewsService.getSellerStats(sellerId);
-    }
-    async findOne(id) {
-        return this.reviewsService.findOne(id);
-    }
-    async create(userId, createReviewDto) {
-        return this.reviewsService.createReview(userId, createReviewDto);
-    }
-    async update(userId, id, updateReviewDto) {
-        return this.reviewsService.updateReview(userId, id, updateReviewDto);
-    }
-    async createResponse(userId, reviewId, responseDto) {
-        return this.reviewsService.createResponse(userId, reviewId, responseDto);
-    }
-    async voteReview(userId, reviewId, voteDto) {
-        return this.reviewsService.voteReview(userId, reviewId, voteDto);
-    }
-    async reportReview(userId, reviewId, reportDto) {
-        return this.reviewsService.reportReview(userId, reviewId, reportDto);
-    }
-    async getAdminStats() {
-        return this.reviewsService.getAdminStats();
-    }
-    async getPendingReviews(page, limit) {
-        return this.reviewsService.getPendingReviews(page, limit);
-    }
-    async moderateReview(adminId, reviewId, moderateDto) {
-        return this.reviewsService.moderateReview(adminId, reviewId, moderateDto);
-    }
-    async deleteReview(reviewId) {
-        return this.reviewsService.deleteReview(reviewId);
-    }
-};
-exports.ReviewsController = ReviewsController;
-__decorate([
-    (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Get reviews with filters' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Reviews retrieved successfully' }),
-    __param(0, (0, common_1.Query)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_b = typeof dto_1.FilterReviewDto !== "undefined" && dto_1.FilterReviewDto) === "function" ? _b : Object]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)('products/:productId/stats'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get product review statistics' }),
-    (0, swagger_1.ApiParam)({ name: 'productId', description: 'Product ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Product stats retrieved' }),
-    __param(0, (0, common_1.Param)('productId', common_1.ParseUUIDPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "getProductStats", null);
-__decorate([
-    (0, common_1.Get)('sellers/:sellerId/stats'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get seller review statistics' }),
-    (0, swagger_1.ApiParam)({ name: 'sellerId', description: 'Seller ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Seller stats retrieved' }),
-    __param(0, (0, common_1.Param)('sellerId', common_1.ParseUUIDPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "getSellerStats", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get review by ID' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review found' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "findOne", null);
-__decorate([
-    (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.BUYER),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Create a review' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Review created successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid input' }),
-    (0, swagger_1.ApiResponse)({ status: 409, description: 'Review already exists' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, typeof (_c = typeof dto_1.CreateReviewDto !== "undefined" && dto_1.CreateReviewDto) === "function" ? _c : Object]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "create", null);
-__decorate([
-    (0, common_1.Put)(':id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Update own review' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review updated successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 403, description: 'Not authorized to update this review' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, typeof (_d = typeof dto_1.UpdateReviewDto !== "undefined" && dto_1.UpdateReviewDto) === "function" ? _d : Object]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "update", null);
-__decorate([
-    (0, common_1.Post)(':id/response'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SELLER),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Respond to a review' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Response created successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 403, description: 'Not authorized to respond to this review' }),
-    (0, swagger_1.ApiResponse)({ status: 409, description: 'Response already exists' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, typeof (_e = typeof dto_1.CreateReviewResponseDto !== "undefined" && dto_1.CreateReviewResponseDto) === "function" ? _e : Object]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "createResponse", null);
-__decorate([
-    (0, common_1.Post)(':id/vote'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Vote on review helpfulness' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Vote recorded successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Cannot vote on own review' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, typeof (_f = typeof dto_1.ReviewVoteDto !== "undefined" && dto_1.ReviewVoteDto) === "function" ? _f : Object]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "voteReview", null);
-__decorate([
-    (0, common_1.Post)(':id/report'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Report inappropriate review' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Report submitted successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 409, description: 'Already reported this review' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, typeof (_g = typeof dto_1.ReportReviewDto !== "undefined" && dto_1.ReportReviewDto) === "function" ? _g : Object]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "reportReview", null);
-__decorate([
-    (0, common_1.Get)('admin/stats'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Get admin review statistics' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Admin stats retrieved successfully' }),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "getAdminStats", null);
-__decorate([
-    (0, common_1.Get)('admin/pending'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Get pending reviews for moderation' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Pending reviews retrieved successfully' }),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('limit')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "getPendingReviews", null);
-__decorate([
-    (0, common_1.Put)('admin/:id/moderate'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Moderate a review' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review moderated successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, typeof (_h = typeof dto_1.ModerateReviewDto !== "undefined" && dto_1.ModerateReviewDto) === "function" ? _h : Object]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "moderateReview", null);
-__decorate([
-    (0, common_1.Delete)('admin/:id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Delete a review' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'Review ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Review deleted successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Review not found' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], ReviewsController.prototype, "deleteReview", null);
-exports.ReviewsController = ReviewsController = __decorate([
-    (0, swagger_1.ApiTags)('Reviews'),
-    (0, common_1.Controller)('reviews'),
-    __metadata("design:paramtypes", [typeof (_a = typeof reviews_service_1.ReviewsService !== "undefined" && reviews_service_1.ReviewsService) === "function" ? _a : Object])
-], ReviewsController);
-
-
-/***/ }),
-/* 298 */
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ModerateReviewDto = exports.FilterReviewDto = exports.ReportReviewDto = exports.ReviewVoteDto = exports.CreateReviewResponseDto = exports.UpdateReviewDto = exports.CreateReviewDto = void 0;
-var create_review_dto_1 = __webpack_require__(299);
-Object.defineProperty(exports, "CreateReviewDto", ({ enumerable: true, get: function () { return create_review_dto_1.CreateReviewDto; } }));
-var update_review_dto_1 = __webpack_require__(300);
-Object.defineProperty(exports, "UpdateReviewDto", ({ enumerable: true, get: function () { return update_review_dto_1.UpdateReviewDto; } }));
-Object.defineProperty(exports, "CreateReviewResponseDto", ({ enumerable: true, get: function () { return update_review_dto_1.CreateReviewResponseDto; } }));
-var review_vote_dto_1 = __webpack_require__(301);
-Object.defineProperty(exports, "ReviewVoteDto", ({ enumerable: true, get: function () { return review_vote_dto_1.ReviewVoteDto; } }));
-var report_review_dto_1 = __webpack_require__(302);
-Object.defineProperty(exports, "ReportReviewDto", ({ enumerable: true, get: function () { return report_review_dto_1.ReportReviewDto; } }));
-var filter_review_dto_1 = __webpack_require__(303);
-Object.defineProperty(exports, "FilterReviewDto", ({ enumerable: true, get: function () { return filter_review_dto_1.FilterReviewDto; } }));
-var moderate_review_dto_1 = __webpack_require__(304);
-Object.defineProperty(exports, "ModerateReviewDto", ({ enumerable: true, get: function () { return moderate_review_dto_1.ModerateReviewDto; } }));
-
-
-/***/ }),
-/* 299 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CreateReviewDto = void 0;
-const class_validator_1 = __webpack_require__(22);
-const swagger_1 = __webpack_require__(4);
-class CreateReviewDto {
-}
-exports.CreateReviewDto = CreateReviewDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Order ID for verified purchase',
-        example: 'clp1234567890'
-    }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'orderId.required' }),
-    (0, class_validator_1.IsUUID)('4', { message: 'orderId.invalid' }),
-    __metadata("design:type", String)
-], CreateReviewDto.prototype, "orderId", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Product being reviewed',
-        example: 'clp0987654321'
-    }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'productId.required' }),
-    (0, class_validator_1.IsUUID)('4', { message: 'productId.invalid' }),
-    __metadata("design:type", String)
-], CreateReviewDto.prototype, "productId", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Rating from 1 to 5 stars',
-        minimum: 1,
-        maximum: 5,
-        example: 5
-    }),
-    (0, class_validator_1.IsInt)({ message: 'rating.mustBeInteger' }),
-    (0, class_validator_1.Min)(1, { message: 'rating.tooLow' }),
-    (0, class_validator_1.Max)(5, { message: 'rating.tooHigh' }),
-    __metadata("design:type", Number)
-], CreateReviewDto.prototype, "rating", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Review title',
-        maxLength: 100,
-        example: 'Great furniture design!'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'title.mustBeString' }),
-    (0, class_validator_1.MaxLength)(100, { message: 'title.tooLong' }),
-    __metadata("design:type", String)
-], CreateReviewDto.prototype, "title", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Review comment',
-        minLength: 10,
-        maxLength: 2000,
-        example: 'This furniture design exceeded my expectations...'
-    }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'comment.required' }),
-    (0, class_validator_1.IsString)({ message: 'comment.mustBeString' }),
-    (0, class_validator_1.MinLength)(10, { message: 'comment.tooShort' }),
-    (0, class_validator_1.MaxLength)(2000, { message: 'comment.tooLong' }),
-    __metadata("design:type", String)
-], CreateReviewDto.prototype, "comment", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Positive aspects (pros)',
-        maxLength: 500,
-        example: 'Easy to follow instructions, beautiful result'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'pros.mustBeString' }),
-    (0, class_validator_1.MaxLength)(500, { message: 'pros.tooLong' }),
-    __metadata("design:type", String)
-], CreateReviewDto.prototype, "pros", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Negative aspects (cons)',
-        maxLength: 500,
-        example: 'Some measurements could be clearer'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'cons.mustBeString' }),
-    (0, class_validator_1.MaxLength)(500, { message: 'cons.tooLong' }),
-    __metadata("design:type", String)
-], CreateReviewDto.prototype, "cons", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Review images (file IDs)',
-        type: [String],
-        maxItems: 5,
-        example: ['clp1111111111', 'clp2222222222']
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsArray)({ message: 'images.mustBeArray' }),
-    (0, class_validator_1.IsUUID)('4', { each: true, message: 'images.invalidId' }),
-    __metadata("design:type", Array)
-], CreateReviewDto.prototype, "images", void 0);
-
-
-/***/ }),
-/* 300 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CreateReviewResponseDto = exports.UpdateReviewDto = void 0;
-const swagger_1 = __webpack_require__(4);
-const create_review_dto_1 = __webpack_require__(299);
-class UpdateReviewDto extends (0, swagger_1.PartialType)((0, swagger_1.OmitType)(create_review_dto_1.CreateReviewDto, ['orderId', 'productId'])) {
-}
-exports.UpdateReviewDto = UpdateReviewDto;
-const class_validator_1 = __webpack_require__(22);
-const swagger_2 = __webpack_require__(4);
-class CreateReviewResponseDto {
-}
-exports.CreateReviewResponseDto = CreateReviewResponseDto;
-__decorate([
-    (0, swagger_2.ApiProperty)({
-        description: 'Seller response to the review',
-        minLength: 10,
-        maxLength: 1000,
-        example: 'Thank you for your feedback! We really appreciate...'
-    }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'comment.required' }),
-    (0, class_validator_1.IsString)({ message: 'comment.mustBeString' }),
-    (0, class_validator_1.MinLength)(10, { message: 'comment.tooShort' }),
-    (0, class_validator_1.MaxLength)(1000, { message: 'comment.tooLong' }),
-    __metadata("design:type", String)
-], CreateReviewResponseDto.prototype, "comment", void 0);
-
-
-/***/ }),
-/* 301 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var _a;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ReviewVoteDto = void 0;
-const class_validator_1 = __webpack_require__(22);
-const swagger_1 = __webpack_require__(4);
-const client_1 = __webpack_require__(11);
-class ReviewVoteDto {
-}
-exports.ReviewVoteDto = ReviewVoteDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Vote type',
-        enum: client_1.ReviewHelpfulness,
-        example: 'HELPFUL'
-    }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'vote.required' }),
-    (0, class_validator_1.IsIn)(['HELPFUL', 'NOT_HELPFUL'], { message: 'vote.invalid' }),
-    __metadata("design:type", typeof (_a = typeof client_1.ReviewHelpfulness !== "undefined" && client_1.ReviewHelpfulness) === "function" ? _a : Object)
-], ReviewVoteDto.prototype, "vote", void 0);
-
-
-/***/ }),
-/* 302 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ReportReviewDto = void 0;
-const class_validator_1 = __webpack_require__(22);
-const swagger_1 = __webpack_require__(4);
-class ReportReviewDto {
-}
-exports.ReportReviewDto = ReportReviewDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Reason for reporting',
-        enum: ['spam', 'inappropriate', 'fake', 'harassment', 'other'],
-        example: 'inappropriate'
-    }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'reason.required' }),
-    (0, class_validator_1.IsIn)(['spam', 'inappropriate', 'fake', 'harassment', 'other'], {
-        message: 'reason.invalid'
-    }),
-    __metadata("design:type", String)
-], ReportReviewDto.prototype, "reason", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Additional details about the report',
-        maxLength: 500,
-        example: 'This review contains offensive language...'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'details.mustBeString' }),
-    (0, class_validator_1.MaxLength)(500, { message: 'details.tooLong' }),
-    __metadata("design:type", String)
-], ReportReviewDto.prototype, "details", void 0);
-
-
-/***/ }),
-/* 303 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var _a;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.FilterReviewDto = void 0;
-const class_validator_1 = __webpack_require__(22);
-const class_transformer_1 = __webpack_require__(39);
-const swagger_1 = __webpack_require__(4);
-const client_1 = __webpack_require__(11);
-class FilterReviewDto {
-    constructor() {
-        this.sortBy = 'newest';
-        this.page = 1;
-        this.limit = 12;
-    }
-}
-exports.FilterReviewDto = FilterReviewDto;
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Product ID to filter reviews',
-        example: 'clp0987654321'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsUUID)('4', { message: 'productId.invalid' }),
-    __metadata("design:type", String)
-], FilterReviewDto.prototype, "productId", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Seller ID to filter reviews',
-        example: 'clp1234567890'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsUUID)('4', { message: 'sellerId.invalid' }),
-    __metadata("design:type", String)
-], FilterReviewDto.prototype, "sellerId", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Filter by rating',
-        minimum: 1,
-        maximum: 5,
-        example: 5
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)({ message: 'rating.mustBeInteger' }),
-    (0, class_validator_1.Min)(1, { message: 'rating.tooLow' }),
-    (0, class_validator_1.Max)(5, { message: 'rating.tooHigh' }),
-    __metadata("design:type", Number)
-], FilterReviewDto.prototype, "rating", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Filter by review status',
-        enum: client_1.ReviewStatus,
-        example: 'PUBLISHED'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsIn)(['PENDING_MODERATION', 'PUBLISHED', 'FLAGGED', 'REMOVED'], {
-        message: 'status.invalid'
-    }),
-    __metadata("design:type", typeof (_a = typeof client_1.ReviewStatus !== "undefined" && client_1.ReviewStatus) === "function" ? _a : Object)
-], FilterReviewDto.prototype, "status", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Sort by',
-        enum: ['newest', 'oldest', 'highest', 'lowest', 'helpful'],
-        example: 'newest'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsIn)(['newest', 'oldest', 'highest', 'lowest', 'helpful'], {
-        message: 'sortBy.invalid'
-    }),
-    __metadata("design:type", String)
-], FilterReviewDto.prototype, "sortBy", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Page number',
-        minimum: 1,
-        example: 1
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)({ message: 'page.mustBeInteger' }),
-    (0, class_validator_1.Min)(1, { message: 'page.tooLow' }),
-    __metadata("design:type", Number)
-], FilterReviewDto.prototype, "page", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Items per page',
-        minimum: 1,
-        maximum: 50,
-        example: 12
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)({ message: 'limit.mustBeInteger' }),
-    (0, class_validator_1.Min)(1, { message: 'limit.tooLow' }),
-    (0, class_validator_1.Max)(50, { message: 'limit.tooHigh' }),
-    __metadata("design:type", Number)
-], FilterReviewDto.prototype, "limit", void 0);
-
-
-/***/ }),
-/* 304 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var _a;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ModerateReviewDto = void 0;
-const class_validator_1 = __webpack_require__(22);
-const swagger_1 = __webpack_require__(4);
-const client_1 = __webpack_require__(11);
-class ModerateReviewDto {
-}
-exports.ModerateReviewDto = ModerateReviewDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'New review status',
-        enum: client_1.ReviewStatus,
-        example: 'PUBLISHED'
-    }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'status.required' }),
-    (0, class_validator_1.IsIn)(['PENDING_MODERATION', 'PUBLISHED', 'FLAGGED', 'REMOVED'], {
-        message: 'status.invalid'
-    }),
-    __metadata("design:type", typeof (_a = typeof client_1.ReviewStatus !== "undefined" && client_1.ReviewStatus) === "function" ? _a : Object)
-], ModerateReviewDto.prototype, "status", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Reason for moderation action',
-        maxLength: 500,
-        example: 'Review contains inappropriate language'
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'reason.mustBeString' }),
-    (0, class_validator_1.MaxLength)(500, { message: 'reason.tooLong' }),
-    __metadata("design:type", String)
-], ModerateReviewDto.prototype, "reason", void 0);
-
-
-/***/ }),
 /* 305 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
@@ -46166,15 +46132,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var SellersController_1;
 var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SellersController = void 0;
 const common_1 = __webpack_require__(2);
 const swagger_1 = __webpack_require__(4);
 const sellers_service_1 = __webpack_require__(308);
-let SellersController = class SellersController {
+let SellersController = SellersController_1 = class SellersController {
     constructor(sellersService) {
         this.sellersService = sellersService;
+        this.logger = new common_1.Logger(SellersController_1.name);
     }
     create(createSellerDto) {
         return this.sellersService.create(createSellerDto);
@@ -46219,7 +46187,7 @@ let SellersController = class SellersController {
             return await this.sellersService.getSellerProducts(seller.userId, filters);
         }
         catch (error) {
-            console.error('❌ [CONTROLLER] Error getting seller products:', error);
+            this.logger.error('Error getting seller products', error.stack);
             throw new common_1.InternalServerErrorException('Error retrieving seller products');
         }
     }
@@ -46327,7 +46295,7 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], SellersController.prototype, "remove", null);
-exports.SellersController = SellersController = __decorate([
+exports.SellersController = SellersController = SellersController_1 = __decorate([
     (0, swagger_1.ApiTags)('sellers'),
     (0, common_1.Controller)('sellers'),
     __metadata("design:paramtypes", [typeof (_a = typeof sellers_service_1.SellersService !== "undefined" && sellers_service_1.SellersService) === "function" ? _a : Object])

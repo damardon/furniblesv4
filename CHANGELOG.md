@@ -13,6 +13,7 @@
 - Fixed `backend/prisma/prisma.config.ts` to use the correct Prisma 6.x config shape and dotenv loading.
 - Normalized analytics cache key generation for seller dashboard requests.
 - Added root `tsconfig.json` for monorepo project references and editor workspace resolution.
+- **Removed `get-docker.sh`**: Obsolete generic Docker installation script; users can refer to official Docker documentation or use their preferred installation method.
 
 ### Fixed
 - Restored backend build after Prisma downgrade and configuration correction.

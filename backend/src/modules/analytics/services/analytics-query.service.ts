@@ -134,7 +134,6 @@ export class AnalyticsQueryService {
         buyer: { select: { firstName: true, lastName: true } },
         items: {
           where: { sellerId },
-          take: 1,
           include: { product: { select: { title: true } } }
         }
       }
@@ -143,7 +142,9 @@ export class AnalyticsQueryService {
     return orders.map(o => ({
       id: o.id,
       buyerName: `${o.buyer.firstName} ${o.buyer.lastName}`,
-      productTitle: o.items[0]?.product?.title ?? 'Multiple Items',
+      productTitle: o.items.length > 1
+        ? 'Multiple Items'
+        : o.items[0]?.product?.title ?? 'Multiple Items',
       amount: o.items.reduce((s, i) => s + i.price, 0),
       status: o.status,
       createdAt: o.createdAt.toISOString()
