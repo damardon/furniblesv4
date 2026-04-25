@@ -1,5 +1,5 @@
 // src/modules/checkout/checkout.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CartService } from '../cart/cart.service';
@@ -9,6 +9,8 @@ import { CheckoutDto, CheckoutResponseDto } from './dto/checkout.dto';
 
 @Injectable()
 export class CheckoutService {
+  private readonly logger = new Logger(CheckoutService.name);
+
   constructor(
     private prisma: PrismaService,
     private cartService: CartService,
@@ -128,7 +130,7 @@ export class CheckoutService {
 
       return new Date() < expirationTime && order.status === 'PENDING';
     } catch (error) {
-      console.error('Error validating checkout session:', error);
+      this.logger.error('Error validating checkout session', error.stack);
       return false;
     }
   }

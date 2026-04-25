@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -37,6 +38,7 @@ export interface ProcessedFile {
 
 @Injectable()
 export class FilesService {
+  private readonly logger = new Logger(FilesService.name);
   private readonly uploadPath: string;
   private readonly maxFileSize: number;
   private readonly allowedMimeTypes: string[];
@@ -371,7 +373,7 @@ async getStorageStats() {
       await fs.unlink(filePath);
     } catch (error) {
       // Log error but don't fail the operation
-      console.error('Error deleting physical file:', error);
+      this.logger.error('Error deleting physical file', error.stack);
     }
   }
 
@@ -488,48 +490,40 @@ async getStorageStats() {
       }
     });
 
+    const eligibleFiles = orphanedFiles.filter(
+      (f) => f.type === FileType.PDF || f.type === FileType.IMAGE || f.type === FileType.THUMBNAIL,
+    );
+
+    // Batch mark as deleted in a single query
+    await this.prisma.file.updateMany({
+      where: { id: { in: eligibleFiles.map((f) => f.id) } },
+      data: { status: FileStatus.DELETED },
+    });
+
     let totalSize = 0;
     let deletedCount = 0;
+    const failedIds: string[] = [];
 
-    for (const file of orphanedFiles) {
+    // Only loop for filesystem operations (cannot be batched)
+    for (const file of eligibleFiles) {
+      const typeDir = file.type === FileType.PDF ? 'pdfs' : file.type === FileType.IMAGE ? 'images' : 'thumbnails';
+      const filePath = path.join(this.uploadPath, typeDir, file.key);
       try {
-        // Marcar como eliminado
-        await this.prisma.file.update({
-          where: { id: file.id },
-          data: { status: FileStatus.DELETED }
-        });
-
-        // Eliminar archivo físico
-        let filePath: string;
-        switch (file.type) {
-          case FileType.PDF:
-            filePath = path.join(this.uploadPath, 'pdfs', file.key);
-            break;
-          case FileType.IMAGE:
-            filePath = path.join(this.uploadPath, 'images', file.key);
-            break;
-          case FileType.THUMBNAIL:
-            filePath = path.join(this.uploadPath, 'thumbnails', file.key);
-            break;
-          default:
-            continue;
-        }
-
-        try {
-          await fs.unlink(filePath);
-          totalSize += file.size;
-          deletedCount++;
-        } catch (error) {
-          console.error(`Error deleting file ${filePath}:`, error);
-          // Revertir el estado si no se pudo eliminar físicamente
-          await this.prisma.file.update({
-            where: { id: file.id },
-            data: { status: FileStatus.ACTIVE }
-          });
-        }
+        await fs.unlink(filePath);
+        totalSize += file.size;
+        deletedCount++;
       } catch (error) {
-        console.error(`Error processing orphaned file ${file.id}:`, error);
+        this.logger.error(`Error deleting file ${filePath}`, error.stack);
+        failedIds.push(file.id);
       }
+    }
+
+    // Restore DB status for files that couldn't be physically deleted
+    if (failedIds.length > 0) {
+      await this.prisma.file.updateMany({
+        where: { id: { in: failedIds } },
+        data: { status: FileStatus.ACTIVE },
+      });
     }
 
     return {
@@ -624,7 +618,7 @@ async getStorageStats() {
       await fs.mkdir(path.join(this.uploadPath, 'images'), { recursive: true });
       await fs.mkdir(path.join(this.uploadPath, 'thumbnails'), { recursive: true });
     } catch (error) {
-      console.error('Error creating upload directories:', error);
+      this.logger.error('Error creating upload directories', error.stack);
     }
   }
 
@@ -632,7 +626,7 @@ async getStorageStats() {
     try {
       await fs.mkdir(dirPath, { recursive: true });
     } catch (error) {
-      console.error('Error creating directory:', error);
+      this.logger.error('Error creating directory', error.stack);
     }
   }
 

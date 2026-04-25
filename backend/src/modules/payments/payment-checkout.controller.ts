@@ -249,25 +249,22 @@ export class PaymentCheckoutController {
         where: { userId: user.id }
       });
 
-      // Crear tokens de descarga para cada producto
-      const downloadTokens = [];
-      for (const item of order.items) {
-        const downloadToken = await this.prisma.downloadToken.create({
-          data: {
-            token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-            orderId: order.id,
-            productId: item.productId,
-            buyerId: user.id,
-            downloadLimit: 5,
-            downloadCount: 0,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
-            isActive: true,
-          }
-        });
-        downloadTokens.push(downloadToken);
-      }
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const { count: downloadTokenCount } = await this.prisma.downloadToken.createMany({
+        data: order.items.map((item: any) => ({
+          token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+          orderId: order.id,
+          productId: item.productId,
+          buyerId: user.id,
+          downloadLimit: 5,
+          downloadCount: 0,
+          expiresAt,
+          isActive: true,
+        })),
+        skipDuplicates: true,
+      });
 
-      this.logger.log(`Stripe payment completed for order ${order.id} with ${downloadTokens.length} download tokens`);
+      this.logger.log(`Stripe payment completed for order ${order.id} with ${downloadTokenCount} download tokens`);
 
       return {
         success: true,
@@ -275,7 +272,7 @@ export class PaymentCheckoutController {
         paymentId: paymentIntent.id,
         orderId: order.id,
         orderNumber: order.orderNumber,
-        downloadTokensCount: downloadTokens.length,
+        downloadTokensCount: downloadTokenCount,
       };
 
     } catch (error) {
@@ -473,25 +470,22 @@ export class PaymentCheckoutController {
         where: { userId: user.id }
       });
 
-      // Crear tokens de descarga para cada producto
-      const downloadTokens = [];
-      for (const item of order.items) {
-        const downloadToken = await this.prisma.downloadToken.create({
-          data: {
-            token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-            orderId: order.id,
-            productId: item.productId,
-            buyerId: user.id,
-            downloadLimit: 5,
-            downloadCount: 0,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
-            isActive: true,
-          }
-        });
-        downloadTokens.push(downloadToken);
-      }
+      const paypalExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const { count: paypalTokenCount } = await this.prisma.downloadToken.createMany({
+        data: order.items.map((item: any) => ({
+          token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+          orderId: order.id,
+          productId: item.productId,
+          buyerId: user.id,
+          downloadLimit: 5,
+          downloadCount: 0,
+          expiresAt: paypalExpiresAt,
+          isActive: true,
+        })),
+        skipDuplicates: true,
+      });
 
-      this.logger.log(`PayPal payment completed for order ${order.id} with ${downloadTokens.length} download tokens`);
+      this.logger.log(`PayPal payment completed for order ${order.id} with ${paypalTokenCount} download tokens`);
 
       return {
         success: true,
@@ -499,7 +493,7 @@ export class PaymentCheckoutController {
         paymentId: captureResult.paymentId,
         orderId: order.id,
         orderNumber: order.orderNumber,
-        downloadTokensCount: downloadTokens.length,
+        downloadTokensCount: paypalTokenCount,
       };
 
     } catch (error) {

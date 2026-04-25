@@ -1,15 +1,16 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
-  Query, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
   NotFoundException,
   InternalServerErrorException,
-  BadRequestException
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { SellersService } from './sellers.service';
@@ -18,6 +19,7 @@ import { SellerProfile } from '@prisma/client';
 @ApiTags('sellers')
 @Controller('sellers')
 export class SellersController {
+  private readonly logger = new Logger(SellersController.name);
   constructor(private readonly sellersService: SellersService) {}
 
   @Post()
@@ -113,7 +115,7 @@ export class SellersController {
       // ✅ Usar sellerId (que es el userId del vendedor)
       return await this.sellersService.getSellerProducts(seller.userId, filters);
     } catch (error) {
-      console.error('❌ [CONTROLLER] Error getting seller products:', error);
+      this.logger.error('Error getting seller products', error.stack);
       throw new InternalServerErrorException('Error retrieving seller products');
     }
   }

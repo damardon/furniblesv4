@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
@@ -23,6 +23,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
   private readonly frontendUrl: string;
 
   constructor(
@@ -117,7 +118,7 @@ export class NotificationService {
     const preferences = await this.getUserPreferences(dto.userId);
     
     if (!this.shouldSendNotification(dto.type, preferences)) {
-      console.log(`Notification skipped due to user preferences: ${dto.type} for user ${dto.userId}`);
+      this.logger.debug(`Notification skipped due to user preferences: ${dto.type} for user ${dto.userId}`);
       return;
     }
 
@@ -163,7 +164,7 @@ export class NotificationService {
     // Enviar email de forma asíncrona (si está habilitado)
     if (preferences.emailEnabled) {
       this.sendEmailNotification(notification).catch(error => {
-        console.error('Error sending email notification:', error);
+        this.logger.error('Error sending email notification', error.stack);
       });
     }
 
@@ -495,7 +496,7 @@ export class NotificationService {
         });
 
       } catch (error) {
-        console.error(`Error processing scheduled notification ${scheduled.id}:`, error);
+        this.logger.error(`Error processing scheduled notification ${scheduled.id}`, error.stack);
         
         // Incrementar intentos
         const newAttempts = scheduled.attempts + 1;
@@ -920,7 +921,7 @@ export class NotificationService {
       );
 
     } catch (error) {
-      console.error(`Error sending email notification ${notification.id}:`, error);
+      this.logger.error(`Error sending email notification ${notification.id}`, error.stack);
       // No lanzar error para que no afecte el flujo principal
     }
   }
@@ -1045,7 +1046,7 @@ export class NotificationService {
       }
     });
 
-    console.log('Expired notifications cleanup completed');
+    this.logger.log('Expired notifications cleanup completed');
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
@@ -20,6 +20,8 @@ export interface JWTPayload {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -94,10 +96,10 @@ export class AuthService {
     // Usar findByEmail para obtener el user completo después de la creación
     const fullUser = await this.usersService.findByEmail(registerDto.email);
 
-    console.log(`Verification token for ${registerDto.email}: ${emailVerificationToken}`);
+    this.logger.debug(`Email verification token for ${registerDto.email}: ${emailVerificationToken}`);
 
     return {
-      message: 'User registered successfully. Check console for verification token.',
+      message: 'User registered successfully. Please check your email to verify your account.',
       userId: fullUser.id,
     };
   }
@@ -160,7 +162,7 @@ export class AuthService {
     // Guardar token en base de datos
     await this.usersService.savePasswordResetToken(user.id, resetToken, expiresAt);
 
-    console.log(`Password reset token for ${user.email}: ${resetToken}`);
+    this.logger.debug(`Password reset token for ${user.email}: ${resetToken}`);
 
     return {
       message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña',

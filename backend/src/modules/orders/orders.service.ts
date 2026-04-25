@@ -1,12 +1,16 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  BadRequestException 
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CartService } from '../cart/cart.service';
 import { FeesService } from '../fees/fees.service';
 import { NotificationService } from '../notifications/notifications.service';
+import { ReviewsService } from '../reviews/reviews.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { OrderFiltersDto } from './dto/order-filters.dto';
@@ -14,11 +18,15 @@ import { OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private prisma: PrismaService,
     private cartService: CartService,
     private feesService: FeesService,
     private notificationService: NotificationService,
+    @Inject(forwardRef(() => ReviewsService))
+    private reviewsService: ReviewsService,
   ) {}
 
   // Agregar estos métodos al OrdersService existente
@@ -615,19 +623,11 @@ private buildOrderBy(sortBy?: string, sortOrder?: string): any {
     // Enviar notificación de orden completada
     await this.notificationService.sendOrderCompletedNotification(order);
 
-    // 🆕 NUEVA INTEGRACIÓN: Programar recordatorios de reviews
     try {
-      // Importar ReviewsService dinámicamente para evitar dependencia circular
-      const { ReviewsService } = await import('../reviews/reviews.service');
-      const reviewsService = new ReviewsService(this.prisma, this.notificationService);
-      
-      // Programar recordatorios de reviews para 3 días después
-      await reviewsService.scheduleReviewReminders(order.id, order.buyerId);
-      
-      console.log(`Review reminders scheduled for order ${order.orderNumber}`);
+      await this.reviewsService.scheduleReviewReminders(order.id, order.buyerId);
+      this.logger.log(`Review reminders scheduled for order ${order.orderNumber}`);
     } catch (error) {
-      console.error('Error scheduling review reminders:', error);
-      // No interrumpir el flujo principal si falla la programación de recordatorios
+      this.logger.error('Error scheduling review reminders', error.stack);
     }
   }
 
@@ -652,47 +652,41 @@ private buildOrderBy(sortBy?: string, sortOrder?: string): any {
    */
   private async generateDownloadTokens(order: any): Promise<void> {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 días de expiración
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
-    for (const item of order.items) {
-      if (item.product.pdfFileId) {
-        await this.prisma.downloadToken.create({
-          data: {
-            orderId: order.id,
-            productId: item.productId,
-            buyerId: order.buyerId,
-            downloadLimit: 5, // Configurable
-            expiresAt
-          }
-        });
-      }
-    }
+    const itemsWithPdf = order.items.filter((item: any) => item.product.pdfFileId);
+    if (itemsWithPdf.length === 0) return;
+
+    await this.prisma.downloadToken.createMany({
+      data: itemsWithPdf.map((item: any) => ({
+        orderId: order.id,
+        productId: item.productId,
+        buyerId: order.buyerId,
+        downloadLimit: 5,
+        expiresAt,
+      })),
+      skipDuplicates: true,
+    });
   }
 
   /**
    * Actualizar estadísticas de productos vendidos
    */
   private async updateProductStatistics(orderItems: any[]): Promise<void> {
-    for (const item of orderItems) {
-      await this.prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          downloadCount: {
-            increment: 1
-          }
-        }
-      });
-
-      // Actualizar estadísticas del seller
-      await this.prisma.sellerProfile.update({
-        where: { userId: item.sellerId },
-        data: {
-          totalSales: {
-            increment: 1
-          }
-        }
-      });
-    }
+    await Promise.all(
+      orderItems.map((item) =>
+        Promise.all([
+          this.prisma.product.update({
+            where: { id: item.productId },
+            data: { downloadCount: { increment: 1 } },
+          }),
+          this.prisma.sellerProfile.update({
+            where: { userId: item.sellerId },
+            data: { totalSales: { increment: 1 } },
+          }),
+        ]),
+      ),
+    );
   }
 
   /**
@@ -981,12 +975,10 @@ private buildOrderBy(sortBy?: string, sortOrder?: string): any {
       
       // 🆕 PROGRAMAR RECORDATORIOS DE REVIEWS
       try {
-        const { ReviewsService } = await import('../reviews/reviews.service');
-        const reviewsService = new ReviewsService(this.prisma, this.notificationService);
-        await reviewsService.scheduleReviewReminders(updatedOrder.id, updatedOrder.buyerId);
-        console.log(`Review reminders scheduled for order ${updatedOrder.orderNumber} (manual completion)`);
+        await this.reviewsService.scheduleReviewReminders(updatedOrder.id, updatedOrder.buyerId);
+        this.logger.log(`Review reminders scheduled for order ${updatedOrder.orderNumber} (manual completion)`);
       } catch (error) {
-        console.error('Error scheduling review reminders on manual completion:', error);
+        this.logger.error('Error scheduling review reminders on manual completion', error.stack);
       }
     }
 

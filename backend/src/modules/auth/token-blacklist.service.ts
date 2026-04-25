@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class TokenBlacklistService {
+  private readonly logger = new Logger(TokenBlacklistService.name);
   private blacklistedTokens = new Map<string, { userId: string; expiresAt: Date }>();
 
   constructor(private readonly jwtService: JwtService) {
@@ -27,8 +28,7 @@ export class TokenBlacklistService {
         }, timeUntilExpiration);
       }
     } catch (error) {
-      console.error('Error blacklisting token:', error);
-      // No lanzar error para no interrumpir el logout
+      this.logger.error('Error blacklisting token', error.stack);
     }
   }
 
@@ -48,8 +48,8 @@ export class TokenBlacklistService {
 
       return true;
     } catch (error) {
-      console.error('Error checking blacklist:', error);
-      return false; // En caso de error, permitir el acceso
+      this.logger.error('Error checking blacklist', error.stack);
+      return false;
     }
   }
 
@@ -72,10 +72,10 @@ export class TokenBlacklistService {
       });
 
       if (expiredTokens.length > 0) {
-        console.log(`Cleaned up ${expiredTokens.length} expired tokens`);
+        this.logger.debug(`Cleaned up ${expiredTokens.length} expired tokens`);
       }
     } catch (error) {
-      console.error('Error cleaning up expired tokens:', error);
+      this.logger.error('Error cleaning up expired tokens', error.stack);
     }
   }
 

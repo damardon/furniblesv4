@@ -1,10 +1,11 @@
 // src/modules/reviews/reviews.service.ts
-import { 
-  Injectable, 
-  NotFoundException, 
-  BadRequestException, 
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
   ConflictException,
-  ForbiddenException
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notifications/notifications.service';
@@ -25,9 +26,11 @@ import {
 
 @Injectable()
 export class ReviewsService {
+  private readonly logger = new Logger(ReviewsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   // ============================================
@@ -176,7 +179,7 @@ export class ReviewsService {
           buyer: review.buyer
         });
       } catch (error) {
-        console.error('Error sending review notification:', error);
+        this.logger.error('Error sending review notification', error.stack);
         // No interrumpir el flujo si falla la notificación
       }
     }
@@ -188,7 +191,7 @@ export class ReviewsService {
     try {
       await this.notificationService.checkReviewMilestones(product.sellerId);
     } catch (error) {
-      console.error('Error checking review milestones:', error);
+      this.logger.error('Error checking review milestones', error.stack);
     }
 
     return this.findOne(review.id);
@@ -442,7 +445,7 @@ export class ReviewsService {
           buyer: review.buyer
         });
       } catch (error) {
-        console.error('Error sending review update notification:', error);
+        this.logger.error('Error sending review update notification', error.stack);
       }
     }
 
@@ -533,7 +536,7 @@ export class ReviewsService {
         }
       );
     } catch (error) {
-      console.error('Error sending review response notification:', error);
+      this.logger.error('Error sending review response notification', error.stack);
     }
 
     return response;
@@ -630,7 +633,7 @@ export class ReviewsService {
           product: review.product
         });
       } catch (error) {
-        console.error('Error sending review helpful notification:', error);
+        this.logger.error('Error sending review helpful notification', error.stack);
       }
     }
 
@@ -709,7 +712,7 @@ export class ReviewsService {
           }
         });
       } catch (error) {
-        console.error('Error sending review flagged notification:', error);
+        this.logger.error('Error sending review flagged notification', error.stack);
       }
     }
 
@@ -782,7 +785,7 @@ export class ReviewsService {
         });
       }
     } catch (error) {
-      console.error('Error sending moderation notification:', error);
+      this.logger.error('Error sending moderation notification', error.stack);
     }
 
     // Actualizar estadísticas si se aprueba o rechaza
@@ -794,7 +797,7 @@ export class ReviewsService {
         try {
           await this.notificationService.checkReviewMilestones(review.product.sellerId);
         } catch (error) {
-          console.error('Error checking review milestones:', error);
+          this.logger.error('Error checking review milestones', error.stack);
         }
       }
     }
@@ -969,7 +972,7 @@ export class ReviewsService {
         }
       });
     } catch (error) {
-      console.error('Error sending review deletion notification:', error);
+      this.logger.error('Error sending review deletion notification', error.stack);
     }
 
     // Actualizar estadísticas
@@ -1207,7 +1210,7 @@ export class ReviewsService {
         });
       }
     } catch (error) {
-      console.error('Error sending rating improvement notification:', error);
+      this.logger.error('Error sending rating improvement notification', error.stack);
     }
   }
 
@@ -1264,7 +1267,7 @@ export class ReviewsService {
         }
       }
     } catch (error) {
-      console.error('Error scheduling review reminders:', error);
+      this.logger.error('Error scheduling review reminders', error.stack);
     }
   }
 
@@ -1315,7 +1318,7 @@ export class ReviewsService {
         });
       }
     } catch (error) {
-      console.error('Error checking product rating milestone:', error);
+      this.logger.error('Error checking product rating milestone', error.stack);
     }
   }
 }

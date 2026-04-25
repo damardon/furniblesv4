@@ -1,8 +1,9 @@
-import { 
-  Injectable, 
-  NotFoundException, 
+import {
+  Injectable,
+  NotFoundException,
   BadRequestException,
-  ForbiddenException 
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FeesService } from '../fees/fees.service';
@@ -14,6 +15,8 @@ import { SyncCartDto } from './dto/sync-cart.dto';
 
 @Injectable()
 export class CartService {
+  private readonly logger = new Logger(CartService.name);
+
   constructor(
     private prisma: PrismaService,
     private feesService: FeesService,
@@ -261,7 +264,7 @@ export class CartService {
         await this.addToCart(userId, { productId }, lang);
       } catch (error) {
         // Ignorar errores individuales para no fallar toda la migración
-        console.warn(`Failed to migrate product ${productId}:`, error.message);
+        this.logger.warn(`Failed to migrate product ${productId}: ${error.message}`);
       }
     }
 
