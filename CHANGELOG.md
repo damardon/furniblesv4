@@ -24,4 +24,7 @@
 ### Notes
 - Backend tests executed: 87 passed for stages 1-9 with the current audit changes.
 - Frontend build validated successfully after cleanup.
+- Repository-level type check passed: `frontend` `tsc --noEmit` and `backend` build both succeed.
+- No package-level `tsconfig.json` compile errors were found in current `backend/tsconfig.json` or `frontend/tsconfig.json`.
+- Existing PR open for this branch: https://github.com/damardon/furniblesv4/pull/1
 - Backup available at `/tmp/backend-furniblesv4-backup-*.tar.gz`.
