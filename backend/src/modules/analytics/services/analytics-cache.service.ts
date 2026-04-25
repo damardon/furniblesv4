@@ -96,12 +96,14 @@ export class AnalyticsCacheService implements OnModuleInit, OnModuleDestroy {
   async invalidatePattern(pattern: string): Promise<void> {
     if (!this.enabled || !this.client) return;
     try {
-      const keys = await this.client.keys(pattern);
-      if (keys.length > 0) {
-        await this.client.del(...keys);
+      const stream = this.client.scanStream({ match: pattern, count: 100 });
+      for await (const keys of stream as AsyncIterable<string[]>) {
+        if (keys.length > 0) {
+          await this.client.unlink(...keys); // UNLINK is non-blocking; falls back to DEL on older Redis
+        }
       }
     } catch {
-      // ignore
+      // non-fatal
     }
   }
 

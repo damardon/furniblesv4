@@ -21,6 +21,8 @@
 - Completed admin analytics fee breakdown aggregation and pending payout reporting.
 - Verified backend stage tests: 87 passed, 0 failed for the audited modules.
 - Verified frontend production build success.
+- **Critical**: Fixed revenue calculation in `getSellerRecentOrders` query: removed `take: 1` limitation on seller items to correctly sum all item prices (was undercounting for multi-item orders); updated product title logic to show 'Multiple Items' when applicable.
+- **Critical**: Fixed Redis performance issue in `AnalyticsCacheService.invalidatePattern()`: replaced blocking `KEYS` command with incremental `SCAN` iteration using `scanStream` to prevent server stalls; switched to `UNLINK` for non-blocking memory cleanup on large key batches.
 
 ### Notes
 - Backend tests executed: 87 passed for stages 1-9 with the current audit changes.
