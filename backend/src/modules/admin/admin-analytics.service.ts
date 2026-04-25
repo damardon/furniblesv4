@@ -389,14 +389,60 @@ export class AdminAnalyticsService {
   }
 
   /**
-   * Helper: Growth mensual
+   * Helper: Growth mensual con datos reales y optimización
    */
   private async getMonthlyGrowth(filters: AdminAnalyticsFiltersDto) {
-    // Implementación simplificada
-    return [
-      { month: '2025-01', revenue: 1000, growth: 0 },
-      { month: '2025-02', revenue: 1200, growth: 20 },
-      { month: '2025-03', revenue: 1440, growth: 20 }
-    ];
+    const whereClause = this.buildWhereClause(filters);
+
+    // Obtener datos de los últimos 12 meses para evitar sobrecarga
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        ...whereClause,
+        status: 'COMPLETED',
+        createdAt: { gte: twelveMonthsAgo }
+      },
+      select: { totalAmount: true, createdAt: true },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    if (orders.length === 0) {
+      return [];
+    }
+
+    const monthlyData = new Map<string, { revenue: number; orders: number }>();
+
+    orders.forEach(order => {
+      const monthKey = order.createdAt.toISOString().slice(0, 7); // YYYY-MM
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { revenue: 0, orders: 0 });
+      }
+      const data = monthlyData.get(monthKey)!;
+      data.revenue += order.totalAmount;
+      data.orders += 1;
+    });
+
+    const sortedMonths = Array.from(monthlyData.entries())
+      .sort(([a], [b]) => a.localeCompare(b));
+
+    let previousRevenue = 0;
+
+    return sortedMonths.map(([month, data], index) => {
+      const growth = index === 0
+        ? 0
+        : previousRevenue === 0
+          ? (data.revenue > 0 ? 100 : 0)
+          : ((data.revenue - previousRevenue) / previousRevenue) * 100;
+
+      previousRevenue = data.revenue;
+
+      return {
+        month,
+        revenue: Number(data.revenue.toFixed(2)),
+        growth: Number(growth.toFixed(2))
+      };
+    });
   }
 }
