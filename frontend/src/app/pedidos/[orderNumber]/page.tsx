@@ -151,7 +151,6 @@ export default function OrderDetailPage() {
           return
         }
 
-        console.log('🔍 [ORDER-DETAIL] Fetching order:', orderNumber)
         
         // ✅ API call directa al backend
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderNumber}`, {
@@ -171,7 +170,6 @@ export default function OrderDetailPage() {
         }
 
         const orderData = await response.json()
-        console.log('✅ [ORDER-DETAIL] Order data received:', orderData)
         setOrder(orderData)
         
         // Si el pedido está pagado, cargar descargas
@@ -189,7 +187,6 @@ export default function OrderDetailPage() {
 
             if (downloadsResponse.ok) {
               const downloadsData = await downloadsResponse.json()
-              console.log('✅ [ORDER-DETAIL] Downloads loaded:', downloadsData.length)
               setDownloads(downloadsData)
             }
           } catch (downloadsError) {
@@ -236,7 +233,6 @@ export default function OrderDetailPage() {
       })
 
       if (response.ok) {
-        console.log('✅ [ORDER-DETAIL] Order cancelled successfully')
         setOrder(prev => prev ? { ...prev, status: 'CANCELLED' as const } : null)
       } else {
         const result = await response.json()

@@ -128,7 +128,6 @@ export default function ConfiguracionPage() {
     try {
       // Simular carga de configuraciones
       // En implementación real, esto vendría del API
-      console.log('Loading user settings...')
     } catch (error) {
       console.error('Error loading settings:', error)
     }

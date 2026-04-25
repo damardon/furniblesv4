@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## [Unreleased] - 2026-04-25 (Session 2)
+
+### Frontend & Repository Cleanup — `refactor/production-ready-v1`
+
+#### Git Repository Hygiene
+- **`furnibles-completo.tar.gz`** removed from git tracking — a 2.2 MB backup archive was being committed as a tracked file, bloating every clone and pull. Added `*.tar.gz` and `*.zip` to root `.gitignore`.
+- **`backend/dist/`** untracked — compiled JS output (`dist/main.js`, `dist/tsconfig.tsbuildinfo`) was being versioned. Added `backend/dist/` and `*.tsbuildinfo` to root `.gitignore` and ran `git rm --cached`. Build artifacts should never live in source control.
+- **`frontend/tsconfig.tsbuildinfo`** untracked — same reason as above.
+- **`frontend/debug-env.js`** deleted — a debugging script that printed raw environment variables (`NEXT_PUBLIC_API_URL`, `NODE_ENV`) to `console.log`. Was never part of the application; only existed as a temporary dev artifact.
+
+#### Frontend: `console.log` Elimination
+All 152 `console.log` debug calls were removed from 28 frontend source files. These were debug-only statements (most emoji-prefixed: `'🔍 [HOMEPAGE] Fetching...'`, `'✅ Cookie set:'`, etc.) left over from development. They add noise to the browser console in production and can expose internal state. `console.error` calls in catch blocks (210 occurrences) were intentionally kept — they surface actual runtime errors.
+
+Files cleaned:
+`lib/api.ts`, `lib/homepage-api.ts`, `lib/orders-api.ts`, `lib/download-api.ts`,
+`lib/stores/auth-store.ts`, `lib/stores/seller-store.ts`, `lib/stores/index.ts`,
+`contexts/auth-context.tsx`, `contexts/cart-context.tsx`, `contexts/payment-context.tsx`,
+`app/page.tsx`, `app/pedidos/[orderNumber]/page.tsx`, `app/admin/dashboard/reviews/page.tsx`,
+`app/productos/page.tsx`, `app/productos/[slug]/page.tsx`, `app/configuracion/page.tsx`,
+`app/vendedor-dashboard/dashboard/page.tsx`, `app/descargas/page.tsx`,
+`app/vendedores/page.tsx`, `app/vendedores/[slug]/page.tsx`,
+`components/upload/file-upload.tsx`, `components/notifications/notification-panel.tsx`,
+`components/checkout/paypal-payment-form.tsx`, `components/checkout/stripe-payment-form.tsx`,
+`components/reviews/review-modal.tsx`, `components/providers/socket-provider.tsx`,
+`components/providers/anime-provider.tsx`, `components/providers/particles-provider.tsx`
+
+**`components/reviews/review-modal.tsx` syntax fix**: The cleanup script left an orphaned `})` at line 123 inside a `try` block (the closing of a multiline `console.log` object literal that spanned multiple lines). Manually removed — `tsc --noEmit` exits 0 on the frontend after the fix.
+
+#### Frontend: ESLint Configuration
+Created **`frontend/.eslintrc.js`** — the frontend had no ESLint configuration despite having `eslint` installed. Extends `next/core-web-vitals` + `@typescript-eslint/recommended`. Key rules:
+- `no-console: ['warn', { allow: ['error', 'warn'] }]` — enforces the cleanup above going forward; `console.error` and `console.warn` are explicitly allowed.
+- `@typescript-eslint/no-explicit-any: 'warn'` — surfaces remaining `any` types without blocking builds.
+
+**Validation**: `tsc --noEmit` on frontend exits 0. Backend `tsc --noEmit` and lint (0 errors) unchanged.
+
+### Commits (Session 2)
+- `c417533` — CHANGELOG: full backend audit documentation  
+- `[pending]` — Frontend cleanup: git hygiene, console.log removal, ESLint setup
+
 ## [Unreleased] - 2026-04-25
 
 ### Technical Debt Audit — `refactor/production-ready-v1`

@@ -28,7 +28,6 @@ export default function HomePage() {
   // ✅ Cargar datos reales al montar el componente
   useEffect(() => {
     async function loadHomepageData() {
-      console.log('🚀 [HOMEPAGE] Loading real data...')
       
       try {
         const [products, stats, sellers] = await Promise.all([
@@ -44,7 +43,6 @@ export default function HomePage() {
           loading: false
         })
         
-        console.log('✅ [HOMEPAGE] All data loaded successfully')
       } catch (error) {
         console.error('❌ [HOMEPAGE] Error loading data:', error)
         setData(prev => ({ ...prev, loading: false }))

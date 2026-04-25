@@ -26,7 +26,6 @@ if (typeof window !== 'undefined') {
     registerStore('seller', useSellerStore)
     registerStore('admin', useAdminStore)
 
-    console.log('✅ All stores registered in store-manager')
   }, 100)
 }
 

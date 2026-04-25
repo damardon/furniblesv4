@@ -133,7 +133,6 @@ export function FileUpload({
         throw new Error('No autorizado')
       }
 
-      console.log('🔍 [FILE-UPLOAD] Uploading file:', file.name)
       
       // ✅ Crear FormData
       const formData = new FormData()
@@ -155,7 +154,6 @@ export function FileUpload({
       }
 
       const result = await response.json()
-      console.log('✅ [FILE-UPLOAD] File uploaded successfully:', result)
       
       if (result && result.id) {
         const uploadedFile: UploadedFile = {
@@ -182,7 +180,6 @@ export function FileUpload({
           prev.map(f => f.id === tempId ? uploadedFile : f)
         )
 
-        console.log('✅ [FILE-UPLOAD] File processed successfully')
         return uploadedFile
       } else {
         throw new Error('Invalid response format')
@@ -276,7 +273,6 @@ export function FileUpload({
       try {
         const token = getAuthToken()
         if (token) {
-          console.log('🔍 [FILE-UPLOAD] Deleting file:', fileId)
           
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/files/${fileId}`, {
             method: 'DELETE',
@@ -288,7 +284,6 @@ export function FileUpload({
           })
 
           if (response.ok) {
-            console.log('✅ [FILE-UPLOAD] File deleted successfully')
           }
         }
       } catch (error) {

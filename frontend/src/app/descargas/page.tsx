@@ -117,7 +117,6 @@ export default function DownloadsPage() {
           throw new Error('No authentication token found')
         }
 
-        console.log('🔍 [DOWNLOADS] Loading user downloads and stats')
         
         // Fetch downloads from real API
         const downloadsResponse = await fetch('/api/downloads', {
@@ -146,10 +145,6 @@ export default function DownloadsPage() {
           const calculatedStats = calculateDownloadStats(userDownloads)
           setStats(calculatedStats)
           
-          console.log('✅ [DOWNLOADS] Data loaded:', {
-            downloads: userDownloads.length,
-            stats: calculatedStats
-          })
         } else {
           throw new Error(downloadsData.message || 'Failed to load downloads')
         }
@@ -334,7 +329,6 @@ export default function DownloadsPage() {
         throw new Error('No authentication token found')
       }
 
-      console.log('🔍 [DOWNLOADS] Starting download for token:', download.downloadToken)
 
       // Call real download API
       const response = await fetch(`/api/downloads/${download.downloadToken}/download`, {
@@ -372,7 +366,6 @@ export default function DownloadsPage() {
           } : d)
         )
 
-        console.log('✅ [DOWNLOADS] Download started successfully')
       } else {
         throw new Error(result.message || 'Error al descargar archivo')
       }

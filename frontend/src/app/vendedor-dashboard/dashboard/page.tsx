@@ -111,7 +111,6 @@ export default function SellerDashboardPage() {
           return
         }
 
-        console.log('🔍 [SELLER-DASHBOARD] Fetching dashboard data')
 
         // ✅ API call para estadísticas generales del vendedor
         const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/seller/dashboard`, {
@@ -127,7 +126,6 @@ export default function SellerDashboardPage() {
         }
 
         const statsData = await statsResponse.json()
-        console.log('✅ [SELLER-DASHBOARD] Stats loaded:', statsData)
 
         // ✅ API call para ventas recientes
         const salesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/sales?limit=5&sortBy=createdAt&sortOrder=desc`, {
@@ -141,7 +139,6 @@ export default function SellerDashboardPage() {
         let recentSales: RecentSale[] = []
         if (salesResponse.ok) {
           const salesData = await salesResponse.json()
-          console.log('✅ [SELLER-DASHBOARD] Recent sales loaded:', salesData.data?.length || 0)
           
           // Transformar datos de la API al formato esperado
           recentSales = salesData.data?.map((order: any) => ({
@@ -167,7 +164,6 @@ export default function SellerDashboardPage() {
         let topProducts: TopProduct[] = []
         if (productsResponse.ok) {
           const productsData = await productsResponse.json()
-          console.log('✅ [SELLER-DASHBOARD] Top products loaded:', productsData.length || 0)
           topProducts = productsData || []
         }
 
@@ -183,7 +179,6 @@ export default function SellerDashboardPage() {
         let recentReviews: RecentReview[] = []
         if (reviewsResponse.ok) {
           const reviewsData = await reviewsResponse.json()
-          console.log('✅ [SELLER-DASHBOARD] Recent reviews loaded:', reviewsData.data?.length || 0)
           
           // Transformar datos de la API al formato esperado
           recentReviews = reviewsData.data?.map((review: any) => ({
@@ -217,7 +212,6 @@ export default function SellerDashboardPage() {
         }
 
         setDashboardData(dashboardData)
-        console.log('✅ [SELLER-DASHBOARD] Dashboard data set successfully')
 
       } catch (err) {
         console.error('❌ [SELLER-DASHBOARD] Error fetching dashboard data:', err)

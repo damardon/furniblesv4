@@ -90,7 +90,6 @@ export default function ProductosPage() {
     
     try {
       const currentFilters = { ...filters, ...newFilters }
-      console.log('🔍 [FRONTEND] Loading products with filters:', currentFilters)
       
       // Construir query string
       const queryParams = new URLSearchParams()
@@ -109,14 +108,12 @@ export default function ProductosPage() {
         cache: 'no-store',
       })
 
-      console.log('🔍 [FRONTEND] Products API response status:', response.status)
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
       }
 
       const data: ProductsResponse = await response.json()
-      console.log('✅ [FRONTEND] Products loaded:', data.data.length)
       
       setProducts(data.data)
       setTotalProducts(data.total)

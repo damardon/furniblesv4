@@ -100,7 +100,6 @@ const syncWithServer = () => {
 
     // Conexión exitosa
     newSocket.on('connect', () => {
-      console.log('🔌 Socket conectado:', newSocket.id)
       setIsConnected(true)
       setConnected(true)
       setConnectionError(null)
@@ -114,7 +113,6 @@ const syncWithServer = () => {
 
     // Desconexión
     newSocket.on('disconnect', (reason) => {
-      console.log('🔌 Socket desconectado:', reason)
       setIsConnected(false)
       setConnected(false)
       
@@ -133,7 +131,6 @@ const syncWithServer = () => {
 
     // Evento de reconexión
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log('🔌 Socket reconectado después de', attemptNumber, 'intentos')
       setReconnectAttempts(0)
       setConnectionError(null)
     })
@@ -142,13 +139,11 @@ const syncWithServer = () => {
 
     // Nueva notificación
     newSocket.on('notification:new', (notification: Notification) => {
-      console.log('🔔 Nueva notificación:', notification)
       addNotification(notification)
     })
 
     // Actualización de orden
     newSocket.on('order:status-changed', (data: { order: Order; status: string }) => {
-      console.log('📦 Estado de orden actualizado:', data)
       
       // Crear notificación local para cambios de orden
       const notification: Notification = {
@@ -171,7 +166,6 @@ const syncWithServer = () => {
 
     // Producto aprobado/rechazado
     newSocket.on('product:moderated', (data: { productId: string; status: string; reason?: string }) => {
-      console.log('📋 Producto moderado:', data)
       
       const notification: Notification = {
         id: `product-${data.productId}-${Date.now()}`,
@@ -195,7 +189,6 @@ const syncWithServer = () => {
 
     // Nueva reseña recibida
     newSocket.on('review:received', (data: { productId: string; rating: number; reviewId: string }) => {
-      console.log('⭐ Nueva reseña recibida:', data)
       
       const notification: Notification = {
         id: `review-${data.reviewId}-${Date.now()}`,
@@ -217,7 +210,6 @@ const syncWithServer = () => {
 
     // Pago recibido
     newSocket.on('payment:received', (data: { amount: number; orderId: string; currency: string }) => {
-      console.log('💰 Pago recibido:', data)
       
       const notification: Notification = {
         id: `payment-${data.orderId}-${Date.now()}`,
@@ -239,13 +231,11 @@ const syncWithServer = () => {
 
     // Carrito sincronizado (para múltiples dispositivos)
     newSocket.on('cart:updated', () => {
-      console.log('🛒 Carrito actualizado desde otro dispositivo')
       syncWithServer()
     })
 
     // Evento de sistema (mantenimiento, actualizaciones, etc.)
     newSocket.on('system:announcement', (data: { title: string; message: string; priority: string }) => {
-      console.log('📢 Anuncio del sistema:', data)
       
       const notification: Notification = {
         id: `system-${Date.now()}`,
@@ -270,7 +260,6 @@ const syncWithServer = () => {
 
     // Cleanup
     return () => {
-      console.log('🔌 Limpiando conexión socket')
       newSocket.disconnect()
       setSocket(null)
       setIsConnected(false)

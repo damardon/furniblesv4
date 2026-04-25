@@ -97,7 +97,6 @@ export function StripePaymentForm({ amount, currency, cartItems, customerInfo }:
       }
 
       if (paymentIntent?.status === 'succeeded') {
-        console.log('✅ [STRIPE] Payment successful')
         
         // Limpiar carrito y redirigir
         await clearCart()

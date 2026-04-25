@@ -158,7 +158,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const loadCart = async () => {
     const token = getAuthToken()
     if (!token) {
-      console.log('No auth token, skipping cart load')
       return
     }
 
@@ -178,7 +177,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             summary: data.summary || initialState.summary
           }
         })
-        console.log('✅ Cart loaded:', data.items.length, 'items')
       } else {
         console.error('Failed to load cart:', response.status)
         dispatch({ type: 'SET_ERROR', payload: 'Error cargando carrito' })
@@ -215,7 +213,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             summary: data.summary || initialState.summary
           }
         })
-        console.log('✅ Product added to cart')
       } else {
         const errorData = await response.json()
         dispatch({ type: 'SET_ERROR', payload: errorData.message || 'Error agregando producto' })
@@ -248,7 +245,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             summary: data.summary || initialState.summary
           }
         })
-        console.log('✅ Product removed from cart')
       } else {
         dispatch({ type: 'SET_ERROR', payload: 'Error removiendo producto' })
       }
@@ -277,7 +273,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         dispatch({ type: 'CLEAR_CART' })
-        console.log('✅ Cart cleared')
       } else {
         // Aún así limpiar localmente si hay error del servidor
         dispatch({ type: 'CLEAR_CART' })
@@ -293,7 +288,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ✅ NUEVA función: Manejar pago exitoso
   const handlePaymentSuccess = async (paymentId: string, paymentMethod: string = 'unknown') => {
     try {
-      console.log('🎉 [CART] Payment successful, clearing cart and redirecting...')
       
       // Limpiar carrito
       await clearCart()

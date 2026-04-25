@@ -100,7 +100,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
         return
       }
 
-      console.log('🔍 [NOTIFICATIONS] Loading notifications')
       
       // Construir query params
       const queryParams = new URLSearchParams()
@@ -126,7 +125,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       }
 
       const data = await response.json()
-      console.log('✅ [NOTIFICATIONS] Notifications loaded:', data.data?.length || 0)
       
       // Calcular unreadCount desde los datos
       const unreadCount = data.data?.filter((n: Notification) => !n.isRead).length || 0
@@ -156,7 +154,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       const token = getAuthToken()
       if (!token) return
 
-      console.log('🔍 [NOTIFICATIONS] Marking as read:', notificationId)
       
       // ✅ API call para marcar como leída
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}/read`, {
@@ -169,7 +166,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       })
 
       if (response.ok) {
-        console.log('✅ [NOTIFICATIONS] Marked as read successfully')
         
         // Actualizar estado local
         setNotificationsData(prev => {
@@ -201,7 +197,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       const token = getAuthToken()
       if (!token) return
 
-      console.log('🔍 [NOTIFICATIONS] Marking all as read')
       
       // ✅ API call para marcar todas como leídas
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/mark-all-read`, {
@@ -214,7 +209,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       })
 
       if (response.ok) {
-        console.log('✅ [NOTIFICATIONS] All marked as read successfully')
         
         // Actualizar estado local
         setNotificationsData(prev => {
@@ -244,7 +238,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       const token = getAuthToken()
       if (!token) return
 
-      console.log('🔍 [NOTIFICATIONS] Deleting notification:', notificationId)
       
       // ✅ API call para eliminar notificación
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}`, {
@@ -257,7 +250,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       })
 
       if (response.ok) {
-        console.log('✅ [NOTIFICATIONS] Deleted successfully')
         
         // Actualizar estado local
         setNotificationsData(prev => {

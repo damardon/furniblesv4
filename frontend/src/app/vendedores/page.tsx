@@ -71,7 +71,6 @@ export default function SellersPage() {
       setError(null)
       
       try {
-        console.log('🔍 [FRONTEND] Loading sellers from API...')
         
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sellers`, {
           method: 'GET',
@@ -81,14 +80,12 @@ export default function SellersPage() {
           cache: 'no-store',
         })
 
-        console.log('🔍 [FRONTEND] API Response status:', response.status)
 
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`)
         }
 
         const data: SellersResponse = await response.json()
-        console.log('🔍 [FRONTEND] Sellers loaded:', data.data.length)
         
         setSellers(data.data)
       } catch (error) {
@@ -96,7 +93,6 @@ export default function SellersPage() {
         setError(error instanceof Error ? error.message : 'Error loading sellers')
         
         // ⚠️ Fallback a datos mock solo en caso de error
-        console.log('⚠️ [FRONTEND] Using fallback mock data')
         const mockSellers: SellerProfile[] = [
           {
             id: 'cmdjni1ny00026693cjf4vaz1',

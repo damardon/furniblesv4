@@ -166,7 +166,6 @@ export default function AdminReviewsPage() {
         return
       }
 
-      console.log('🔍 [ADMIN-REVIEWS] Fetching reviews with filters:', { page, ...filters })
       
       // Construir query params
       const queryParams = new URLSearchParams()
@@ -194,7 +193,6 @@ export default function AdminReviewsPage() {
       }
 
       const data = await response.json()
-      console.log('✅ [ADMIN-REVIEWS] Reviews loaded:', data.data?.length || 0)
       
       // Calcular estadísticas desde los datos
       const reviews = data.data || []
@@ -245,7 +243,6 @@ export default function AdminReviewsPage() {
         throw new Error('No autorizado')
       }
 
-      console.log('🔍 [ADMIN-REVIEWS] Moderating review:', { reviewId, action, reason })
       
       // ✅ API call para moderar review
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews/${reviewId}/moderate`, {
@@ -264,7 +261,6 @@ export default function AdminReviewsPage() {
       }
 
       const result = await response.json()
-      console.log('✅ [ADMIN-REVIEWS] Review moderated successfully:', result)
       
       return { success: true, data: result }
     } catch (error) {

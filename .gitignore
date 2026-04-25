@@ -23,6 +23,15 @@ pids
 out/
 build/
 
+# Build artifacts — do not commit compiled output
+backend/dist/
+frontend/.next/
+*.tsbuildinfo
+
+# Backup archives
+*.tar.gz
+*.zip
+
 # Prisma
 backend/prisma/migrations/dev.db*
 
