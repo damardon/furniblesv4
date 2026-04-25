@@ -37975,20 +37975,43 @@ let AdminAnalyticsService = class AdminAnalyticsService {
             _sum: { totalAmount: true, platformFee: true, sellerAmount: true }
         });
         const revenueByCountry = {};
-        const feesByType = await this.prisma.order.findMany({
+        const feeBreakdownOrders = await this.prisma.order.findMany({
             where: { ...whereClause, status: 'COMPLETED' },
             select: { feeBreakdown: true }
+        });
+        const pendingPayoutsResult = await this.prisma.payout.aggregate({
+            where: { status: { in: ['PENDING', 'PROCESSING'] } },
+            _sum: { amount: true }
         });
         const monthlyGrowth = await this.getMonthlyGrowth(filters);
         return {
             totalRevenue: financialStats._sum.totalAmount || 0,
             totalPlatformFees: financialStats._sum.platformFee || 0,
             totalSellerPayouts: financialStats._sum.sellerAmount || 0,
-            pendingPayouts: 0,
+            pendingPayouts: pendingPayoutsResult._sum.amount || 0,
             revenueByCountry,
-            feesByType: {},
+            feesByType: this.aggregateFeesByType(feeBreakdownOrders),
             monthlyGrowth
         };
+    }
+    aggregateFeesByType(orders) {
+        const feesByType = {};
+        orders.forEach(order => {
+            if (!Array.isArray(order.feeBreakdown)) {
+                return;
+            }
+            order.feeBreakdown.forEach(item => {
+                if (!item || typeof item !== 'object') {
+                    return;
+                }
+                const type = item.type;
+                const amount = item.amount;
+                if (typeof type === 'string' && typeof amount === 'number') {
+                    feesByType[type] = (feesByType[type] || 0) + amount;
+                }
+            });
+        });
+        return feesByType;
     }
     buildWhereClause(filters) {
         const where = {};

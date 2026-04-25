@@ -214,9 +214,14 @@ export class AdminAnalyticsService {
     const revenueByCountry = {}; // TODO: Implementar
 
     // Fees por tipo
-    const feesByType = await this.prisma.order.findMany({
+    const feeBreakdownOrders = await this.prisma.order.findMany({
       where: { ...whereClause, status: 'COMPLETED' },
       select: { feeBreakdown: true }
+    });
+
+    const pendingPayoutsResult = await this.prisma.payout.aggregate({
+      where: { status: { in: ['PENDING', 'PROCESSING'] } },
+      _sum: { amount: true }
     });
 
     // Growth mensual
@@ -226,11 +231,39 @@ export class AdminAnalyticsService {
       totalRevenue: financialStats._sum.totalAmount || 0,
       totalPlatformFees: financialStats._sum.platformFee || 0,
       totalSellerPayouts: financialStats._sum.sellerAmount || 0,
-      pendingPayouts: 0, // TODO: Implementar cuando tengamos payouts
+      pendingPayouts: pendingPayoutsResult._sum.amount || 0,
       revenueByCountry,
-      feesByType: {}, // TODO: Procesar feeBreakdown
+      feesByType: this.aggregateFeesByType(feeBreakdownOrders),
       monthlyGrowth
     };
+  }
+
+  /**
+   * Helper: Suma fees por tipo usando feeBreakdown
+   */
+  private aggregateFeesByType(orders: Array<{ feeBreakdown: unknown }>) {
+    const feesByType: Record<string, number> = {};
+
+    orders.forEach(order => {
+      if (!Array.isArray(order.feeBreakdown)) {
+        return;
+      }
+
+      order.feeBreakdown.forEach(item => {
+        if (!item || typeof item !== 'object') {
+          return;
+        }
+
+        const type = (item as any).type;
+        const amount = (item as any).amount;
+
+        if (typeof type === 'string' && typeof amount === 'number') {
+          feesByType[type] = (feesByType[type] || 0) + amount;
+        }
+      });
+    });
+
+    return feesByType;
   }
 
   /**
