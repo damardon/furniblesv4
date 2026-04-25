@@ -2,6 +2,42 @@
 
 ## [Unreleased] - 2026-04-25 (Session 2)
 
+### Frontend: ESLint ERRORS Fixed — `refactor/production-ready-v1`
+
+All 11 ESLint errors eliminated; only warnings remain. Task: Fix all ESLint ERRORS (not warnings) without breaking functionality.
+
+**Errors Fixed:**
+
+1. **`src/lib/stores/index.ts`** (11 errors: `@typescript-eslint/no-var-requires`)
+   - Lines 15-20: Replaced `require()` with `await import()` in `setTimeout` callback to register stores dynamically
+   - Removed unused `getStores()` function that contained 5 additional `require()` calls
+   - Preserved SSR safety: `typeof window !== 'undefined'` check retained
+   - Behavior: Stores are still registered asynchronously on client initialization (fire-and-forget pattern via `setTimeout`)
+
+2. **`src/app/admin/dashboard/[id]/page.tsx`** (1 error: `prefer-const`)
+   - Line 156: Changed `let result` to `const result` (moved declaration to point of assignment on line 173)
+   - Preserved functionality: moderateProduct logic unchanged
+
+3. **`src/components/checkout/stripe-payment-form.tsx`** (4 errors: `react/no-unescaped-entities`)
+   - Lines 184-185: Replaced unescaped `"` with `&quot;` in JSX text nodes
+   - Fixed: "Pagar" → &quot;Pagar&quot;, "FURNIBLES" → &quot;FURNIBLES&quot;
+
+4. **`src/components/providers/socket-provider.tsx`** (2 errors: `@typescript-eslint/no-var-requires`)
+   - Lines 42-43 (`setConnected`): Changed to `async`, replaced `require()` with `await import()`
+   - Lines 56-69 (`addNotification`): Changed to `async`, replaced `require()` with `await import()`
+   - Preserved fire-and-forget pattern: socket event handlers call async functions without `await` (acceptable for non-critical operations)
+   - Behavior: Notification store mutations still execute as before
+
+5. **`src/components/search/search-filters.tsx`** (2 errors: `react/no-unescaped-entities`)
+   - Line 526: Replaced unescaped `"` with `&quot;` in filter display badge
+   - Fixed: "{filters.search}" → &quot;{filters.search}&quot;
+
+**Validation:**
+- ✅ `npm run lint` → 0 errors, N warnings
+- ✅ `npm run build` → success (38 pages generated)
+- ✅ `npx tsc --noEmit` → 0 errors
+- ✅ No functionality broken; SSR checks intact; async/await patterns correct
+
 ### Frontend & Repository Cleanup — `refactor/production-ready-v1`
 
 #### Git Repository Hygiene

@@ -153,7 +153,6 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
 
     setIsLoading(true)
     try {
-      let result
       let newStatus: ProductStatus
 
       switch (moderationAction) {
@@ -170,7 +169,7 @@ export default function AdminProductDetail({ params }: AdminProductDetailProps) 
           throw new Error('Invalid moderation action')
       }
 
-      result = await updateProductStatus(product.id, newStatus, moderationReason || undefined)
+      const result = await updateProductStatus(product.id, newStatus, moderationReason || undefined)
 
       if (result.success) {
         setModerationAction(null)

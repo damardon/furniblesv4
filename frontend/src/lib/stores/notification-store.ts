@@ -130,9 +130,8 @@ export const useNotificationStore = create<NotificationState & NotificationActio
 
       // GESTIÓN DE NOTIFICACIONES
       fetchNotifications: async (reset = false) => {
-        const { getStores } = await import('./index')
-        const stores = getStores()
-        const authToken = stores.authStore?.token
+        const { useAuthStore } = await import('./auth-store')
+        const authToken = useAuthStore.getState().token
         
         if (!authToken) return
 

@@ -39,11 +39,11 @@ const token = storeManager.getToken()
 const isAuthenticated = storeManager.isAuthenticated()
 
 
-const setConnected = (connected: boolean) => {
+const setConnected = async (connected: boolean) => {
   try {
     if (typeof window !== 'undefined') {
-      const { useNotificationStore } = require('@/lib/stores/notification-store')
-      const store = useNotificationStore.getState()
+      const notificationStoreModule = await import('@/lib/stores/notification-store')
+      const store = notificationStoreModule.useNotificationStore.getState()
       if (store.setConnected) {
         store.setConnected(connected)
       }
@@ -53,12 +53,12 @@ const setConnected = (connected: boolean) => {
   }
 }
 
-const addNotification = (notification: any) => {
+const addNotification = async (notification: any) => {
   // Para agregar notificaciones, necesitamos acceso directo al store
   try {
     if (typeof window !== 'undefined') {
-      const { useNotificationStore } = require('@/lib/stores/notification-store')
-      const store = useNotificationStore.getState()
+      const notificationStoreModule = await import('@/lib/stores/notification-store')
+      const store = notificationStoreModule.useNotificationStore.getState()
       if (store.addNotification) {
         store.addNotification(notification)
       }

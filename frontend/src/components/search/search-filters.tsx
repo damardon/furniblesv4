@@ -523,7 +523,7 @@ export function SearchFilters({
             <div className="flex flex-wrap gap-1">
               {filters.search && (
                 <span className="px-2 py-1 bg-blue-100 border border-black text-xs font-bold">
-                  "{filters.search}"
+                  &quot;{filters.search}&quot;
                 </span>
               )}
               {filters.category !== 'ALL' && (

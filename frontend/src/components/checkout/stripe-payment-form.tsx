@@ -181,8 +181,8 @@ export function StripePaymentForm({ amount, currency, cartItems, customerInfo }:
       </Button>
 
       <div className="text-xs text-gray-500 text-center">
-        <p>Al hacer clic en "Pagar", aceptas nuestros términos y condiciones.</p>
-        <p>El cargo aparecerá como "FURNIBLES" en tu estado de cuenta.</p>
+        <p>Al hacer clic en &quot;Pagar&quot;, aceptas nuestros términos y condiciones.</p>
+        <p>El cargo aparecerá como &quot;FURNIBLES&quot; en tu estado de cuenta.</p>
       </div>
     </form>
   )
