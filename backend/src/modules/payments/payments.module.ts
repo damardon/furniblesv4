@@ -2,15 +2,17 @@
 import { Module } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
-import { PaymentCheckoutController } from './payment-checkout.controller'; // ✅ NUEVO
-import { PayPalService } from './paypal.service'; // ✅ UBICACIÓN CORRECTA
+import { PaymentCheckoutController } from './payment-checkout.controller';
+import { PayPalService } from './paypal.service';
 import { StripeModule } from '../stripe/stripe.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { NotificationModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    StripeModule, 
-    PrismaModule
+    StripeModule,
+    PrismaModule,
+    NotificationModule,
   ],
   controllers: [
     PaymentsController,

@@ -3,6 +3,7 @@ import { Injectable, Logger, BadRequestException, NotFoundException } from '@nes
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { StripeService } from '../stripe/stripe.service';
+import { NotificationService } from '../notifications/notifications.service';
 import { SellerOnboardingDto } from './dto/seller-onboarding.dto';
 import { PaymentSetupDto } from './dto/payment-setup.dto';
 
@@ -14,6 +15,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -513,17 +515,26 @@ export class PaymentsService {
     try {
       this.logger.log(`Processing payout completion for ${payoutData.id}`);
 
-      // Actualizar estado del payout en nuestra base de datos
-      await this.prisma.payout.updateMany({
+      const payout = await this.prisma.payout.findFirst({
         where: { stripePayoutId: payoutData.id },
-        data: {
-          status: 'PAID',
-          processedAt: new Date(),
-        },
+        select: { sellerId: true, amount: true },
       });
 
-      // TODO: Enviar notificación al seller
-      
+      await this.prisma.payout.updateMany({
+        where: { stripePayoutId: payoutData.id },
+        data: { status: 'PAID', processedAt: new Date() },
+      });
+
+      if (payout?.sellerId) {
+        await this.notificationService.createNotification({
+          userId: payout.sellerId,
+          type: 'PAYOUT_COMPLETED',
+          title: 'Payout Completed',
+          message: `Your payout of $${payout.amount.toFixed(2)} has been processed successfully.`,
+          data: { stripePayoutId: payoutData.id, amount: payout.amount },
+        });
+      }
+
       this.logger.log(`Payout ${payoutData.id} marked as completed`);
     } catch (error) {
       this.logger.error(`Failed to process payout completion: ${error.message}`);
@@ -531,14 +542,15 @@ export class PaymentsService {
     }
   }
 
-  /**
-   * 🆕 Procesar webhook de payout fallido
-   */
   async processPayoutFailed(payoutData: any) {
     try {
       this.logger.log(`Processing payout failure for ${payoutData.id}`);
 
-      // Actualizar estado del payout en nuestra base de datos
+      const payout = await this.prisma.payout.findFirst({
+        where: { stripePayoutId: payoutData.id },
+        select: { sellerId: true, amount: true },
+      });
+
       await this.prisma.payout.updateMany({
         where: { stripePayoutId: payoutData.id },
         data: {
@@ -547,8 +559,16 @@ export class PaymentsService {
         },
       });
 
-      // TODO: Enviar notificación de error al seller
-      
+      if (payout?.sellerId) {
+        await this.notificationService.createNotification({
+          userId: payout.sellerId,
+          type: 'PAYOUT_FAILED',
+          title: 'Payout Failed',
+          message: `Your payout of $${payout.amount.toFixed(2)} could not be processed. Reason: ${payoutData.failure_message || 'Unknown error'}.`,
+          data: { stripePayoutId: payoutData.id, reason: payoutData.failure_message },
+        });
+      }
+
       this.logger.log(`Payout ${payoutData.id} marked as failed`);
     } catch (error) {
       this.logger.error(`Failed to process payout failure: ${error.message}`);

@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CartService } from '../cart/cart.service';
-import { FeesService } from '../fees/fees.service';
 import { NotificationService } from '../notifications/notifications.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -23,7 +22,6 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private cartService: CartService,
-    private feesService: FeesService,
     private notificationService: NotificationService,
     @Inject(forwardRef(() => ReviewsService))
     private reviewsService: ReviewsService,
@@ -730,7 +728,7 @@ private buildOrderBy(sortBy?: string, sortOrder?: string): any {
       buyerEmail: order.buyerEmail,
       paymentIntentId: order.paymentIntentId,
       paymentStatus: order.paymentStatus,
-      items: order.items.map(item => ({
+      items: order.items.map((item: { id: string; productId: string; productTitle: string; productSlug: string; price: number; quantity: number; sellerName: string; storeName: string }) => ({
         id: item.id,
         productId: item.productId,
         productTitle: item.productTitle,
@@ -738,7 +736,7 @@ private buildOrderBy(sortBy?: string, sortOrder?: string): any {
         price: item.price,
         quantity: item.quantity,
         sellerName: item.sellerName,
-        storeName: item.storeName
+        storeName: item.storeName,
       })),
       buyer: {
         id: order.buyer.id,
@@ -915,9 +913,6 @@ private buildOrderBy(sortBy?: string, sortOrder?: string): any {
         }
       }
     });
-
-    // TODO: Integrar con Stripe para reembolso real
-    // await this.stripeService.createRefund(order.paymentIntentId, amount);
 
     return updatedOrder;
   }

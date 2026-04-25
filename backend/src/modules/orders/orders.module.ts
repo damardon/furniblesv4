@@ -4,7 +4,6 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CartModule } from '../cart/cart.module';
-import { FeesModule } from '../fees/fees.module';
 import { NotificationModule } from '../notifications/notifications.module';
 import { ReviewsModule } from '../reviews/reviews.module';
 
@@ -12,7 +11,6 @@ import { ReviewsModule } from '../reviews/reviews.module';
   imports: [
     PrismaModule,
     CartModule,
-    FeesModule,
     NotificationModule,
     forwardRef(() => ReviewsModule),
   ],
