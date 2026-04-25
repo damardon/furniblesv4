@@ -12,6 +12,7 @@
 - Updated `backend/prisma/schema.prisma` to use `env("DATABASE_URL")`.
 - Fixed `backend/prisma/prisma.config.ts` to use the correct Prisma 6.x config shape and dotenv loading.
 - Normalized analytics cache key generation for seller dashboard requests.
+- Added root `tsconfig.json` for monorepo project references and editor workspace resolution.
 
 ### Fixed
 - Restored backend build after Prisma downgrade and configuration correction.
@@ -26,5 +27,6 @@
 - Frontend build validated successfully after cleanup.
 - Repository-level type check passed: `frontend` `tsc --noEmit` and `backend` build both succeed.
 - No package-level `tsconfig.json` compile errors were found in current `backend/tsconfig.json` or `frontend/tsconfig.json`.
+- Added root `tsconfig.json` for consistent monorepo editor support and workspace type-checking.
 - Existing PR open for this branch: https://github.com/damardon/furniblesv4/pull/1
 - Backup available at `/tmp/backend-furniblesv4-backup-*.tar.gz`.
