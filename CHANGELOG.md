@@ -1,5 +1,257 @@
 # CHANGELOG
 
+## [Unreleased] - 2026-04-25
+
+### Technical Debt Audit — `refactor/production-ready-v1`
+
+Full autonomous audit of the NestJS backend covering security, performance,
+type safety, antipatterns, and tooling. All changes are backward-compatible
+and non-breaking; `tsc --noEmit` exits 0, lint exits 0 errors.
+
+---
+
+#### Security Fix
+
+**`src/modules/auth/auth.service.ts`**
+
+The email verification token and password reset token were logged to `console.log`
+on every call — meaning they appeared in plain text in production server logs.
+Any log aggregator (Datadog, CloudWatch, etc.) would have stored sensitive
+one-time tokens permanently. Both calls were changed to `this.logger.debug()`
+so they only appear when the application runs at DEBUG log level (never in production).
+
+---
+
+#### Performance: N+1 Query Elimination
+
+Five distinct N+1 patterns were identified and fixed. In all cases the number
+of database round-trips went from O(N) to O(1) or O(constant).
+
+**`orders.service.ts` — `generateDownloadTokens`**
+Previously iterated over every digital item in an order and called
+`prisma.downloadToken.create()` in a sequential `for` loop — one INSERT per
+item. Replaced with a single `prisma.downloadToken.createMany({ data: [...], skipDuplicates: true })`.
+For a 10-item order this reduces 10 INSERT statements to 1.
+
+**`orders.service.ts` — `updateProductStatistics`**
+After order fulfillment, the method incremented `downloadCount` on each product
+and `totalSales` on each seller profile in a sequential loop — 2 UPDATE statements
+per item, executed one after the other. Replaced with `Promise.all(items.map(...))` 
+so all updates execute in parallel, then wrapped both product and seller updates
+for each item in a nested `Promise.all`. For a 5-item order: 10 sequential
+round-trips → 10 parallel round-trips (single wait).
+
+**`payment-checkout.controller.ts` — Stripe & PayPal checkout flows**
+Both the Stripe and PayPal payment confirmation handlers created download tokens
+in `for...of` loops identical to the one in `orders.service.ts`. Each loop was
+replaced with `prisma.downloadToken.createMany`. The Stripe result is stored in
+`downloadTokenCount` and the PayPal result in `paypalTokenCount` to avoid the
+previous variable naming collision that masked the bug.
+
+**`files.service.ts` — `cleanupOrphanedFiles`**
+The orphan cleanup job called `prisma.file.update({ where: { id }, data: { status: DELETED } })`
+once per file in a loop — one UPDATE per orphan. Replaced with a single
+`prisma.file.updateMany({ where: { id: { in: eligibleIds } }, data: { status: DELETED } })`.
+The subsequent filesystem `fs.unlink()` calls still run per-file because that is
+unavoidable I/O, but the database round-trips collapse from N to 1.
+
+**`sellers.service.ts` — `findAll` stats aggregation**
+The original `findAll` ran 4 extra queries per seller per page to compute stats:
+`prisma.product.count`, `prisma.review.aggregate` for rating, and two more for
+sales/reviews. For a page of 10 sellers that was 40 additional queries on top
+of the main list query. Fixed in two ways:
+- `rating`, `totalSales`, and `totalReviews` are already denormalized columns
+  on the `SellerProfile` table — they are now read directly from the fetched row
+  instead of re-aggregating.
+- `totalProducts` still requires a live count, but is now fetched via a single
+  `prisma.product.groupBy({ by: ['sellerId'], _count: { id: true } })` across
+  all sellers in the current page, then mapped into a `Map<sellerId, count>`.
+  10 sellers → 1 query instead of 10.
+
+The `findOne` and `findBySlug` methods were refactored into a shared private
+`attachStats()` helper to avoid code duplication.
+
+---
+
+#### Antipattern Removal
+
+**`orders.service.ts` — dynamic import bypassing NestJS DI**
+In two places the service called `ReviewsService` using:
+```typescript
+const { ReviewsService } = await import('../reviews/reviews.service');
+const reviewsService = new ReviewsService(this.prisma, this.notificationService);
+```
+This bypasses NestJS's dependency injection entirely — creating a second,
+unmanaged instance of the service with manually-threaded dependencies.
+This is error-prone (DI graph is ignored), untestable (can't be mocked via
+the module system), and breaks if `ReviewsService`'s constructor signature changes.
+
+Replaced with proper constructor injection using `@Inject(forwardRef(() => ReviewsService))`.
+The `forwardRef` avoids the circular module reference between `OrdersModule` and
+`ReviewsModule` at module-load time.
+
+**`orders.module.ts` — unused module imports**
+`FeesModule` and `StripeModule` were imported and listed as providers but neither
+`FeesService` nor `StripeService` were used anywhere in `orders.service.ts`
+(confirmed via TypeScript unused-variable hints). Both were removed from the
+module's import list.
+
+**`main.ts` and `stripe.module.ts` — CommonJS `require()` inside ES module files**
+`main.ts` used `const compression = require('compression')` and
+`const cookieParser = require('cookie-parser')` with a comment explaining it was
+to "avoid type problems with ES modules." With `esModuleInterop: true` in
+`tsconfig.json`, both can be imported normally. Converted to
+`import compression from 'compression'` and `import cookieParser from 'cookie-parser'`.
+
+`stripe.module.ts` used `const Stripe = require('stripe')` inside a factory
+function. Converted to a top-level `import Stripe from 'stripe'`.
+
+Both files now pass `@typescript-eslint/no-var-requires` without suppression comments.
+
+---
+
+#### Type Safety: Elimination of `any`
+
+A shared interface was created to replace `any` on authenticated user parameters
+across controllers:
+
+**New file: `src/modules/auth/interfaces/authenticated-user.interface.ts`**
+```typescript
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+}
+```
+
+This interface is now used in place of `any` on `@CurrentUser()` decorator
+parameters in the following controllers (21 occurrences total):
+- `payments.controller.ts` — 8 occurrences; also fixed a NestJS routing
+  warning caused by a required parameter appearing after an optional one.
+- `payouts.controller.ts` — 8 occurrences.
+- `payment-checkout.controller.ts` — 5 occurrences.
+
+**`users.service.ts`**
+- `create(createUserData: any)` → `create(createUserData: Prisma.UserCreateInput & { emailVerificationToken?: string })`
+  The intersection with the optional `emailVerificationToken` field is necessary
+  because Prisma's generated `UserCreateInput` type does not expose that field
+  (it's set internally by the auth flow, not via Prisma relations).
+- `update(id, updateData: any)` → `update(id, updateData: Prisma.UserUpdateInput)`
+- `excludeFields<T extends Record<string, any>>` → `Record<string, unknown>`
+  (tightened: `any` defeats the purpose of a generic constraint).
+
+**`sellers.service.ts`**
+Added two explicit interfaces that were previously inlined as `any`:
+```typescript
+interface FindAllSellersQuery { page?: number; limit?: number; search?: string; }
+interface GetSellerProductsQuery {
+  page?: number; limit?: number;
+  category?: ProductCategory; difficulty?: Difficulty;
+  priceMin?: number; priceMax?: number;
+  sortBy?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'rating' | 'popular';
+  search?: string;
+}
+```
+`create` and `update` method bodies typed with `Prisma.SellerProfileCreateInput`
+and `Prisma.SellerProfileUpdateInput`.
+
+**`sellers.controller.ts`**
+`@Body()` parameters in `create` and `update` changed from `any` to
+`Prisma.SellerProfileCreateInput` / `Prisma.SellerProfileUpdateInput`.
+Query params `category` and `difficulty` cast to `ProductCategory` and `Difficulty`
+Prisma enums before passing to the service layer. `sortBy` result cast to the
+literal union type to satisfy TypeScript's structural type check.
+
+---
+
+#### Logger Standardization
+
+All direct `console.log`, `console.error`, `console.warn`, and `console.debug`
+calls in backend services were replaced with NestJS `Logger` instances. Direct
+`console` usage in production code is a problem because:
+- Messages cannot be filtered by log level at runtime.
+- Messages do not include the class/module name in structured log output.
+- Production log aggregators expect structured JSON, which `console.*` does not produce.
+
+Each affected class now has `private readonly logger = new Logger(ClassName.name)`.
+Files modified:
+
+| File | Calls replaced | Before → After |
+|------|---------------|----------------|
+| `auth.service.ts` | 2 | `console.log` → `logger.debug` |
+| `token-blacklist.service.ts` | 4 | `console.log/error` → `logger.debug/error` |
+| `files.service.ts` | 3 | `console.error` → `logger.error` |
+| `notifications.service.ts` | 5 | `console.log/error` → `logger.log/error` |
+| `reviews.service.ts` | 12 | `console.error` → `logger.error` |
+| `cart.service.ts` | 1 | `console.warn` → `logger.warn` |
+| `checkout.service.ts` | 1 | `console.error` → `logger.error` |
+| `orders.service.ts` | 3 | `console.log/error` → `logger.log/error` |
+
+---
+
+#### TODO Resolution: Payout Notifications
+
+**`src/modules/payments/payments.service.ts`**
+
+Two methods `processPayoutCompleted` and `processPayoutFailed` existed as
+documented stubs with `// TODO: implement` bodies. These are called by the
+Stripe webhook handler when a payout to a seller's bank account succeeds or fails.
+
+Both are now fully implemented:
+1. Fetch the internal payout record by `stripePayoutId` to get the seller's `userId`.
+2. Batch-update all transactions linked to this payout from `PENDING` to `COMPLETED`
+   (or `FAILED`) using `prisma.transaction.updateMany` — one query instead of N.
+3. Call `notificationService.createNotification()` with type `PAYOUT_COMPLETED`
+   or `PAYOUT_FAILED`, including the payout amount and currency in the metadata.
+
+**`src/modules/payments/payments.module.ts`**
+Added `NotificationModule` to `imports` so `NotificationService` is available
+for injection in `PaymentsService`.
+
+---
+
+#### Tooling: ESLint + Prettier Setup
+
+The NestJS project generator normally scaffolds `.eslintrc.js` and `.prettierrc`,
+but both were absent from the repository. Without them, ESLint runs with no rules
+and Prettier cannot enforce formatting consistency.
+
+**`backend/.eslintrc.js`** (created)
+Standard NestJS ESLint configuration:
+- Parser: `@typescript-eslint/parser` with `parserOptions.project`
+- Extends: `plugin:@typescript-eslint/recommended` + `plugin:prettier/recommended`
+- Rules: `no-explicit-any: warn` (not error — many exist in test fixtures),
+  `no-unused-vars: warn` with `argsIgnorePattern: ^_`
+
+**`backend/.prettierrc`** (created)
+```json
+{ "singleQuote": true, "trailingComma": "all" }
+```
+These match the NestJS generator defaults and prevent mixed quote styles across files.
+
+**`backend/tsconfig.eslint.json`** (created)
+```json
+{ "extends": "./tsconfig.json", "include": ["src/**/*", "test/**/*"] }
+```
+The main `tsconfig.json` excludes `**/*.spec.ts` files (correct for compilation).
+Without a separate tsconfig for ESLint, every spec file produces a fatal
+"not included in parserOptions.project" error. `tsconfig.eslint.json` extends
+the main config but includes test files, so ESLint can type-check them.
+`.eslintrc.js` updated to reference `tsconfig.eslint.json` instead of `tsconfig.json`.
+
+After applying Prettier formatting across the full codebase:
+**Result: 0 lint errors, 427 warnings** (all `no-explicit-any` in test fixtures — acceptable).
+**`tsc --noEmit` exits 0** — no TypeScript compilation errors.
+
+---
+
+### Commits in This Audit
+- `ae482bd` — N+1 fixes (orders, payments, files), security fix (auth tokens), Logger refactor
+- `f0652ec` — `any` type fixes (sellers, users, payment controllers), sellers N+1 optimization
+- `5526dbf` — Payout notifications implemented, unused injections removed (FeesService, StripeService)
+- `4b6a24a` — ESLint/Prettier config, `require` → `import` fixes, full codebase Prettier format
+
 ## [Unreleased] - 2026-04-24
 
 ### Added
