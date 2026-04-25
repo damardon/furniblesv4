@@ -1,22 +1,22 @@
 // src/modules/reviews/dto/create-review.dto.ts
-import { 
-  IsNotEmpty, 
-  IsString, 
-  IsInt, 
-  Min, 
-  Max, 
-  IsOptional, 
+import {
+  IsNotEmpty,
+  IsString,
+  IsInt,
+  Min,
+  Max,
+  IsOptional,
   MaxLength,
   MinLength,
   IsArray,
-  IsUUID
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateReviewDto {
   @ApiProperty({
     description: 'Order ID for verified purchase',
-    example: 'clp1234567890'
+    example: 'clp1234567890',
   })
   @IsNotEmpty({ message: 'orderId.required' })
   @IsUUID('4', { message: 'orderId.invalid' })
@@ -24,7 +24,7 @@ export class CreateReviewDto {
 
   @ApiProperty({
     description: 'Product being reviewed',
-    example: 'clp0987654321'
+    example: 'clp0987654321',
   })
   @IsNotEmpty({ message: 'productId.required' })
   @IsUUID('4', { message: 'productId.invalid' })
@@ -34,7 +34,7 @@ export class CreateReviewDto {
     description: 'Rating from 1 to 5 stars',
     minimum: 1,
     maximum: 5,
-    example: 5
+    example: 5,
   })
   @IsInt({ message: 'rating.mustBeInteger' })
   @Min(1, { message: 'rating.tooLow' })
@@ -44,7 +44,7 @@ export class CreateReviewDto {
   @ApiPropertyOptional({
     description: 'Review title',
     maxLength: 100,
-    example: 'Great furniture design!'
+    example: 'Great furniture design!',
   })
   @IsOptional()
   @IsString({ message: 'title.mustBeString' })
@@ -55,7 +55,7 @@ export class CreateReviewDto {
     description: 'Review comment',
     minLength: 10,
     maxLength: 2000,
-    example: 'This furniture design exceeded my expectations...'
+    example: 'This furniture design exceeded my expectations...',
   })
   @IsNotEmpty({ message: 'comment.required' })
   @IsString({ message: 'comment.mustBeString' })
@@ -66,7 +66,7 @@ export class CreateReviewDto {
   @ApiPropertyOptional({
     description: 'Positive aspects (pros)',
     maxLength: 500,
-    example: 'Easy to follow instructions, beautiful result'
+    example: 'Easy to follow instructions, beautiful result',
   })
   @IsOptional()
   @IsString({ message: 'pros.mustBeString' })
@@ -76,7 +76,7 @@ export class CreateReviewDto {
   @ApiPropertyOptional({
     description: 'Negative aspects (cons)',
     maxLength: 500,
-    example: 'Some measurements could be clearer'
+    example: 'Some measurements could be clearer',
   })
   @IsOptional()
   @IsString({ message: 'cons.mustBeString' })
@@ -87,7 +87,7 @@ export class CreateReviewDto {
     description: 'Review images (file IDs)',
     type: [String],
     maxItems: 5,
-    example: ['clp1111111111', 'clp2222222222']
+    example: ['clp1111111111', 'clp2222222222'],
   })
   @IsOptional()
   @IsArray({ message: 'images.mustBeArray' })

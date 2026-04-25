@@ -6,9 +6,17 @@ describe('Orders Functional Tests', () => {
       const orderNumber = `ORD-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}-${sequence}`;
       expect(orderNumber).toBe('ORD-20241224-001');
     });
-    
+
     it('should validate order states', () => {
-      const validStates = ['PENDING', 'PROCESSING', 'PAID', 'COMPLETED', 'CANCELLED', 'REFUNDED', 'DISPUTED'];
+      const validStates = [
+        'PENDING',
+        'PROCESSING',
+        'PAID',
+        'COMPLETED',
+        'CANCELLED',
+        'REFUNDED',
+        'DISPUTED',
+      ];
       const testState = 'COMPLETED';
       expect(validStates).toContain(testState);
     });

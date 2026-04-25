@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
@@ -31,7 +37,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmailWithPassword(email);
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user;
       return result;
     }
@@ -63,24 +69,25 @@ export class AuthService {
     };
 
     return {
-  success: true,
-  message: 'Login successful',
-  data: {
-    token: this.jwtService.sign(payload),        // Cambió: access_token → token
-    refreshToken: this.jwtService.sign(payload, { // Agregado: refreshToken
-      expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRES_IN', '7d'),
-    }),
-    expiresIn: 24 * 60 * 60, // 24 horas en segundos        // Agregado: expiresIn
-    user: {
-      id: fullUser.id,
-      email: fullUser.email,
-      firstName: fullUser.firstName,
-      lastName: fullUser.lastName,
-      role: fullUser.role,
-      status: fullUser.isActive ? 'ACTIVE' : 'INACTIVE', // Agregado: status
-    },
-  },
-};
+      success: true,
+      message: 'Login successful',
+      data: {
+        token: this.jwtService.sign(payload), // Cambió: access_token → token
+        refreshToken: this.jwtService.sign(payload, {
+          // Agregado: refreshToken
+          expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRES_IN', '7d'),
+        }),
+        expiresIn: 24 * 60 * 60, // 24 horas en segundos        // Agregado: expiresIn
+        user: {
+          id: fullUser.id,
+          email: fullUser.email,
+          firstName: fullUser.firstName,
+          lastName: fullUser.lastName,
+          role: fullUser.role,
+          status: fullUser.isActive ? 'ACTIVE' : 'INACTIVE', // Agregado: status
+        },
+      },
+    };
   }
 
   async register(registerDto: RegisterDto) {
@@ -96,32 +103,44 @@ export class AuthService {
     // Usar findByEmail para obtener el user completo después de la creación
     const fullUser = await this.usersService.findByEmail(registerDto.email);
 
-    this.logger.debug(`Email verification token for ${registerDto.email}: ${emailVerificationToken}`);
+    this.logger.debug(
+      `Email verification token for ${registerDto.email}: ${emailVerificationToken}`,
+    );
 
     return {
-      message: 'User registered successfully. Please check your email to verify your account.',
+      message:
+        'User registered successfully. Please check your email to verify your account.',
       userId: fullUser.id,
     };
   }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
     const user = await this.usersService.findById(userId);
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    const isCurrentPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
     if (!isCurrentPasswordValid) {
       throw new BadRequestException('Contraseña actual incorrecta');
     }
 
-    const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
+    const hashedNewPassword = await bcrypt.hash(
+      changePasswordDto.newPassword,
+      12,
+    );
     await this.usersService.updatePassword(userId, hashedNewPassword);
   }
 
   async refreshToken(user: any): Promise<{ access_token: string }> {
     const fullUser = await this.usersService.findById(user.id);
-    
+
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
       sub: fullUser.id,
       email: fullUser.email,
@@ -138,7 +157,7 @@ export class AuthService {
     if (token) {
       await this.tokenBlacklistService.blacklistToken(token, userId);
     }
-    
+
     return {
       message: 'Sesión cerrada exitosamente',
     };
@@ -146,11 +165,12 @@ export class AuthService {
 
   async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await this.usersService.findByEmail(email);
-    
+
     if (!user) {
       // Por seguridad, no revelamos si el email existe o no
       return {
-        message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña',
+        message:
+          'Si el email existe, recibirás instrucciones para restablecer tu contraseña',
       };
     }
 
@@ -160,30 +180,43 @@ export class AuthService {
     expiresAt.setHours(expiresAt.getHours() + 1); // Expira en 1 hora
 
     // Guardar token en base de datos
-    await this.usersService.savePasswordResetToken(user.id, resetToken, expiresAt);
+    await this.usersService.savePasswordResetToken(
+      user.id,
+      resetToken,
+      expiresAt,
+    );
 
     this.logger.debug(`Password reset token for ${user.email}: ${resetToken}`);
 
     return {
-      message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña',
+      message:
+        'Si el email existe, recibirás instrucciones para restablecer tu contraseña',
     };
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.usersService.findByResetToken(token);
-    
+
     if (!user) {
-      throw new BadRequestException('Token de recuperación inválido o expirado');
+      throw new BadRequestException(
+        'Token de recuperación inválido o expirado',
+      );
     }
 
     // Verificar que el token no haya expirado
-    if (user.resetPasswordExpiresAt && user.resetPasswordExpiresAt < new Date()) {
+    if (
+      user.resetPasswordExpiresAt &&
+      user.resetPasswordExpiresAt < new Date()
+    ) {
       throw new BadRequestException('Token de recuperación expirado');
     }
 
     // Hashear nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 12);
-    
+
     // Actualizar contraseña y limpiar token
     await this.usersService.resetUserPassword(user.id, hashedPassword);
 
@@ -194,9 +227,11 @@ export class AuthService {
 
   async verifyEmail(token: string): Promise<{ message: string }> {
     const user = await this.usersService.findByVerificationToken(token);
-    
+
     if (!user) {
-      throw new BadRequestException('Token de verificación inválido o expirado');
+      throw new BadRequestException(
+        'Token de verificación inválido o expirado',
+      );
     }
 
     await this.usersService.verifyEmail(user.id);

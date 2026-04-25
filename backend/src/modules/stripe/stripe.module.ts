@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
 import { StripeService } from './stripe.service';
 
 @Module({
@@ -8,7 +9,6 @@ import { StripeService } from './stripe.service';
     {
       provide: 'STRIPE_CLIENT',
       useFactory: (configService: ConfigService) => {
-        const Stripe = require('stripe');
         return new Stripe(configService.get('STRIPE_SECRET_KEY'), {
           apiVersion: '2023-10-16',
         });
@@ -20,5 +20,3 @@ import { StripeService } from './stripe.service';
   exports: [StripeService],
 })
 export class StripeModule {}
-
-

@@ -14,7 +14,7 @@ import {
   ValidationPipe,
   BadRequestException,
   NotFoundException,
-  ForbiddenException
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,7 +22,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
-  ApiParam
+  ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -37,7 +37,7 @@ import {
   NotificationAnalyticsDto,
   TrackEngagementDto,
   NotificationResponseDto,
-  NotificationPreferencesResponseDto
+  NotificationPreferencesResponseDto,
 } from './dto/notification.dto';
 import { UserRole } from '@prisma/client';
 
@@ -60,19 +60,54 @@ export class NotificationsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Notifications retrieved successfully',
-    type: [NotificationResponseDto]
+    type: [NotificationResponseDto],
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-  @ApiQuery({ name: 'type', required: false, description: 'Filter by notification type' })
-  @ApiQuery({ name: 'priority', required: false, description: 'Filter by priority' })
-  @ApiQuery({ name: 'channel', required: false, description: 'Filter by channel' })
-  @ApiQuery({ name: 'isRead', required: false, type: Boolean, description: 'Filter by read status' })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date filter (ISO string)' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date filter (ISO string)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter by notification type',
+  })
+  @ApiQuery({
+    name: 'priority',
+    required: false,
+    description: 'Filter by priority',
+  })
+  @ApiQuery({
+    name: 'channel',
+    required: false,
+    description: 'Filter by channel',
+  })
+  @ApiQuery({
+    name: 'isRead',
+    required: false,
+    type: Boolean,
+    description: 'Filter by read status',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date filter (ISO string)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date filter (ISO string)',
+  })
   async getUserNotifications(
     @Request() req,
-    @Query(ValidationPipe) filters: FilterNotificationsDto
+    @Query(ValidationPipe) filters: FilterNotificationsDto,
   ) {
     const userId = req.user.sub;
     return await this.notificationService.getUserNotifications(userId, filters);
@@ -88,11 +123,11 @@ export class NotificationsController {
   @ApiParam({ name: 'id', description: 'Notification ID' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Notification marked as read'
+    description: 'Notification marked as read',
   })
   async markAsRead(
     @Param('id', ParseUUIDPipe) notificationId: string,
-    @Request() req
+    @Request() req,
   ) {
     const userId = req.user.sub;
     await this.notificationService.markAsRead(notificationId, userId);
@@ -108,7 +143,7 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Mark all notifications as read' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'All notifications marked as read'
+    description: 'All notifications marked as read',
   })
   async markAllAsRead(@Request() req) {
     const userId = req.user.sub;
@@ -130,11 +165,12 @@ export class NotificationsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Notification preferences retrieved successfully',
-    type: NotificationPreferencesResponseDto
+    type: NotificationPreferencesResponseDto,
   })
   async getNotificationPreferences(@Request() req) {
     const userId = req.user.sub;
-    const preferences = await this.notificationService.getUserPreferences(userId);
+    const preferences =
+      await this.notificationService.getUserPreferences(userId);
     return preferences;
   }
 
@@ -147,11 +183,11 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Update user notification preferences' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Notification preferences updated successfully'
+    description: 'Notification preferences updated successfully',
   })
   async updateNotificationPreferences(
     @Request() req,
-    @Body(ValidationPipe) dto: UpdateNotificationPreferencesDto
+    @Body(ValidationPipe) dto: UpdateNotificationPreferencesDto,
   ) {
     const userId = req.user.sub;
     await this.notificationService.updateNotificationPreferences(userId, dto);
@@ -164,14 +200,16 @@ export class NotificationsController {
   @Post('track-engagement')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Track notification engagement (read, click, dismiss)' })
+  @ApiOperation({
+    summary: 'Track notification engagement (read, click, dismiss)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Engagement tracked successfully'
+    description: 'Engagement tracked successfully',
   })
   async trackEngagement(
     @Request() req,
-    @Body(ValidationPipe) dto: TrackEngagementDto
+    @Body(ValidationPipe) dto: TrackEngagementDto,
   ) {
     const userId = req.user.sub;
     await this.notificationService.trackEngagement(dto, userId);
@@ -188,18 +226,20 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Schedule a notification for later delivery' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Notification scheduled successfully'
+    description: 'Notification scheduled successfully',
   })
   async scheduleNotification(
     @Request() req,
-    @Body(ValidationPipe) dto: CreateScheduledNotificationDto
+    @Body(ValidationPipe) dto: CreateScheduledNotificationDto,
   ) {
     // Verificar que el usuario puede programar notificaciones para este userId
     const currentUserId = req.user.sub;
     const userRole = req.user.role;
 
     if (userRole !== UserRole.ADMIN && dto.userId !== currentUserId) {
-      throw new ForbiddenException('You can only schedule notifications for yourself');
+      throw new ForbiddenException(
+        'You can only schedule notifications for yourself',
+      );
     }
 
     await this.notificationService.scheduleNotification(dto);
@@ -216,18 +256,20 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Send manual review digest for seller' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Review digest sent successfully'
+    description: 'Review digest sent successfully',
   })
   async sendReviewDigest(
     @Request() req,
-    @Body(ValidationPipe) dto: SendReviewDigestDto
+    @Body(ValidationPipe) dto: SendReviewDigestDto,
   ) {
     const currentUserId = req.user.sub;
     const userRole = req.user.role;
 
     // Verificar que el seller solo puede solicitar su propio digest
     if (userRole === UserRole.SELLER && dto.sellerId !== currentUserId) {
-      throw new ForbiddenException('You can only request your own review digest');
+      throw new ForbiddenException(
+        'You can only request your own review digest',
+      );
     }
 
     await this.notificationService.sendReviewWeeklyDigest(dto);
@@ -240,19 +282,41 @@ export class NotificationsController {
   @Get('analytics')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get notification analytics and engagement metrics' })
+  @ApiOperation({
+    summary: 'Get notification analytics and engagement metrics',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Analytics retrieved successfully'
+    description: 'Analytics retrieved successfully',
   })
-  @ApiQuery({ name: 'type', required: false, description: 'Filter by notification type' })
-  @ApiQuery({ name: 'channel', required: false, description: 'Filter by notification channel' })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date filter' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date filter' })
-  @ApiQuery({ name: 'groupBy', required: false, description: 'Group by: day, week, month, type, channel' })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter by notification type',
+  })
+  @ApiQuery({
+    name: 'channel',
+    required: false,
+    description: 'Filter by notification channel',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date filter',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date filter',
+  })
+  @ApiQuery({
+    name: 'groupBy',
+    required: false,
+    description: 'Group by: day, week, month, type, channel',
+  })
   async getNotificationAnalytics(
     @Request() req,
-    @Query(ValidationPipe) filters: NotificationAnalyticsDto
+    @Query(ValidationPipe) filters: NotificationAnalyticsDto,
   ) {
     const userId = req.user.sub;
     const userRole = req.user.role;
@@ -276,21 +340,26 @@ export class NotificationsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Notification retrieved successfully',
-    type: NotificationResponseDto
+    type: NotificationResponseDto,
   })
   async getNotification(
     @Param('id', ParseUUIDPipe) notificationId: string,
-    @Request() req
+    @Request() req,
   ) {
     const userId = req.user.sub;
-    
-    const notifications = await this.notificationService.getUserNotifications(userId, {
-      page: 1,
-      limit: 1
-    });
 
-    const notification = notifications.data.find(n => n.id === notificationId);
-    
+    const notifications = await this.notificationService.getUserNotifications(
+      userId,
+      {
+        page: 1,
+        limit: 1,
+      },
+    );
+
+    const notification = notifications.data.find(
+      (n) => n.id === notificationId,
+    );
+
     if (!notification) {
       throw new NotFoundException('Notification not found');
     }
@@ -311,20 +380,20 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get all review-related notifications' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Review notifications retrieved successfully'
+    description: 'Review notifications retrieved successfully',
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getReviewNotifications(
     @Request() req,
     @Query('page') page?: number,
-    @Query('limit') limit?: number
+    @Query('limit') limit?: number,
   ) {
     const userId = req.user.sub;
-    
+
     const filters: FilterNotificationsDto = {
       page: page || 1,
-      limit: Math.min(limit || 20, 100)
+      limit: Math.min(limit || 20, 100),
     };
 
     // Filtrar solo notificaciones de reviews
@@ -335,20 +404,21 @@ export class NotificationsController {
       'REVIEW_WEEKLY_DIGEST',
       'REVIEW_FOLLOW_UP',
       'REVIEW_MILESTONE',
-      'REVIEW_PENDING_REMINDER'
+      'REVIEW_PENDING_REMINDER',
     ];
 
-    const allNotifications = await this.notificationService.getUserNotifications(userId, filters);
-    
+    const allNotifications =
+      await this.notificationService.getUserNotifications(userId, filters);
+
     // Filtrar manualmente por tipos de review
-    const reviewNotifications = allNotifications.data.filter(notification => 
-      reviewTypes.includes(notification.type as string)
+    const reviewNotifications = allNotifications.data.filter((notification) =>
+      reviewTypes.includes(notification.type as string),
     );
 
     return {
       ...allNotifications,
       data: reviewNotifications,
-      total: reviewNotifications.length
+      total: reviewNotifications.length,
     };
   }
 
@@ -362,7 +432,7 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Manually trigger review reminders (Admin only)' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Review reminders sent successfully'
+    description: 'Review reminders sent successfully',
   })
   async sendReviewReminders(@Request() req) {
     await this.notificationService.sendReviewReminders();
@@ -383,10 +453,10 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Create manual notification (Admin only)' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Notification created successfully'
+    description: 'Notification created successfully',
   })
   async createManualNotification(
-    @Body(ValidationPipe) dto: CreateNotificationDto
+    @Body(ValidationPipe) dto: CreateNotificationDto,
   ) {
     await this.notificationService.createNotification(dto);
     return { message: 'Notification created successfully' };
@@ -402,13 +472,25 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get global notification analytics (Admin only)' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Global analytics retrieved successfully'
+    description: 'Global analytics retrieved successfully',
   })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date filter' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date filter' })
-  @ApiQuery({ name: 'groupBy', required: false, description: 'Group by period' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date filter',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date filter',
+  })
+  @ApiQuery({
+    name: 'groupBy',
+    required: false,
+    description: 'Group by period',
+  })
   async getGlobalAnalytics(
-    @Query(ValidationPipe) filters: NotificationAnalyticsDto
+    @Query(ValidationPipe) filters: NotificationAnalyticsDto,
   ) {
     // No especificar userId para obtener analytics globales
     return await this.notificationService.getNotificationAnalytics(filters);
@@ -421,14 +503,16 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get engagement metrics by notification type (Admin only)' })
+  @ApiOperation({
+    summary: 'Get engagement metrics by notification type (Admin only)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Engagement metrics retrieved successfully'
+    description: 'Engagement metrics retrieved successfully',
   })
   async getEngagementMetrics() {
     return await this.notificationService.getNotificationAnalytics({
-      groupBy: 'type'
+      groupBy: 'type',
     });
   }
 
@@ -442,12 +526,12 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get review digest statistics (Admin only)' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Digest statistics retrieved successfully'
+    description: 'Digest statistics retrieved successfully',
   })
   async getDigestStats() {
     return await this.notificationService.getNotificationAnalytics({
       type: 'REVIEW_WEEKLY_DIGEST' as any,
-      groupBy: 'week'
+      groupBy: 'week',
     });
   }
 
@@ -458,10 +542,12 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Force send weekly digests to all eligible sellers (Admin only)' })
+  @ApiOperation({
+    summary: 'Force send weekly digests to all eligible sellers (Admin only)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Weekly digests sent successfully'
+    description: 'Weekly digests sent successfully',
   })
   async forceWeeklyDigests() {
     await this.notificationService.sendWeeklyDigests();
@@ -475,10 +561,12 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Manually cleanup expired notifications (Admin only)' })
+  @ApiOperation({
+    summary: 'Manually cleanup expired notifications (Admin only)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Expired notifications cleaned up successfully'
+    description: 'Expired notifications cleaned up successfully',
   })
   async cleanupExpiredNotifications() {
     await this.notificationService.cleanupExpiredNotifications();
@@ -499,17 +587,18 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get user digest configuration (Sellers only)' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Digest configuration retrieved successfully'
+    description: 'Digest configuration retrieved successfully',
   })
   async getDigestConfig(@Request() req) {
     const userId = req.user.sub;
-    const preferences = await this.notificationService.getUserPreferences(userId);
+    const preferences =
+      await this.notificationService.getUserPreferences(userId);
 
     return {
       digestFrequency: (preferences as any).digestFrequency ?? null,
       digestDay: (preferences as any).digestDay ?? null,
       digestTime: (preferences as any).digestTime ?? null,
-      timezone: (preferences as any).timezone ?? null
+      timezone: (preferences as any).timezone ?? null,
     };
   }
 
@@ -520,17 +609,19 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Send test notification (Admin only - Development)' })
+  @ApiOperation({
+    summary: 'Send test notification (Admin only - Development)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Test notification sent successfully'
+    description: 'Test notification sent successfully',
   })
   async sendTestNotification(
     @Request() req,
-    @Body() body: { userId?: string; type?: string; message?: string }
+    @Body() body: { userId?: string; type?: string; message?: string },
   ) {
     const targetUserId = body.userId || req.user.sub;
-    
+
     await this.notificationService.createNotification({
       userId: targetUserId,
       type: (body.type as any) || 'SYSTEM_NOTIFICATION',
@@ -539,8 +630,8 @@ export class NotificationsController {
       data: {
         test: true,
         sentAt: new Date().toISOString(),
-        sentBy: req.user.sub
-      }
+        sentBy: req.user.sub,
+      },
     });
 
     return { message: 'Test notification sent successfully' };
@@ -553,10 +644,12 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get notification system health status (Admin only)' })
+  @ApiOperation({
+    summary: 'Get notification system health status (Admin only)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'System health retrieved successfully'
+    description: 'System health retrieved successfully',
   })
   async getSystemHealth() {
     // Obtener métricas básicas del sistema
@@ -566,14 +659,14 @@ export class NotificationsController {
     const analytics = await this.notificationService.getNotificationAnalytics({
       startDate: thirtyDaysAgo.toISOString(),
       endDate: new Date().toISOString(),
-      groupBy: 'day'
+      groupBy: 'day',
     });
 
     return {
       status: 'healthy',
       uptime: process.uptime(),
       lastMonthSummary: analytics.summary,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }

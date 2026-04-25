@@ -53,7 +53,10 @@ describe('Complete Purchase Flow (E2E)', () => {
         include: { product: true },
       });
 
-      const subtotal = cartItems.reduce((sum, item) => sum + item.priceSnapshot, 0);
+      const subtotal = cartItems.reduce(
+        (sum, item) => sum + item.priceSnapshot,
+        0,
+      );
       const platformFee = subtotal * 0.1;
       const total = subtotal + platformFee;
 
@@ -70,7 +73,10 @@ describe('Complete Purchase Flow (E2E)', () => {
         include: { product: true },
       });
 
-      const subtotal = cartItems.reduce((sum, item) => sum + item.priceSnapshot, 0);
+      const subtotal = cartItems.reduce(
+        (sum, item) => sum + item.priceSnapshot,
+        0,
+      );
       const platformFee = subtotal * 0.1;
       const total = subtotal + platformFee;
 
@@ -84,7 +90,7 @@ describe('Complete Purchase Flow (E2E)', () => {
           totalAmount: total,
           currency: 'USD',
           items: {
-            create: cartItems.map(item => ({
+            create: cartItems.map((item) => ({
               productId: item.productId,
               sellerId: item.product.sellerId,
               price: item.priceSnapshot,
@@ -165,7 +171,10 @@ describe('Complete Purchase Flow (E2E)', () => {
 
   describe('Download Process', () => {
     function isTokenValid(token: any): boolean {
-      return token.expiresAt > new Date() && token.downloadCount < token.downloadLimit;
+      return (
+        token.expiresAt > new Date() &&
+        token.downloadCount < token.downloadLimit
+      );
     }
 
     it('should validate download tokens', async () => {

@@ -5,7 +5,14 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/modules/prisma/prisma.service';
-import { UserRole, OrderStatus, ProductStatus, ReviewStatus, ProductCategory, Difficulty } from '@prisma/client';
+import {
+  UserRole,
+  OrderStatus,
+  ProductStatus,
+  ReviewStatus,
+  ProductCategory,
+  Difficulty,
+} from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { hash } from 'bcrypt';
 
@@ -34,7 +41,7 @@ describe('Analytics E2E Tests', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
-    
+
     prisma = app.get<PrismaService>(PrismaService);
     jwtService = app.get<JwtService>(JwtService);
 
@@ -62,8 +69,8 @@ describe('Analytics E2E Tests', () => {
         lastName: 'User',
         role: UserRole.ADMIN,
         emailVerified: true,
-        password: hashedPassword
-      }
+        password: hashedPassword,
+      },
     });
     adminUserId = adminUser.id;
 
@@ -75,8 +82,8 @@ describe('Analytics E2E Tests', () => {
         lastName: 'User',
         role: UserRole.SELLER,
         emailVerified: true,
-        password: hashedPassword
-      }
+        password: hashedPassword,
+      },
     });
     sellerUserId = sellerUser.id;
 
@@ -87,8 +94,8 @@ describe('Analytics E2E Tests', () => {
         storeName: 'Test Business',
         slug: 'test-business',
         description: 'Test Description',
-        isVerified: true
-      }
+        isVerified: true,
+      },
     });
 
     // Create Buyer User
@@ -99,8 +106,8 @@ describe('Analytics E2E Tests', () => {
         lastName: 'User',
         role: UserRole.BUYER,
         emailVerified: true,
-        password: hashedPassword
-      }
+        password: hashedPassword,
+      },
     });
     buyerUserId = buyerUser.id;
 
@@ -109,13 +116,13 @@ describe('Analytics E2E Tests', () => {
       data: {
         title: 'Test Product for Analytics',
         description: 'Test Product Description',
-        price: 100.00,
+        price: 100.0,
         sellerId: sellerUserId,
         status: ProductStatus.APPROVED,
         slug: 'test-product-analytics',
         category: ProductCategory.FURNITURE,
-        difficulty: Difficulty.BEGINNER
-      }
+        difficulty: Difficulty.BEGINNER,
+      },
     });
     productId = product.id;
 
@@ -128,16 +135,16 @@ describe('Analytics E2E Tests', () => {
         mimeType: 'application/pdf',
         size: 1024,
         type: 'PDF',
-        uploadedById: sellerUserId
-      }
+        uploadedById: sellerUserId,
+      },
     });
 
     // Update product with file reference
     await prisma.product.update({
       where: { id: productId },
       data: {
-        pdfFileId: pdfFile.id
-      }
+        pdfFileId: pdfFile.id,
+      },
     });
 
     // Create Order with proper structure and required fields
@@ -145,12 +152,12 @@ describe('Analytics E2E Tests', () => {
       data: {
         orderNumber: `ORD-${Date.now()}`,
         buyerId: buyerUserId,
-        subtotal: 100.00,
-        subtotalAmount: 100.00,
-        platformFeeRate: 0.10,
-        platformFee: 10.00,
-        totalAmount: 100.00,
-        sellerAmount: 90.00,
+        subtotal: 100.0,
+        subtotalAmount: 100.0,
+        platformFeeRate: 0.1,
+        platformFee: 10.0,
+        totalAmount: 100.0,
+        sellerAmount: 90.0,
         status: OrderStatus.COMPLETED,
         buyerEmail: 'buyer@analytics-test.com',
         items: {
@@ -161,11 +168,11 @@ describe('Analytics E2E Tests', () => {
             sellerId: sellerUserId,
             sellerName: 'Seller User',
             storeName: 'Test Business',
-            price: 100.00,
-            quantity: 1
-          }
-        }
-      }
+            price: 100.0,
+            quantity: 1,
+          },
+        },
+      },
     });
     orderId = order.id;
 
@@ -180,8 +187,8 @@ describe('Analytics E2E Tests', () => {
         title: 'Great Product!',
         comment: 'This product exceeded my expectations.',
         status: ReviewStatus.PUBLISHED,
-        isVerified: true
-      }
+        isVerified: true,
+      },
     });
     reviewId = review.id;
 
@@ -190,8 +197,8 @@ describe('Analytics E2E Tests', () => {
       data: {
         reviewId: reviewId,
         sellerId: sellerUserId,
-        comment: 'Thank you for your review!'
-      }
+        comment: 'Thank you for your review!',
+      },
     });
 
     // Create Product Rating
@@ -205,8 +212,8 @@ describe('Analytics E2E Tests', () => {
         threeStar: 0,
         fourStar: 0,
         fiveStar: 1,
-        recommendationRate: 100.0
-      }
+        recommendationRate: 100.0,
+      },
     });
 
     // Create Seller Rating
@@ -219,8 +226,8 @@ describe('Analytics E2E Tests', () => {
         twoStar: 0,
         threeStar: 0,
         fourStar: 0,
-        fiveStar: 1
-      }
+        fiveStar: 1,
+      },
     });
 
     // Create Transactions
@@ -228,24 +235,24 @@ describe('Analytics E2E Tests', () => {
       data: {
         type: 'PLATFORM_FEE',
         status: 'COMPLETED',
-        amount: 10.00,
+        amount: 10.0,
         currency: 'USD',
         sellerId: sellerUserId,
         orderId: orderId,
-        description: 'Platform fee for order'
-      }
+        description: 'Platform fee for order',
+      },
     });
 
     await prisma.transaction.create({
       data: {
         type: 'STRIPE_FEE',
         status: 'COMPLETED',
-        amount: 3.00,
+        amount: 3.0,
         currency: 'USD',
         sellerId: sellerUserId,
         orderId: orderId,
-        description: 'Stripe processing fee'
-      }
+        description: 'Stripe processing fee',
+      },
     });
 
     // Create Notification Analytics
@@ -263,34 +270,58 @@ describe('Analytics E2E Tests', () => {
         readAt: new Date(),
         clickedAt: new Date(),
         deviceType: 'desktop',
-        platform: 'web'
-      }
+        platform: 'web',
+      },
     });
 
     // Generate JWT tokens
-    adminToken = jwtService.sign({ sub: adminUserId, email: adminUser.email, role: UserRole.ADMIN });
-    sellerToken = jwtService.sign({ sub: sellerUserId, email: sellerUser.email, role: UserRole.SELLER });
-    buyerToken = jwtService.sign({ sub: buyerUserId, email: buyerUser.email, role: UserRole.BUYER });
+    adminToken = jwtService.sign({
+      sub: adminUserId,
+      email: adminUser.email,
+      role: UserRole.ADMIN,
+    });
+    sellerToken = jwtService.sign({
+      sub: sellerUserId,
+      email: sellerUser.email,
+      role: UserRole.SELLER,
+    });
+    buyerToken = jwtService.sign({
+      sub: buyerUserId,
+      email: buyerUser.email,
+      role: UserRole.BUYER,
+    });
   }
 
   async function cleanupTestData() {
     try {
       // Delete in reverse order of dependencies
-      await prisma.notificationAnalytics.deleteMany({ where: { userId: sellerUserId } });
-      await prisma.transaction.deleteMany({ where: { sellerId: sellerUserId } });
-      await prisma.sellerRating.deleteMany({ where: { sellerId: sellerUserId } });
-      await prisma.productRating.deleteMany({ where: { productId: productId } });
-      await prisma.reviewResponse.deleteMany({ where: { sellerId: sellerUserId } });
+      await prisma.notificationAnalytics.deleteMany({
+        where: { userId: sellerUserId },
+      });
+      await prisma.transaction.deleteMany({
+        where: { sellerId: sellerUserId },
+      });
+      await prisma.sellerRating.deleteMany({
+        where: { sellerId: sellerUserId },
+      });
+      await prisma.productRating.deleteMany({
+        where: { productId: productId },
+      });
+      await prisma.reviewResponse.deleteMany({
+        where: { sellerId: sellerUserId },
+      });
       await prisma.review.deleteMany({ where: { sellerId: sellerUserId } });
       await prisma.orderItem.deleteMany({ where: { orderId: orderId } });
       await prisma.order.deleteMany({ where: { buyerId: buyerUserId } });
       await prisma.file.deleteMany({ where: { uploadedById: sellerUserId } });
       await prisma.product.deleteMany({ where: { sellerId: sellerUserId } });
-      await prisma.sellerProfile.deleteMany({ where: { userId: sellerUserId } });
+      await prisma.sellerProfile.deleteMany({
+        where: { userId: sellerUserId },
+      });
       await prisma.user.deleteMany({
         where: {
-          id: { in: [adminUserId, sellerUserId, buyerUserId] }
-        }
+          id: { in: [adminUserId, sellerUserId, buyerUserId] },
+        },
       });
     } catch (error) {
       console.error('Cleanup error:', error);
@@ -307,7 +338,7 @@ describe('Analytics E2E Tests', () => {
             startDate: '2024-01-01T00:00:00.000Z',
             endDate: '2024-12-31T23:59:59.999Z',
             includeComparison: 'true',
-            includeActivity: 'true'
+            includeActivity: 'true',
           })
           .expect(200);
 
@@ -333,7 +364,7 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
             sellerId: sellerUserId,
-            includeComparison: 'false'
+            includeComparison: 'false',
           })
           .expect(200);
 
@@ -370,7 +401,7 @@ describe('Analytics E2E Tests', () => {
           .query({
             includeProductBreakdown: 'true',
             includeFees: 'true',
-            groupBy: 'month'
+            groupBy: 'month',
           })
           .expect(200);
 
@@ -386,14 +417,18 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${sellerToken}`)
           .query({
             startDate: '2024-01-01',
-            endDate: '2024-06-30'
+            endDate: '2024-06-30',
           })
           .expect(200);
 
         expect(response.body.success).toBe(true);
         expect(response.body.meta.timeRange).toBeDefined();
-        expect(response.body.meta.timeRange.start).toBe('2024-01-01T00:00:00.000Z');
-        expect(response.body.meta.timeRange.end).toBe('2024-06-30T00:00:00.000Z');
+        expect(response.body.meta.timeRange.start).toBe(
+          '2024-01-01T00:00:00.000Z',
+        );
+        expect(response.body.meta.timeRange.end).toBe(
+          '2024-06-30T00:00:00.000Z',
+        );
       });
     });
 
@@ -405,7 +440,7 @@ describe('Analytics E2E Tests', () => {
           .query({
             sortBy: 'revenue',
             sortOrder: 'desc',
-            includeDetails: 'true'
+            includeDetails: 'true',
           })
           .expect(200);
 
@@ -423,7 +458,7 @@ describe('Analytics E2E Tests', () => {
           .query({
             includeDistribution: 'true',
             includeRecentReviews: 'true',
-            includeResponseMetrics: 'true'
+            includeResponseMetrics: 'true',
           })
           .expect(200);
 
@@ -440,7 +475,7 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${sellerToken}`)
           .query({
             includeRepeatAnalysis: 'true',
-            includeLifetimeValue: 'true'
+            includeLifetimeValue: 'true',
           })
           .expect(200);
 
@@ -456,7 +491,7 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${sellerToken}`)
           .query({
             includeEngagement: 'true',
-            includeTypeBreakdown: 'true'
+            includeTypeBreakdown: 'true',
           })
           .expect(200);
 
@@ -474,7 +509,7 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
             includeComparison: 'true',
-            includeTrends: 'true'
+            includeTrends: 'true',
           })
           .expect(200);
 
@@ -508,7 +543,7 @@ describe('Analytics E2E Tests', () => {
             type: 'sellers',
             sortBy: 'revenue',
             sortOrder: 'desc',
-            limit: '10'
+            limit: '10',
           })
           .expect(200);
 
@@ -532,7 +567,7 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
             'sellerIds[]': sellerUserId, // Array parameter format
-            'metrics[]': 'revenue'
+            'metrics[]': 'revenue',
           })
           .expect(200);
 
@@ -549,7 +584,7 @@ describe('Analytics E2E Tests', () => {
           .query({
             startDate: '2024-01-01',
             endDate: '2024-12-31',
-            includeBreakdown: 'true'
+            includeBreakdown: 'true',
           })
           .expect(200);
 
@@ -571,7 +606,7 @@ describe('Analytics E2E Tests', () => {
             filename: 'test_export',
             sellerId: sellerUserId,
             startDate: '2024-01-01',
-            endDate: '2024-12-31'
+            endDate: '2024-12-31',
           })
           .expect(200);
 
@@ -587,7 +622,7 @@ describe('Analytics E2E Tests', () => {
           .send({
             type: 'SELLER_REVENUE',
             format: 'XLSX',
-            sellerId: 'some-other-seller' // Should be overridden
+            sellerId: 'some-other-seller', // Should be overridden
           })
           .expect(200);
 
@@ -601,7 +636,7 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${buyerToken}`)
           .send({
             type: 'SELLER_REVENUE',
-            format: 'CSV'
+            format: 'CSV',
           })
           .expect(403);
       });
@@ -617,7 +652,7 @@ describe('Analytics E2E Tests', () => {
             description: 'Monthly sales overview',
             metrics: ['revenue', 'orders'],
             chartTypes: ['line', 'bar'],
-            includeRawData: true
+            includeRawData: true,
           })
           .expect(200);
 
@@ -632,7 +667,7 @@ describe('Analytics E2E Tests', () => {
           .send({
             title: 'Platform Overview Report',
             metrics: ['revenue', 'users', 'growth'],
-            chartTypes: ['line']
+            chartTypes: ['line'],
           })
           .expect(200);
 
@@ -651,7 +686,7 @@ describe('Analytics E2E Tests', () => {
             frequency: 'weekly',
             recipients: ['admin@test.com'],
             reportType: 'PLATFORM_OVERVIEW',
-            deliveryTime: '09:00'
+            deliveryTime: '09:00',
           })
           .expect(201);
 
@@ -666,7 +701,7 @@ describe('Analytics E2E Tests', () => {
           .set('Authorization', `Bearer ${sellerToken}`)
           .send({
             name: 'Test Report',
-            frequency: 'weekly'
+            frequency: 'weekly',
           })
           .expect(403);
       });
@@ -682,7 +717,7 @@ describe('Analytics E2E Tests', () => {
           .query({
             startDate: '2024-01-01',
             endDate: '2024-12-31',
-            groupBy: 'month'
+            groupBy: 'month',
           })
           .expect(200);
 
@@ -698,7 +733,7 @@ describe('Analytics E2E Tests', () => {
           .get(`/analytics/charts/seller/${sellerUserId}/revenue`)
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
-            groupBy: 'week'
+            groupBy: 'week',
           })
           .expect(200);
 
@@ -714,8 +749,8 @@ describe('Analytics E2E Tests', () => {
             lastName: 'Seller',
             role: UserRole.SELLER,
             emailVerified: true,
-            password: 'hashedPassword'
-          }
+            password: 'hashedPassword',
+          },
         });
 
         await request(app.getHttpServer())
@@ -741,7 +776,7 @@ describe('Analytics E2E Tests', () => {
           .get('/analytics/charts/admin/platform-overview')
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
-            includeTrends: 'true'
+            includeTrends: 'true',
           })
           .expect(200);
 
@@ -832,7 +867,7 @@ describe('Analytics E2E Tests', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           startDate: '2025-01-01T00:00:00.000Z',
-          endDate: '2025-12-31T23:59:59.999Z'
+          endDate: '2025-12-31T23:59:59.999Z',
         })
         .expect(200);
 
@@ -846,7 +881,7 @@ describe('Analytics E2E Tests', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           startDate: '2024-01-01T00:00:00.000Z',
-          endDate: '2024-12-31T23:59:59.999Z'
+          endDate: '2024-12-31T23:59:59.999Z',
         })
         .expect(200);
 
@@ -862,7 +897,7 @@ describe('Analytics E2E Tests', () => {
         .get('/analytics/seller/dashboard')
         .set('Authorization', `Bearer ${adminToken}`)
         .query({
-          sellerId: 'non-existent-seller-id'
+          sellerId: 'non-existent-seller-id',
         })
         .expect(404); // Should return NotFoundException
     });
@@ -873,7 +908,7 @@ describe('Analytics E2E Tests', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           startDate: 'invalid-date',
-          endDate: 'also-invalid'
+          endDate: 'also-invalid',
         })
         .expect(400); // Should fail validation
     });
@@ -892,7 +927,7 @@ describe('Analytics E2E Tests', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           startDate: '2020-01-01T00:00:00.000Z',
-          endDate: '2024-12-31T23:59:59.999Z'
+          endDate: '2024-12-31T23:59:59.999Z',
         })
         .timeout(5000) // 5 second timeout
         .expect(200);
@@ -918,17 +953,19 @@ describe('Analytics E2E Tests', () => {
     });
 
     it('should handle concurrent requests correctly', async () => {
-      const requests = Array(5).fill(0).map(() =>
-        request(app.getHttpServer())
-          .get('/analytics/seller/dashboard')
-          .set('Authorization', `Bearer ${sellerToken}`)
-          .expect(200)
-      );
+      const requests = Array(5)
+        .fill(0)
+        .map(() =>
+          request(app.getHttpServer())
+            .get('/analytics/seller/dashboard')
+            .set('Authorization', `Bearer ${sellerToken}`)
+            .expect(200),
+        );
 
       const responses = await Promise.all(requests);
 
       // All requests should succeed
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.body.success).toBe(true);
         expect(response.body.data.totalRevenue.value).toBe(100);
       });
@@ -972,14 +1009,14 @@ describe('Analytics E2E Tests', () => {
           lastName: 'User',
           role: UserRole.SELLER,
           emailVerified: true,
-          password: 'hashedPassword'
-        }
+          password: 'hashedPassword',
+        },
       });
 
-      const seller2Token = jwtService.sign({ 
-        sub: seller2.id, 
-        email: seller2.email, 
-        role: UserRole.SELLER 
+      const seller2Token = jwtService.sign({
+        sub: seller2.id,
+        email: seller2.email,
+        role: UserRole.SELLER,
       });
 
       // Seller2 should not see seller1's data
@@ -1004,7 +1041,7 @@ describe('Analytics E2E Tests', () => {
         '/analytics/seller/dashboard',
         '/analytics/seller/revenue',
         '/analytics/seller/products',
-        '/analytics/seller/reviews'
+        '/analytics/seller/reviews',
       ];
 
       for (const endpoint of endpoints) {
@@ -1030,16 +1067,23 @@ describe('Analytics E2E Tests', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .expect(200);
 
-      const metrics = ['totalRevenue', 'monthlyRevenue', 'averageOrderValue', 'totalOrders'];
-      
-      metrics.forEach(metric => {
+      const metrics = [
+        'totalRevenue',
+        'monthlyRevenue',
+        'averageOrderValue',
+        'totalOrders',
+      ];
+
+      metrics.forEach((metric) => {
         expect(response.body.data[metric]).toHaveProperty('value');
         expect(typeof response.body.data[metric].value).toBe('number');
-        
+
         if (response.body.data[metric].change !== undefined) {
           expect(typeof response.body.data[metric].change).toBe('number');
           expect(response.body.data[metric]).toHaveProperty('changeType');
-          expect(['increase', 'decrease', 'neutral']).toContain(response.body.data[metric].changeType);
+          expect(['increase', 'decrease', 'neutral']).toContain(
+            response.body.data[metric].changeType,
+          );
         }
       });
     });

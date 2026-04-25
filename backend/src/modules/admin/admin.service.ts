@@ -28,7 +28,7 @@ export class AdminService {
         totalProducts,
         pendingProducts,
         totalOrders,
-        platformRevenue
+        platformRevenue,
       ] = await Promise.all([
         this.prisma.user.count(),
         this.prisma.user.count({ where: { role: UserRole.SELLER } }),
@@ -36,7 +36,7 @@ export class AdminService {
         this.prisma.product.count(),
         this.prisma.product.count({ where: { status: ProductStatus.PENDING } }),
         this.prisma.order.count(),
-        this.calculatePlatformRevenue()
+        this.calculatePlatformRevenue(),
       ]);
 
       return {
@@ -45,22 +45,25 @@ export class AdminService {
           users: {
             total: totalUsers,
             sellers: totalSellers,
-            buyers: totalBuyers
+            buyers: totalBuyers,
           },
           products: {
             total: totalProducts,
-            pending: pendingProducts
+            pending: pendingProducts,
           },
           orders: {
-            total: totalOrders
+            total: totalOrders,
           },
           revenue: {
-            platform: platformRevenue
-          }
-        }
+            platform: platformRevenue,
+          },
+        },
       };
     } catch (error) {
-      this.logger.error(`Error getting dashboard overview: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error getting dashboard overview: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -68,7 +71,9 @@ export class AdminService {
   // 👥 GESTIÓN DE USUARIOS
   async getAllUsers(page = 1, limit = 20, role?: UserRole) {
     try {
-      this.logger.log(`Getting all users - page: ${page}, limit: ${limit}, role: ${role}`);
+      this.logger.log(
+        `Getting all users - page: ${page}, limit: ${limit}, role: ${role}`,
+      );
 
       const skip = (page - 1) * limit;
       const where = role ? { role } : {};
@@ -83,13 +88,13 @@ export class AdminService {
             _count: {
               select: {
                 orders: true,
-                products: true
-              }
-            }
+                products: true,
+              },
+            },
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         }),
-        this.prisma.user.count({ where })
+        this.prisma.user.count({ where }),
       ]);
 
       return {
@@ -99,8 +104,8 @@ export class AdminService {
           total,
           page,
           limit,
-          totalPages: Math.ceil(total / limit)
-        }
+          totalPages: Math.ceil(total / limit),
+        },
       };
     } catch (error) {
       this.logger.error(`Error getting users: ${error.message}`, error.stack);
@@ -116,17 +121,20 @@ export class AdminService {
         where: { id: userId },
         data: { status },
         include: {
-          sellerProfile: true
-        }
+          sellerProfile: true,
+        },
       });
 
       return {
         success: true,
         data: user,
-        message: `User status updated to ${status}`
+        message: `User status updated to ${status}`,
       };
     } catch (error) {
-      this.logger.error(`Error updating user status: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error updating user status: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -134,7 +142,9 @@ export class AdminService {
   // 📦 MODERACIÓN DE PRODUCTOS - CORREGIDO
   async getPendingProducts(page = 1, limit = 20) {
     try {
-      this.logger.log(`Getting pending products - page: ${page}, limit: ${limit}`);
+      this.logger.log(
+        `Getting pending products - page: ${page}, limit: ${limit}`,
+      );
 
       const skip = (page - 1) * limit;
 
@@ -150,20 +160,20 @@ export class AdminService {
                 email: true,
                 sellerProfile: {
                   select: {
-                    storeName: true
-                  }
-                }
-              }
+                    storeName: true,
+                  },
+                },
+              },
             },
             _count: {
               select: {
-                reviews: true
-              }
-            }
+                reviews: true,
+              },
+            },
           },
-          orderBy: { createdAt: 'asc' }
+          orderBy: { createdAt: 'asc' },
         }),
-        this.prisma.product.count({ where: { status: ProductStatus.PENDING } })
+        this.prisma.product.count({ where: { status: ProductStatus.PENDING } }),
       ]);
 
       // Enriquecer productos con información de archivos
@@ -172,9 +182,9 @@ export class AdminService {
           const fileInfo = await this.getProductFileInfo(product);
           return {
             ...product,
-            fileInfo
+            fileInfo,
           };
-        })
+        }),
       );
 
       return {
@@ -184,25 +194,32 @@ export class AdminService {
           total,
           page,
           limit,
-          totalPages: Math.ceil(total / limit)
-        }
+          totalPages: Math.ceil(total / limit),
+        },
       };
     } catch (error) {
-      this.logger.error(`Error getting pending products: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error getting pending products: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
-  async moderateProduct(productId: string, status: ProductStatus, reason?: string) {
+  async moderateProduct(
+    productId: string,
+    status: ProductStatus,
+    reason?: string,
+  ) {
     try {
       this.logger.log(`Moderating product: ${productId} to ${status}`);
 
       const product = await this.prisma.product.update({
         where: { id: productId },
-        data: { 
+        data: {
           status,
           rejectionReason: reason, // Campo correcto según schema
-          moderatedAt: new Date()
+          moderatedAt: new Date(),
         },
         include: {
           seller: {
@@ -211,21 +228,24 @@ export class AdminService {
               email: true,
               sellerProfile: {
                 select: {
-                  storeName: true
-                }
-              }
-            }
-          }
-        }
+                  storeName: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       return {
         success: true,
         data: product,
-        message: `Product ${status.toLowerCase()} successfully`
+        message: `Product ${status.toLowerCase()} successfully`,
       };
     } catch (error) {
-      this.logger.error(`Error moderating product: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error moderating product: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -240,13 +260,13 @@ export class AdminService {
         totalUsers,
         totalProducts,
         totalOrders,
-        errorLogs
+        errorLogs,
       ] = await Promise.all([
         this.testDatabaseConnection(),
         this.prisma.user.count(),
         this.prisma.product.count(),
         this.prisma.order.count(),
-        this.getRecentErrorLogs()
+        this.getRecentErrorLogs(),
       ]);
 
       return {
@@ -254,19 +274,22 @@ export class AdminService {
         data: {
           database: {
             connected: dbConnectionTest,
-            uptime: process.uptime()
+            uptime: process.uptime(),
           },
           counts: {
             users: totalUsers,
             products: totalProducts,
-            orders: totalOrders
+            orders: totalOrders,
           },
           errors: errorLogs,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
     } catch (error) {
-      this.logger.error(`Error getting system health: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error getting system health: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -276,8 +299,8 @@ export class AdminService {
     try {
       const transactions = await this.prisma.transaction.findMany({
         where: {
-          type: 'PLATFORM_FEE'
-        }
+          type: 'PLATFORM_FEE',
+        },
       });
 
       return transactions.reduce((total, transaction) => {
@@ -310,93 +333,105 @@ export class AdminService {
       const fileInfo = {
         pdfFile: null,
         imageFiles: [],
-        thumbnailFiles: []
+        thumbnailFiles: [],
       };
 
       // Obtener archivo PDF
       if (product.pdfFileId) {
         const pdfFile = await this.prisma.file.findUnique({
-          where: { id: product.pdfFileId }
+          where: { id: product.pdfFileId },
         });
         fileInfo.pdfFile = pdfFile;
       }
 
       // Obtener archivos de imagen
-      if (Array.isArray(product.imageFileIds) && product.imageFileIds.length > 0) {
+      if (
+        Array.isArray(product.imageFileIds) &&
+        product.imageFileIds.length > 0
+      ) {
         const imageFiles = await this.prisma.file.findMany({
-          where: { 
+          where: {
             id: { in: product.imageFileIds },
-            type: 'IMAGE'
-          }
+            type: 'IMAGE',
+          },
         });
         fileInfo.imageFiles = imageFiles;
       }
 
       // Obtener archivos de thumbnail
-      if (Array.isArray(product.thumbnailFileIds) && product.thumbnailFileIds.length > 0) {
+      if (
+        Array.isArray(product.thumbnailFileIds) &&
+        product.thumbnailFileIds.length > 0
+      ) {
         const thumbnailFiles = await this.prisma.file.findMany({
-          where: { 
+          where: {
             id: { in: product.thumbnailFileIds },
-            type: 'THUMBNAIL'
-          }
+            type: 'THUMBNAIL',
+          },
         });
         fileInfo.thumbnailFiles = thumbnailFiles;
       }
 
       return fileInfo;
     } catch (error) {
-      this.logger.error(`Error getting file info for product ${product.id}:`, error);
+      this.logger.error(
+        `Error getting file info for product ${product.id}:`,
+        error,
+      );
       return {
         pdfFile: null,
         imageFiles: [],
-        thumbnailFiles: []
+        thumbnailFiles: [],
       };
     }
   }
   // 📦 OBTENER PRODUCTO ESPECÍFICO PARA MODERACIÓN
-async getProductById(productId: string) {
-  try {
-    this.logger.log(`Getting product by ID: ${productId}`);
+  async getProductById(productId: string) {
+    try {
+      this.logger.log(`Getting product by ID: ${productId}`);
 
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      include: {
-        seller: {
-          include: {
-            sellerProfile: true
-          }
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
+        include: {
+          seller: {
+            include: {
+              sellerProfile: true,
+            },
+          },
+          _count: {
+            select: {
+              reviews: true,
+              favorites: true,
+              orderItems: true,
+            },
+          },
         },
-        _count: {
-          select: {
-            reviews: true,
-            favorites: true,
-            orderItems: true
-          }
-        }
-      }
-    });
+      });
 
-    if (!product) {
+      if (!product) {
+        return {
+          success: false,
+          message: 'Product not found',
+          statusCode: 404,
+        };
+      }
+
+      // Enriquecer con información de archivos
+      const fileInfo = await this.getProductFileInfo(product);
+
       return {
-        success: false,
-        message: 'Product not found',
-        statusCode: 404
+        success: true,
+        product: {
+          ...product,
+          fileInfo,
+        },
       };
+    } catch (error) {
+      this.logger.error(
+        `Error getting product by ID: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
-
-    // Enriquecer con información de archivos
-    const fileInfo = await this.getProductFileInfo(product);
-
-    return {
-      success: true,
-      product: {
-        ...product,
-        fileInfo
-      }
-    };
-  } catch (error) {
-    this.logger.error(`Error getting product by ID: ${error.message}`, error.stack);
-    throw error;
   }
-}
 }

@@ -1,5 +1,13 @@
 // src/modules/payouts/dto/payout-filter.dto.ts - FINAL
-import { IsOptional, IsIn, IsDateString, IsString, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsIn,
+  IsDateString,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -44,7 +52,7 @@ export class PayoutFilterDto {
 
   @ApiPropertyOptional({
     description: 'Minimum payout amount',
-    example: 10.00,
+    example: 10.0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'minAmount.invalid' })
@@ -53,7 +61,7 @@ export class PayoutFilterDto {
 
   @ApiPropertyOptional({
     description: 'Maximum payout amount',
-    example: 1000.00,
+    example: 1000.0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'maxAmount.invalid' })

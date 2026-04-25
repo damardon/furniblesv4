@@ -4,7 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class TokenBlacklistService {
   private readonly logger = new Logger(TokenBlacklistService.name);
-  private blacklistedTokens = new Map<string, { userId: string; expiresAt: Date }>();
+  private blacklistedTokens = new Map<
+    string,
+    { userId: string; expiresAt: Date }
+  >();
 
   constructor(private readonly jwtService: JwtService) {
     // Limpiar tokens expirados cada hora
@@ -35,7 +38,7 @@ export class TokenBlacklistService {
   async isTokenBlacklisted(token: string): Promise<boolean> {
     try {
       const blacklistedData = this.blacklistedTokens.get(token);
-      
+
       if (!blacklistedData) {
         return false;
       }
@@ -67,7 +70,7 @@ export class TokenBlacklistService {
       }
 
       // Eliminar tokens expirados
-      expiredTokens.forEach(token => {
+      expiredTokens.forEach((token) => {
         this.blacklistedTokens.delete(token);
       });
 

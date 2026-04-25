@@ -1,5 +1,11 @@
 // src/modules/payouts/dto/update-payout.dto.ts - FINAL
-import { IsOptional, IsIn, IsString, IsDateString, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsIn,
+  IsString,
+  IsDateString,
+  IsBoolean,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdatePayoutDto {

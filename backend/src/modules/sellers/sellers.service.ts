@@ -15,7 +15,13 @@ interface GetSellerProductsQuery {
   difficulty?: Difficulty;
   priceMin?: number;
   priceMax?: number;
-  sortBy?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'rating' | 'popular';
+  sortBy?:
+    | 'newest'
+    | 'oldest'
+    | 'price_asc'
+    | 'price_desc'
+    | 'rating'
+    | 'popular';
   search?: string;
 }
 
@@ -105,7 +111,9 @@ export class SellersService {
       where: { sellerId: { in: sellerUserIds }, status: 'APPROVED' },
       _count: { id: true },
     });
-    const productCountMap = new Map(productCounts.map((p) => [p.sellerId, p._count.id]));
+    const productCountMap = new Map(
+      productCounts.map((p) => [p.sellerId, p._count.id]),
+    );
 
     const sellersWithStats = sellers.map((seller) => ({
       ...seller,
@@ -188,7 +196,14 @@ export class SellersService {
     return this.attachStats(seller);
   }
 
-  private async attachStats<T extends { userId: string; rating: number; totalSales: number; totalReviews: number }>(seller: T) {
+  private async attachStats<
+    T extends {
+      userId: string;
+      rating: number;
+      totalSales: number;
+      totalReviews: number;
+    },
+  >(seller: T) {
     const totalProducts = await this.prisma.product.count({
       where: { sellerId: seller.userId, status: 'APPROVED' },
     });
@@ -227,10 +242,8 @@ export class SellersService {
       ...(category && { category }),
       ...(difficulty && { difficulty }),
       ...(priceMin && { price: { gte: priceMin } }),
-      ...(priceMax && { 
-        price: priceMin 
-          ? { gte: priceMin, lte: priceMax }
-          : { lte: priceMax }
+      ...(priceMax && {
+        price: priceMin ? { gte: priceMin, lte: priceMax } : { lte: priceMax },
       }),
       // ✅ Búsqueda compatible con SQLite
       ...(search && {
@@ -244,7 +257,7 @@ export class SellersService {
 
     // ✅ Configurar ordenamiento
     let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
-    
+
     switch (sortBy) {
       case 'oldest':
         orderBy = { createdAt: 'asc' };

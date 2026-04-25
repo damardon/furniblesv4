@@ -9,11 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [
-    StripeModule,
-    PrismaModule,
-    NotificationModule,
-  ],
+  imports: [StripeModule, PrismaModule, NotificationModule],
   controllers: [
     PaymentsController,
     PaymentCheckoutController, // ✅ AGREGAR el nuevo controlador
@@ -23,7 +19,7 @@ import { NotificationModule } from '../notifications/notifications.module';
     PayPalService, // ✅ AGREGAR PayPal service
   ],
   exports: [
-    PaymentsService, 
+    PaymentsService,
     PayPalService, // ✅ EXPORTAR para otros módulos
   ],
 })

@@ -2,7 +2,7 @@ import { PartialType, OmitType } from '@nestjs/swagger';
 import { CreateReviewDto } from './create-review.dto';
 
 export class UpdateReviewDto extends PartialType(
-  OmitType(CreateReviewDto, ['orderId', 'productId'])
+  OmitType(CreateReviewDto, ['orderId', 'productId']),
 ) {}
 
 // src/modules/reviews/dto/review-response.dto.ts
@@ -14,7 +14,7 @@ export class CreateReviewResponseDto {
     description: 'Seller response to the review',
     minLength: 10,
     maxLength: 1000,
-    example: 'Thank you for your feedback! We really appreciate...'
+    example: 'Thank you for your feedback! We really appreciate...',
   })
   @IsNotEmpty({ message: 'comment.required' })
   @IsString({ message: 'comment.mustBeString' })
@@ -22,5 +22,3 @@ export class CreateReviewResponseDto {
   @MaxLength(1000, { message: 'comment.tooLong' })
   comment: string;
 }
-
-

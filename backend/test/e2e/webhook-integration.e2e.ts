@@ -7,7 +7,7 @@ describe('Webhook Integration (E2E)', () => {
   beforeAll(async () => {
     const testData = await setupTestDb();
     buyer = testData.buyer;
-    
+
     // Create test order
     order = await prisma.order.create({
       data: {
@@ -22,8 +22,8 @@ describe('Webhook Integration (E2E)', () => {
         platformFee: 10,
         sellerAmount: 90,
         buyerEmail: buyer.email,
-        buyer: { connect: { id: buyer.id } }
-      }
+        buyer: { connect: { id: buyer.id } },
+      },
     });
   });
 
@@ -41,31 +41,32 @@ describe('Webhook Integration (E2E)', () => {
             id: 'pi_test_webhook_123',
             amount_received: 11000, // $110.00 in cents
             currency: 'usd',
-            metadata: { orderId: order.id }
-          }
-        }
+            metadata: { orderId: order.id },
+          },
+        },
       };
-      
+
       // Simulate webhook processing
       // First, find the order by paymentIntentId since it's not unique in the schema
       const orderToUpdate = await prisma.order.findFirst({
-        where: { paymentIntentId: mockStripeEvent.data.object.id }
+        where: { paymentIntentId: mockStripeEvent.data.object.id },
       });
-      if (!orderToUpdate) throw new Error('Order not found for paymentIntentId');
+      if (!orderToUpdate)
+        throw new Error('Order not found for paymentIntentId');
 
       const updatedOrder = await prisma.order.update({
         where: { id: orderToUpdate.id },
         data: {
           status: 'PROCESSING',
           paidAt: new Date(),
-          paymentStatus: 'succeeded'
-        }
+          paymentStatus: 'succeeded',
+        },
       });
-      
+
       expect(updatedOrder.status).toBe('PROCESSING');
       expect(updatedOrder.paymentStatus).toBe('succeeded');
     });
-    
+
     it('should process payment_intent.payment_failed event', async () => {
       // Create another test order for failure
       const failedOrder = await prisma.order.create({
@@ -81,10 +82,10 @@ describe('Webhook Integration (E2E)', () => {
           platformFee: 5,
           sellerAmount: 45,
           buyerEmail: buyer.email,
-          buyer: { connect: { id: buyer.id } }
-        }
+          buyer: { connect: { id: buyer.id } },
+        },
       });
-      
+
       const mockFailureEvent = {
         type: 'payment_intent.payment_failed',
         data: {
@@ -92,17 +93,18 @@ describe('Webhook Integration (E2E)', () => {
             id: 'pi_test_failed_123',
             last_payment_error: {
               code: 'card_declined',
-              message: 'Your card was declined.'
-            }
-          }
-        }
+              message: 'Your card was declined.',
+            },
+          },
+        },
       };
-      
+
       // Simulate failure processing
       const orderToUpdate = await prisma.order.findFirst({
-        where: { paymentIntentId: mockFailureEvent.data.object.id }
+        where: { paymentIntentId: mockFailureEvent.data.object.id },
       });
-      if (!orderToUpdate) throw new Error('Order not found for paymentIntentId');
+      if (!orderToUpdate)
+        throw new Error('Order not found for paymentIntentId');
 
       const updatedOrder = await prisma.order.update({
         where: { id: orderToUpdate.id },
@@ -111,12 +113,12 @@ describe('Webhook Integration (E2E)', () => {
           metadata: {
             paymentError: {
               code: mockFailureEvent.data.object.last_payment_error.code,
-              message: mockFailureEvent.data.object.last_payment_error.message
-            }
-          }
-        }
+              message: mockFailureEvent.data.object.last_payment_error.message,
+            },
+          },
+        },
       });
-      
+
       expect(updatedOrder.paymentStatus).toBe('failed');
     });
   });
@@ -126,9 +128,9 @@ describe('Webhook Integration (E2E)', () => {
       // Complete the order
       await prisma.order.update({
         where: { id: order.id },
-        data: { status: 'COMPLETED', completedAt: new Date() }
+        data: { status: 'COMPLETED', completedAt: new Date() },
       });
-      
+
       // Create buyer notification
       const buyerNotification = await prisma.notification.create({
         data: {
@@ -138,10 +140,10 @@ describe('Webhook Integration (E2E)', () => {
           message: `Tu orden ${order.orderNumber} ha sido completada.`,
           data: { orderId: order.id },
           isRead: false,
-          emailSent: true
-        }
+          emailSent: true,
+        },
       });
-      
+
       expect(buyerNotification.type).toBe('ORDER_COMPLETED');
       expect(buyerNotification.emailSent).toBe(true);
     });

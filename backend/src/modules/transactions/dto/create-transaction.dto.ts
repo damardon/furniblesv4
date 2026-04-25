@@ -1,5 +1,12 @@
 // src/modules/transactions/dto/create-transaction.dto.ts
-import { IsString, IsNumber, IsOptional, IsIn, IsObject, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsIn,
+  IsObject,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TransactionType, TransactionStatus } from '@prisma/client';
 
@@ -7,11 +14,21 @@ export class CreateTransactionDto {
   @ApiProperty({
     description: 'Type of transaction',
     example: 'SALE',
-    enum: ['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'],
+    enum: [
+      'SALE',
+      'PLATFORM_FEE',
+      'STRIPE_FEE',
+      'PAYOUT',
+      'REFUND',
+      'CHARGEBACK',
+    ],
   })
-  @IsIn(['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'], {
-    message: 'type.invalid',
-  })
+  @IsIn(
+    ['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'],
+    {
+      message: 'type.invalid',
+    },
+  )
   type: TransactionType;
 
   @ApiProperty({
@@ -104,10 +121,10 @@ export class CreateTransactionDto {
 
   @ApiPropertyOptional({
     description: 'Additional metadata',
-    example: { 
+    example: {
       productIds: ['product_123', 'product_456'],
       orderNumber: 'ORD-20240624-001',
-      customerEmail: 'customer@example.com'
+      customerEmail: 'customer@example.com',
     },
   })
   @IsOptional()

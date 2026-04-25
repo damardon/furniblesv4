@@ -1,5 +1,12 @@
 // src/modules/stripe/dto/create-connect-account.dto.ts
-import { IsEmail, IsString, IsOptional, IsIn, MinLength, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsIn,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateConnectAccountDto {
@@ -35,12 +42,43 @@ export class CreateConnectAccountDto {
   @ApiProperty({
     description: 'ISO country code where the seller is located',
     example: 'US',
-    enum: ['US', 'CA', 'MX', 'AR', 'CL', 'CO', 'PE', 'BR', 'GB', 'DE', 'FR', 'ES', 'IT'],
+    enum: [
+      'US',
+      'CA',
+      'MX',
+      'AR',
+      'CL',
+      'CO',
+      'PE',
+      'BR',
+      'GB',
+      'DE',
+      'FR',
+      'ES',
+      'IT',
+    ],
   })
   @IsString({ message: 'country.invalid' })
-  @IsIn(['US', 'CA', 'MX', 'AR', 'CL', 'CO', 'PE', 'BR', 'GB', 'DE', 'FR', 'ES', 'IT'], {
-    message: 'country.notSupported',
-  })
+  @IsIn(
+    [
+      'US',
+      'CA',
+      'MX',
+      'AR',
+      'CL',
+      'CO',
+      'PE',
+      'BR',
+      'GB',
+      'DE',
+      'FR',
+      'ES',
+      'IT',
+    ],
+    {
+      message: 'country.notSupported',
+    },
+  )
   country: string;
 
   @ApiPropertyOptional({

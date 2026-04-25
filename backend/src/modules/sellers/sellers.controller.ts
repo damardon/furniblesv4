@@ -12,9 +12,20 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { SellersService } from './sellers.service';
-import { SellerProfile, Prisma, ProductCategory, Difficulty } from '@prisma/client';
+import {
+  SellerProfile,
+  Prisma,
+  ProductCategory,
+  Difficulty,
+} from '@prisma/client';
 
 @ApiTags('sellers')
 @Controller('sellers')
@@ -32,9 +43,24 @@ export class SellersController {
 
   @Get()
   @ApiOperation({ summary: 'Get all sellers with pagination and stats' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term',
+  })
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -64,14 +90,54 @@ export class SellersController {
   @Get(':slug/products')
   @ApiOperation({ summary: 'Get products from a specific seller' })
   @ApiParam({ name: 'slug', description: 'Seller slug' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-  @ApiQuery({ name: 'category', required: false, type: String, description: 'Product category' })
-  @ApiQuery({ name: 'difficulty', required: false, type: String, description: 'Product difficulty' })
-  @ApiQuery({ name: 'priceMin', required: false, type: Number, description: 'Minimum price' })
-  @ApiQuery({ name: 'priceMax', required: false, type: Number, description: 'Maximum price' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort by field' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    type: String,
+    description: 'Product category',
+  })
+  @ApiQuery({
+    name: 'difficulty',
+    required: false,
+    type: String,
+    description: 'Product difficulty',
+  })
+  @ApiQuery({
+    name: 'priceMin',
+    required: false,
+    type: Number,
+    description: 'Minimum price',
+  })
+  @ApiQuery({
+    name: 'priceMax',
+    required: false,
+    type: Number,
+    description: 'Maximum price',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Sort by field',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term',
+  })
   async getSellerProducts(
     @Param('slug') slug: string,
     @Query('page') page: string = '1',
@@ -96,7 +162,14 @@ export class SellersController {
     const priceMaxNum = priceMax ? parseFloat(priceMax) : undefined;
 
     // ✅ Validar sortBy
-    const validSortOptions = ['newest', 'oldest', 'price_asc', 'price_desc', 'rating', 'popular'];
+    const validSortOptions = [
+      'newest',
+      'oldest',
+      'price_asc',
+      'price_desc',
+      'rating',
+      'popular',
+    ];
     const validSortBy = validSortOptions.includes(sortBy) ? sortBy : 'newest';
 
     // ✅ Crear filtros
@@ -107,16 +180,27 @@ export class SellersController {
       difficulty: difficulty as Difficulty | undefined,
       priceMin: priceMinNum,
       priceMax: priceMaxNum,
-      sortBy: validSortBy as 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'rating' | 'popular',
+      sortBy: validSortBy as
+        | 'newest'
+        | 'oldest'
+        | 'price_asc'
+        | 'price_desc'
+        | 'rating'
+        | 'popular',
       search,
     };
 
     try {
       // ✅ Usar sellerId (que es el userId del vendedor)
-      return await this.sellersService.getSellerProducts(seller.userId, filters);
+      return await this.sellersService.getSellerProducts(
+        seller.userId,
+        filters,
+      );
     } catch (error) {
       this.logger.error('Error getting seller products', error.stack);
-      throw new InternalServerErrorException('Error retrieving seller products');
+      throw new InternalServerErrorException(
+        'Error retrieving seller products',
+      );
     }
   }
 
@@ -134,7 +218,10 @@ export class SellersController {
   @ApiParam({ name: 'id', description: 'Seller ID' })
   @ApiResponse({ status: 200, description: 'Seller updated successfully' })
   @ApiResponse({ status: 404, description: 'Seller not found' })
-  update(@Param('id') id: string, @Body() updateSellerDto: Prisma.SellerProfileUpdateInput) {
+  update(
+    @Param('id') id: string,
+    @Body() updateSellerDto: Prisma.SellerProfileUpdateInput,
+  ) {
     return this.sellersService.update(id, updateSellerDto);
   }
 

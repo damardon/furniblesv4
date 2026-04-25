@@ -6,7 +6,7 @@ import { ReviewStatus } from '@prisma/client';
 export class FilterReviewDto {
   @ApiPropertyOptional({
     description: 'Product ID to filter reviews',
-    example: 'clp0987654321'
+    example: 'clp0987654321',
   })
   @IsOptional()
   @IsUUID('4', { message: 'productId.invalid' })
@@ -14,7 +14,7 @@ export class FilterReviewDto {
 
   @ApiPropertyOptional({
     description: 'Seller ID to filter reviews',
-    example: 'clp1234567890'
+    example: 'clp1234567890',
   })
   @IsOptional()
   @IsUUID('4', { message: 'sellerId.invalid' })
@@ -24,7 +24,7 @@ export class FilterReviewDto {
     description: 'Filter by rating',
     minimum: 1,
     maximum: 5,
-    example: 5
+    example: 5,
   })
   @IsOptional()
   @Type(() => Number)
@@ -36,29 +36,29 @@ export class FilterReviewDto {
   @ApiPropertyOptional({
     description: 'Filter by review status',
     enum: ReviewStatus,
-    example: 'PUBLISHED'
+    example: 'PUBLISHED',
   })
   @IsOptional()
   @IsIn(['PENDING_MODERATION', 'PUBLISHED', 'FLAGGED', 'REMOVED'], {
-    message: 'status.invalid'
+    message: 'status.invalid',
   })
   status?: ReviewStatus;
 
   @ApiPropertyOptional({
     description: 'Sort by',
     enum: ['newest', 'oldest', 'highest', 'lowest', 'helpful'],
-    example: 'newest'
+    example: 'newest',
   })
   @IsOptional()
   @IsIn(['newest', 'oldest', 'highest', 'lowest', 'helpful'], {
-    message: 'sortBy.invalid'
+    message: 'sortBy.invalid',
   })
   sortBy?: string = 'newest';
 
   @ApiPropertyOptional({
     description: 'Page number',
     minimum: 1,
-    example: 1
+    example: 1,
   })
   @IsOptional()
   @Type(() => Number)
@@ -70,7 +70,7 @@ export class FilterReviewDto {
     description: 'Items per page',
     minimum: 1,
     maximum: 50,
-    example: 12
+    example: 12,
   })
   @IsOptional()
   @Type(() => Number)

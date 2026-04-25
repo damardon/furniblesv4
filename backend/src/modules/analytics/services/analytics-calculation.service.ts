@@ -5,13 +5,14 @@ import { TimeSeriesData } from '../interfaces/charts.interface';
 @Injectable()
 export class AnalyticsCalculationService {
   buildMetricValue(value: number, previous?: number): MetricValue {
-    const change = previous != null && previous > 0
-      ? ((value - previous) / previous) * 100
-      : 0;
+    const change =
+      previous != null && previous > 0
+        ? ((value - previous) / previous) * 100
+        : 0;
     return {
       value,
       change,
-      changeType: change > 0 ? 'increase' : change < 0 ? 'decrease' : 'neutral'
+      changeType: change > 0 ? 'increase' : change < 0 ? 'decrease' : 'neutral',
     };
   }
 
@@ -30,7 +31,10 @@ export class AnalyticsCalculationService {
     return totalRevenue / orderCount;
   }
 
-  getTimeRange(startDate?: string, endDate?: string): { start: Date; end: Date } {
+  getTimeRange(
+    startDate?: string,
+    endDate?: string,
+  ): { start: Date; end: Date } {
     const end = endDate ? new Date(endDate) : new Date();
     const start = startDate
       ? new Date(startDate)
@@ -38,11 +42,14 @@ export class AnalyticsCalculationService {
     return { start, end };
   }
 
-  getPreviousPeriod(timeRange: { start: Date; end: Date }): { start: Date; end: Date } {
+  getPreviousPeriod(timeRange: { start: Date; end: Date }): {
+    start: Date;
+    end: Date;
+  } {
     const duration = timeRange.end.getTime() - timeRange.start.getTime();
     return {
       start: new Date(timeRange.start.getTime() - duration),
-      end: new Date(timeRange.start.getTime())
+      end: new Date(timeRange.start.getTime()),
     };
   }
 
@@ -53,7 +60,7 @@ export class AnalyticsCalculationService {
 
   groupRevenueByPeriod(
     orders: Array<{ createdAt: Date; sellerRevenue: number }>,
-    groupBy: 'day' | 'week' | 'month' = 'month'
+    groupBy: 'day' | 'week' | 'month' = 'month',
   ): TimeSeriesData[] {
     const buckets = new Map<string, number>();
 
@@ -71,10 +78,14 @@ export class AnalyticsCalculationService {
     if (groupBy === 'day') return date.toISOString().substring(0, 10);
     if (groupBy === 'month') return date.toISOString().substring(0, 7);
     // week: ISO week key YYYY-Www
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const d = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+    );
     d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    const week = Math.ceil(
+      ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+    );
     return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
   }
 }

@@ -1,22 +1,22 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { 
-  NotificationType, 
-  NotificationChannel, 
+import {
+  NotificationType,
+  NotificationChannel,
   NotificationPriority,
-  DigestFrequency 
+  DigestFrequency,
 } from '@prisma/client';
-import { 
-  IsString, 
-  IsOptional, 
-  IsEnum, 
-  IsBoolean, 
-  IsObject, 
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsObject,
   IsDateString,
   IsInt,
   Min,
   Max,
   Matches,
-  IsArray
+  IsArray,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -49,7 +49,10 @@ export class CreateNotificationDto {
   orderId?: string;
 
   // 🆕 Nuevos campos para Etapa 10
-  @ApiPropertyOptional({ enum: NotificationPriority, default: NotificationPriority.NORMAL })
+  @ApiPropertyOptional({
+    enum: NotificationPriority,
+    default: NotificationPriority.NORMAL,
+  })
   @IsOptional()
   @IsEnum(NotificationPriority)
   priority?: NotificationPriority;
@@ -199,7 +202,10 @@ export class UpdateNotificationPreferencesDto {
   reviewReminders?: boolean;
 
   // Configuraciones de digest
-  @ApiPropertyOptional({ enum: DigestFrequency, default: DigestFrequency.WEEKLY })
+  @ApiPropertyOptional({
+    enum: DigestFrequency,
+    default: DigestFrequency.WEEKLY,
+  })
   @IsOptional()
   @IsEnum(DigestFrequency)
   digestFrequency?: DigestFrequency;
@@ -214,7 +220,7 @@ export class UpdateNotificationPreferencesDto {
   @ApiPropertyOptional({ pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$' })
   @IsOptional()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'digestTime must be in HH:MM format'
+    message: 'digestTime must be in HH:MM format',
   })
   digestTime?: string;
 
@@ -227,14 +233,14 @@ export class UpdateNotificationPreferencesDto {
   @ApiPropertyOptional({ pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$' })
   @IsOptional()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'quietHoursStart must be in HH:MM format'
+    message: 'quietHoursStart must be in HH:MM format',
   })
   quietHoursStart?: string;
 
   @ApiPropertyOptional({ pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$' })
   @IsOptional()
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'quietHoursEnd must be in HH:MM format'
+    message: 'quietHoursEnd must be in HH:MM format',
   })
   quietHoursEnd?: string;
 
@@ -307,7 +313,10 @@ export class SendReviewDigestDto {
   @IsString()
   sellerId: string;
 
-  @ApiPropertyOptional({ enum: DigestFrequency, default: DigestFrequency.WEEKLY })
+  @ApiPropertyOptional({
+    enum: DigestFrequency,
+    default: DigestFrequency.WEEKLY,
+  })
   @IsOptional()
   @IsEnum(DigestFrequency)
   frequency?: DigestFrequency;

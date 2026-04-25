@@ -1,13 +1,18 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
 export const CACHE_TTL = {
-  SELLER_DASHBOARD: 300,    // 5 min — high traffic, mildly stale ok
-  SELLER_REVENUE: 600,      // 10 min
-  PLATFORM_OVERVIEW: 120,   // 2 min — admin view, fresher
-  TOP_PERFORMERS: 300,      // 5 min
-  HEALTH: 30,               // 30 s — near-realtime
+  SELLER_DASHBOARD: 300, // 5 min — high traffic, mildly stale ok
+  SELLER_REVENUE: 600, // 10 min
+  PLATFORM_OVERVIEW: 120, // 2 min — admin view, fresher
+  TOP_PERFORMERS: 300, // 5 min
+  HEALTH: 30, // 30 s — near-realtime
 } as const;
 
 @Injectable()
@@ -25,7 +30,10 @@ export class AnalyticsCacheService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     try {
-      this.client = new Redis(redisUrl, { lazyConnect: true, enableOfflineQueue: false });
+      this.client = new Redis(redisUrl, {
+        lazyConnect: true,
+        enableOfflineQueue: false,
+      });
       this.client.on('ready', () => {
         this.enabled = true;
         this.logger.log('Analytics cache connected');
@@ -84,7 +92,7 @@ export class AnalyticsCacheService implements OnModuleInit, OnModuleDestroy {
   async getOrSet<T>(
     key: string,
     factory: () => Promise<T>,
-    ttlSeconds: number
+    ttlSeconds: number,
   ): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) return cached;

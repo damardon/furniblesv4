@@ -2,25 +2,25 @@
 describe('Reviews E2E Tests', () => {
   // Mock services and data
   const mockPrisma = {
-    user: { 
-      create: jest.fn(), 
-      findFirst: jest.fn(),
-      findUnique: jest.fn()
-    },
-    product: { 
-      create: jest.fn(), 
+    user: {
+      create: jest.fn(),
       findFirst: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn()
     },
-    order: { 
-      create: jest.fn(), 
-      findFirst: jest.fn(),
-      update: jest.fn()
-    },
-    orderItem: { 
+    product: {
       create: jest.fn(),
-      findMany: jest.fn()
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    order: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
+    },
+    orderItem: {
+      create: jest.fn(),
+      findMany: jest.fn(),
     },
     review: {
       create: jest.fn(),
@@ -30,42 +30,42 @@ describe('Reviews E2E Tests', () => {
       update: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
-      aggregate: jest.fn()
+      aggregate: jest.fn(),
     },
     reviewResponse: {
       create: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     reviewVote: {
       upsert: jest.fn(),
-      findMany: jest.fn()
+      findMany: jest.fn(),
     },
     reviewReport: {
       create: jest.fn(),
-      count: jest.fn()
+      count: jest.fn(),
     },
     productRating: {
       upsert: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     sellerRating: {
       upsert: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     sellerProfile: {
-      update: jest.fn()
+      update: jest.fn(),
     },
     reviewImage: {
       createMany: jest.fn(),
-      deleteMany: jest.fn()
+      deleteMany: jest.fn(),
     },
     file: {
-      findMany: jest.fn()
+      findMany: jest.fn(),
     },
     notification: {
-      create: jest.fn()
+      create: jest.fn(),
     },
-    $transaction: jest.fn()
+    $transaction: jest.fn(),
   };
 
   beforeEach(() => {
@@ -83,68 +83,70 @@ describe('Reviews E2E Tests', () => {
         email: 'buyer@test.com',
         role: 'BUYER',
         firstName: 'Test',
-        lastName: 'Buyer'
+        lastName: 'Buyer',
       },
       seller: {
         id: 'seller-456',
         email: 'seller@test.com',
         role: 'SELLER',
         firstName: 'Test',
-        lastName: 'Seller'
+        lastName: 'Seller',
       },
       product: {
         id: 'product-789',
         title: 'Mesa de Comedor Premium',
         price: 299.99,
         sellerId: 'seller-456',
-        status: 'PUBLISHED'
+        status: 'PUBLISHED',
       },
       order: {
         id: 'order-abc123',
         orderNumber: 'ORD-20241224-001',
         buyerId: 'buyer-123',
         status: 'COMPLETED',
-        totalAmount: 329.99
-      }
+        totalAmount: 329.99,
+      },
     };
 
     describe('Step 1: Setup - Users, Products and Completed Order', () => {
       it('should have necessary entities for review creation', async () => {
         // Mock buyer
         mockPrisma.user.findUnique.mockResolvedValueOnce(testData.buyer);
-        
-        // Mock seller  
+
+        // Mock seller
         mockPrisma.user.findUnique.mockResolvedValueOnce(testData.seller);
-        
+
         // Mock product
         mockPrisma.product.findUnique.mockResolvedValue(testData.product);
-        
+
         // Mock completed order with product
         mockPrisma.order.findFirst.mockResolvedValue({
           ...testData.order,
-          items: [{
-            productId: testData.product.id,
-            sellerId: testData.seller.id,
-            price: testData.product.price
-          }]
+          items: [
+            {
+              productId: testData.product.id,
+              sellerId: testData.seller.id,
+              price: testData.product.price,
+            },
+          ],
         });
 
         // Verify setup
-        const buyer = await mockPrisma.user.findUnique({ 
-          where: { id: testData.buyer.id } 
+        const buyer = await mockPrisma.user.findUnique({
+          where: { id: testData.buyer.id },
         });
-        const seller = await mockPrisma.user.findUnique({ 
-          where: { id: testData.seller.id } 
+        const seller = await mockPrisma.user.findUnique({
+          where: { id: testData.seller.id },
         });
-        const product = await mockPrisma.product.findUnique({ 
-          where: { id: testData.product.id } 
+        const product = await mockPrisma.product.findUnique({
+          where: { id: testData.product.id },
         });
         const order = await mockPrisma.order.findFirst({
-          where: { 
+          where: {
             id: testData.order.id,
-            status: 'COMPLETED'
+            status: 'COMPLETED',
           },
-          include: { items: true }
+          include: { items: true },
         });
 
         expect(buyer.role).toBe('BUYER');
@@ -163,9 +165,10 @@ describe('Reviews E2E Tests', () => {
           productId: testData.product.id,
           rating: 5,
           title: 'Excelente mesa, superó mis expectativas',
-          comment: 'La calidad de los materiales es excepcional. El armado fue sencillo y el resultado final es hermoso. Muy recomendable.',
+          comment:
+            'La calidad de los materiales es excepcional. El armado fue sencillo y el resultado final es hermoso. Muy recomendable.',
           pros: 'Materiales de calidad, fácil armado, diseño elegante',
-          cons: 'El empaque podría ser más compacto'
+          cons: 'El empaque podría ser más compacto',
         };
 
         const mockReview = {
@@ -177,13 +180,13 @@ describe('Reviews E2E Tests', () => {
           isVerified: true,
           helpfulCount: 0,
           notHelpfulCount: 0,
-          createdAt: new Date()
+          createdAt: new Date(),
         };
 
         // Mock order verification
         mockPrisma.order.findFirst.mockResolvedValue({
           ...testData.order,
-          items: [{ productId: testData.product.id }]
+          items: [{ productId: testData.product.id }],
         });
 
         // Mock no existing review
@@ -198,7 +201,7 @@ describe('Reviews E2E Tests', () => {
         // Mock auto-moderation (publish automatically)
         mockPrisma.review.update.mockResolvedValue({
           ...mockReview,
-          status: 'PUBLISHED'
+          status: 'PUBLISHED',
         });
 
         // Mock product rating update
@@ -214,11 +217,11 @@ describe('Reviews E2E Tests', () => {
           where: {
             id: reviewDto.orderId,
             buyerId: testData.buyer.id,
-            status: 'COMPLETED'
+            status: 'COMPLETED',
           },
           include: {
-            items: { where: { productId: reviewDto.productId } }
-          }
+            items: { where: { productId: reviewDto.productId } },
+          },
         });
 
         expect(order).toBeTruthy();
@@ -230,9 +233,9 @@ describe('Reviews E2E Tests', () => {
             orderId_productId_buyerId: {
               orderId: reviewDto.orderId,
               productId: reviewDto.productId,
-              buyerId: testData.buyer.id
-            }
-          }
+              buyerId: testData.buyer.id,
+            },
+          },
         });
 
         expect(existingReview).toBeNull();
@@ -249,8 +252,8 @@ describe('Reviews E2E Tests', () => {
             comment: reviewDto.comment,
             pros: reviewDto.pros,
             cons: reviewDto.cons,
-            status: 'PENDING_MODERATION'
-          }
+            status: 'PENDING_MODERATION',
+          },
         });
 
         expect(review.rating).toBe(5);
@@ -265,7 +268,7 @@ describe('Reviews E2E Tests', () => {
           orderId: testData.order.id,
           productId: testData.product.id,
           rating: 4,
-          comment: 'Segundo intento de review'
+          comment: 'Segundo intento de review',
         };
 
         // Mock existing review
@@ -273,7 +276,7 @@ describe('Reviews E2E Tests', () => {
           id: 'existing-review',
           orderId: testData.order.id,
           productId: testData.product.id,
-          buyerId: testData.buyer.id
+          buyerId: testData.buyer.id,
         });
 
         // Attempt to create duplicate review should fail
@@ -282,9 +285,9 @@ describe('Reviews E2E Tests', () => {
             orderId_productId_buyerId: {
               orderId: reviewDto.orderId,
               productId: reviewDto.productId,
-              buyerId: testData.buyer.id
-            }
-          }
+              buyerId: testData.buyer.id,
+            },
+          },
         });
 
         expect(existingReview).toBeTruthy();
@@ -298,23 +301,23 @@ describe('Reviews E2E Tests', () => {
         const cleanReview = {
           id: 'review-clean',
           comment: 'Excellent product, very satisfied with the quality',
-          rating: 5
+          rating: 5,
         };
 
         mockPrisma.review.findUnique.mockResolvedValue(cleanReview);
         mockPrisma.review.update.mockResolvedValue({
           ...cleanReview,
-          status: 'PUBLISHED'
+          status: 'PUBLISHED',
         });
 
         // Simulate auto-moderation logic
         const review = await mockPrisma.review.findUnique({
-          where: { id: cleanReview.id }
+          where: { id: cleanReview.id },
         });
 
         const suspiciousWords = ['spam', 'fake', 'scam'];
-        const hasSpam = suspiciousWords.some(word => 
-          review.comment.toLowerCase().includes(word.toLowerCase())
+        const hasSpam = suspiciousWords.some((word) =>
+          review.comment.toLowerCase().includes(word.toLowerCase()),
         );
 
         let newStatus = 'PUBLISHED';
@@ -324,7 +327,7 @@ describe('Reviews E2E Tests', () => {
 
         const updatedReview = await mockPrisma.review.update({
           where: { id: review.id },
-          data: { status: newStatus }
+          data: { status: newStatus },
         });
 
         expect(updatedReview.status).toBe('PUBLISHED');
@@ -335,23 +338,23 @@ describe('Reviews E2E Tests', () => {
         const suspiciousReview = {
           id: 'review-suspicious',
           comment: 'This is spam content with fake information',
-          rating: 1
+          rating: 1,
         };
 
         mockPrisma.review.findUnique.mockResolvedValue(suspiciousReview);
         mockPrisma.review.update.mockResolvedValue({
           ...suspiciousReview,
-          status: 'FLAGGED'
+          status: 'FLAGGED',
         });
 
         // Simulate auto-moderation
         const review = await mockPrisma.review.findUnique({
-          where: { id: suspiciousReview.id }
+          where: { id: suspiciousReview.id },
         });
 
         const suspiciousWords = ['spam', 'fake', 'scam'];
-        const hasSpam = suspiciousWords.some(word => 
-          review.comment.toLowerCase().includes(word.toLowerCase())
+        const hasSpam = suspiciousWords.some((word) =>
+          review.comment.toLowerCase().includes(word.toLowerCase()),
         );
 
         let newStatus = 'PUBLISHED';
@@ -361,7 +364,7 @@ describe('Reviews E2E Tests', () => {
 
         const updatedReview = await mockPrisma.review.update({
           where: { id: review.id },
-          data: { status: newStatus }
+          data: { status: newStatus },
         });
 
         expect(updatedReview.status).toBe('FLAGGED');
@@ -373,7 +376,8 @@ describe('Reviews E2E Tests', () => {
       it('should allow seller to respond to published review', async () => {
         const reviewId = 'review-published';
         const responseDto = {
-          comment: '¡Muchas gracias por tu reseña! Nos alegra mucho saber que estás satisfecho con la mesa. Tu feedback nos motiva a seguir mejorando.'
+          comment:
+            '¡Muchas gracias por tu reseña! Nos alegra mucho saber que estás satisfecho con la mesa. Tu feedback nos motiva a seguir mejorando.',
         };
 
         // Mock published review
@@ -382,7 +386,7 @@ describe('Reviews E2E Tests', () => {
           sellerId: testData.seller.id,
           status: 'PUBLISHED',
           product: { id: testData.product.id },
-          buyer: { id: testData.buyer.id }
+          buyer: { id: testData.buyer.id },
         });
 
         // Mock no existing response
@@ -399,10 +403,10 @@ describe('Reviews E2E Tests', () => {
             lastName: testData.seller.lastName,
             sellerProfile: {
               storeName: 'Muebles Premium',
-              avatar: null
-            }
+              avatar: null,
+            },
           },
-          createdAt: new Date()
+          createdAt: new Date(),
         };
 
         mockPrisma.reviewResponse.create.mockResolvedValue(mockResponse);
@@ -410,14 +414,14 @@ describe('Reviews E2E Tests', () => {
         // Simulate seller response process
         const review = await mockPrisma.review.findUnique({
           where: { id: reviewId },
-          include: { product: true, buyer: true }
+          include: { product: true, buyer: true },
         });
 
         expect(review.sellerId).toBe(testData.seller.id);
         expect(review.status).toBe('PUBLISHED');
 
         const existingResponse = await mockPrisma.reviewResponse.findUnique({
-          where: { reviewId }
+          where: { reviewId },
         });
 
         expect(existingResponse).toBeNull();
@@ -426,7 +430,7 @@ describe('Reviews E2E Tests', () => {
           data: {
             reviewId,
             sellerId: testData.seller.id,
-            comment: responseDto.comment
+            comment: responseDto.comment,
           },
           include: {
             seller: {
@@ -436,12 +440,12 @@ describe('Reviews E2E Tests', () => {
                 sellerProfile: {
                   select: {
                     storeName: true,
-                    avatar: true
-                  }
-                }
-              }
-            }
-          }
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
         });
 
         expect(response.comment).toBe(responseDto.comment);
@@ -460,21 +464,21 @@ describe('Reviews E2E Tests', () => {
         mockPrisma.review.findUnique.mockResolvedValue({
           id: reviewId,
           status: 'PUBLISHED',
-          buyerId: 'different-user'
+          buyerId: 'different-user',
         });
 
         // Mock vote creation/update
         mockPrisma.reviewVote.upsert.mockResolvedValue({
           reviewId,
           userId: voterId,
-          vote: 'HELPFUL'
+          vote: 'HELPFUL',
         });
 
         // Mock vote counting
         mockPrisma.reviewVote.findMany.mockResolvedValue([
           { vote: 'HELPFUL' },
           { vote: 'HELPFUL' },
-          { vote: 'NOT_HELPFUL' }
+          { vote: 'NOT_HELPFUL' },
         ]);
 
         // Mock review update with new counts
@@ -482,7 +486,7 @@ describe('Reviews E2E Tests', () => {
 
         // Simulate voting process
         const review = await mockPrisma.review.findUnique({
-          where: { id: reviewId }
+          where: { id: reviewId },
         });
 
         expect(review.status).toBe('PUBLISHED');
@@ -490,22 +494,24 @@ describe('Reviews E2E Tests', () => {
 
         await mockPrisma.reviewVote.upsert({
           where: {
-            reviewId_userId: { reviewId, userId: voterId }
+            reviewId_userId: { reviewId, userId: voterId },
           },
           update: { vote: voteDto.vote },
-          create: { reviewId, userId: voterId, vote: voteDto.vote }
+          create: { reviewId, userId: voterId, vote: voteDto.vote },
         });
 
         const votes = await mockPrisma.reviewVote.findMany({
-          where: { reviewId }
+          where: { reviewId },
         });
 
-        const helpfulCount = votes.filter(v => v.vote === 'HELPFUL').length;
-        const notHelpfulCount = votes.filter(v => v.vote === 'NOT_HELPFUL').length;
+        const helpfulCount = votes.filter((v) => v.vote === 'HELPFUL').length;
+        const notHelpfulCount = votes.filter(
+          (v) => v.vote === 'NOT_HELPFUL',
+        ).length;
 
         await mockPrisma.review.update({
           where: { id: reviewId },
-          data: { helpfulCount, notHelpfulCount }
+          data: { helpfulCount, notHelpfulCount },
         });
 
         expect(helpfulCount).toBe(2);
@@ -513,7 +519,7 @@ describe('Reviews E2E Tests', () => {
         expect(mockPrisma.reviewVote.upsert).toHaveBeenCalledTimes(1);
         expect(mockPrisma.review.update).toHaveBeenCalledWith({
           where: { id: reviewId },
-          data: { helpfulCount: 2, notHelpfulCount: 1 }
+          data: { helpfulCount: 2, notHelpfulCount: 1 },
         });
       });
     });
@@ -529,17 +535,17 @@ describe('Reviews E2E Tests', () => {
           review: {
             rating: 5,
             isVerified: true,
-            status: 'PUBLISHED'
+            status: 'PUBLISHED',
           },
           response: {
             sellerId: testData.seller.id,
-            comment: 'Thank you for the review!'
+            comment: 'Thank you for the review!',
           },
           statistics: {
             averageRating: 5.0,
             totalReviews: 1,
-            recommendationRate: 100.0
-          }
+            recommendationRate: 100.0,
+          },
         };
 
         // Validate flow data integrity
@@ -557,18 +563,20 @@ describe('Reviews E2E Tests', () => {
           'auto_moderation',
           'seller_response',
           'community_voting',
-          'statistics_update'
+          'statistics_update',
         ];
 
         expect(steps).toHaveLength(6);
-        expect(steps).toEqual(expect.arrayContaining([
-          'verified_purchase_check',
-          'review_creation',
-          'auto_moderation',
-          'seller_response',
-          'community_voting',
-          'statistics_update'
-        ]));
+        expect(steps).toEqual(
+          expect.arrayContaining([
+            'verified_purchase_check',
+            'review_creation',
+            'auto_moderation',
+            'seller_response',
+            'community_voting',
+            'statistics_update',
+          ]),
+        );
       });
     });
   });

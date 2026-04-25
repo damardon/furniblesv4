@@ -18,9 +18,11 @@ import { JwtService } from '@nestjs/jwt';
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   },
-  namespace: '/notifications'
+  namespace: '/notifications',
 })
-export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class WebSocketGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -32,7 +34,10 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {
-    this.frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+    this.frontendUrl = this.configService.get(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
   }
 
   async handleConnection(client: Socket) {

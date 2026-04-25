@@ -1,23 +1,28 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { WebSocketGateway } from '../websocket/websocket.gateway';
-import { 
-  NotificationType, 
-  NotificationChannel, 
+import {
+  NotificationType,
+  NotificationChannel,
   NotificationPriority,
   DigestFrequency,
-  Prisma 
+  Prisma,
 } from '@prisma/client';
-import { 
+import {
   CreateNotificationDto,
   CreateScheduledNotificationDto,
   UpdateNotificationPreferencesDto,
   FilterNotificationsDto,
   SendReviewDigestDto,
   NotificationAnalyticsDto,
-  TrackEngagementDto
+  TrackEngagementDto,
 } from './dto/notification.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -32,7 +37,10 @@ export class NotificationService {
     private webSocketGateway: WebSocketGateway,
     private configService: ConfigService,
   ) {
-    this.frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+    this.frontendUrl = this.configService.get(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
   }
 
   /**
@@ -42,13 +50,17 @@ export class NotificationService {
     const translations = {
       en: {
         'notifications.orderCreated': 'Order Created Successfully!',
-        'notifications.orderCreatedMsg': 'Your order {orderNumber} has been created. Please proceed to payment to receive your files.',
+        'notifications.orderCreatedMsg':
+          'Your order {orderNumber} has been created. Please proceed to payment to receive your files.',
         'notifications.orderPaid': 'Payment Confirmed!',
-        'notifications.orderPaidMsg': 'Your payment for order {orderNumber} has been processed successfully. We are preparing your files.',
+        'notifications.orderPaidMsg':
+          'Your payment for order {orderNumber} has been processed successfully. We are preparing your files.',
         'notifications.orderCompleted': 'Files Ready for Download!',
-        'notifications.orderCompletedMsg': 'Your order {orderNumber} is complete. You can now download your files.',
+        'notifications.orderCompletedMsg':
+          'Your order {orderNumber} is complete. You can now download your files.',
         'notifications.productSold': 'New Sale!',
-        'notifications.productSoldMsg': 'You sold {itemCount} product(s) for a total of ${sellerAmount}.',
+        'notifications.productSoldMsg':
+          'You sold {itemCount} product(s) for a total of ${sellerAmount}.',
         'cart.buyerOnly': 'Only buyers can add products to cart',
         'cart.limitExceeded': 'Cart limit exceeded (10 products max)',
         'cart.alreadyExists': 'Product already in cart',
@@ -56,57 +68,75 @@ export class NotificationService {
         'cart.itemNotFound': 'Item not found in cart',
         // 🆕 Nuevas traducciones para reviews
         'notifications.reviewReceived': 'New Review Received!',
-        'notifications.reviewReceivedMsg': 'You received a {rating}-star review for "{productTitle}": "{comment}"',
+        'notifications.reviewReceivedMsg':
+          'You received a {rating}-star review for "{productTitle}": "{comment}"',
         'notifications.reviewResponse': 'Response to Your Review',
-        'notifications.reviewResponseMsg': 'The seller responded to your review for "{productTitle}"',
+        'notifications.reviewResponseMsg':
+          'The seller responded to your review for "{productTitle}"',
         'notifications.reviewHelpful': 'Review Marked as Helpful',
-        'notifications.reviewHelpfulMsg': 'Your review for "{productTitle}" was marked as helpful by another user',
+        'notifications.reviewHelpfulMsg':
+          'Your review for "{productTitle}" was marked as helpful by another user',
         'notifications.reviewWeeklyDigest': 'Weekly Review Summary',
-        'notifications.reviewWeeklyDigestMsg': 'You received {count} new reviews this week with an average rating of {averageRating} stars',
+        'notifications.reviewWeeklyDigestMsg':
+          'You received {count} new reviews this week with an average rating of {averageRating} stars',
         'notifications.reviewReminder': 'Review Reminder',
-        'notifications.reviewReminderMsg': 'Don\'t forget to review "{productTitle}" from your recent purchase',
+        'notifications.reviewReminderMsg':
+          'Don\'t forget to review "{productTitle}" from your recent purchase',
         'notifications.reviewMilestone': 'Review Milestone Reached!',
-        'notifications.reviewMilestoneMsg': 'Congratulations! You\'ve reached {milestone} reviews with an average rating of {averageRating} stars',
+        'notifications.reviewMilestoneMsg':
+          "Congratulations! You've reached {milestone} reviews with an average rating of {averageRating} stars",
       },
       es: {
         'notifications.orderCreated': '¡Orden Creada Exitosamente!',
-        'notifications.orderCreatedMsg': 'Tu orden {orderNumber} ha sido creada. Procede al pago para recibir tus archivos.',
+        'notifications.orderCreatedMsg':
+          'Tu orden {orderNumber} ha sido creada. Procede al pago para recibir tus archivos.',
         'notifications.orderPaid': '¡Pago Confirmado!',
-        'notifications.orderPaidMsg': 'Tu pago por la orden {orderNumber} ha sido procesado exitosamente. Estamos preparando tus archivos.',
+        'notifications.orderPaidMsg':
+          'Tu pago por la orden {orderNumber} ha sido procesado exitosamente. Estamos preparando tus archivos.',
         'notifications.orderCompleted': '¡Archivos Listos para Descarga!',
-        'notifications.orderCompletedMsg': 'Tu orden {orderNumber} está completa. Ya puedes descargar tus archivos.',
+        'notifications.orderCompletedMsg':
+          'Tu orden {orderNumber} está completa. Ya puedes descargar tus archivos.',
         'notifications.productSold': '¡Nueva Venta!',
-        'notifications.productSoldMsg': 'Has vendido {itemCount} producto(s) por un total de ${sellerAmount}.',
-        'cart.buyerOnly': 'Solo los compradores pueden agregar productos al carrito',
-        'cart.limitExceeded': 'Límite de carrito excedido (máximo 10 productos)',
+        'notifications.productSoldMsg':
+          'Has vendido {itemCount} producto(s) por un total de ${sellerAmount}.',
+        'cart.buyerOnly':
+          'Solo los compradores pueden agregar productos al carrito',
+        'cart.limitExceeded':
+          'Límite de carrito excedido (máximo 10 productos)',
         'cart.alreadyExists': 'El producto ya está en tu carrito',
         'cart.ownProduct': 'No puedes comprar tu propio producto',
         'cart.itemNotFound': 'Producto no encontrado en el carrito',
         // 🆕 Nuevas traducciones para reviews
         'notifications.reviewReceived': '¡Nueva Reseña Recibida!',
-        'notifications.reviewReceivedMsg': 'Recibiste una reseña de {rating} estrellas para "{productTitle}": "{comment}"',
+        'notifications.reviewReceivedMsg':
+          'Recibiste una reseña de {rating} estrellas para "{productTitle}": "{comment}"',
         'notifications.reviewResponse': 'Respuesta a Tu Reseña',
-        'notifications.reviewResponseMsg': 'El vendedor respondió a tu reseña de "{productTitle}"',
+        'notifications.reviewResponseMsg':
+          'El vendedor respondió a tu reseña de "{productTitle}"',
         'notifications.reviewHelpful': 'Reseña Marcada como Útil',
-        'notifications.reviewHelpfulMsg': 'Tu reseña de "{productTitle}" fue marcada como útil por otro usuario',
+        'notifications.reviewHelpfulMsg':
+          'Tu reseña de "{productTitle}" fue marcada como útil por otro usuario',
         'notifications.reviewWeeklyDigest': 'Resumen Semanal de Reseñas',
-        'notifications.reviewWeeklyDigestMsg': 'Recibiste {count} nuevas reseñas esta semana con un promedio de {averageRating} estrellas',
+        'notifications.reviewWeeklyDigestMsg':
+          'Recibiste {count} nuevas reseñas esta semana con un promedio de {averageRating} estrellas',
         'notifications.reviewReminder': 'Recordatorio de Reseña',
-        'notifications.reviewReminderMsg': 'No olvides reseñar "{productTitle}" de tu compra reciente',
+        'notifications.reviewReminderMsg':
+          'No olvides reseñar "{productTitle}" de tu compra reciente',
         'notifications.reviewMilestone': '¡Hito de Reseñas Alcanzado!',
-        'notifications.reviewMilestoneMsg': '¡Felicitaciones! Has alcanzado {milestone} reseñas con un promedio de {averageRating} estrellas',
-      }
+        'notifications.reviewMilestoneMsg':
+          '¡Felicitaciones! Has alcanzado {milestone} reseñas con un promedio de {averageRating} estrellas',
+      },
     };
 
     let text = translations[lang]?.[key] || translations['en'][key] || key;
-    
+
     // Reemplazar variables
     if (args) {
-      Object.keys(args).forEach(argKey => {
+      Object.keys(args).forEach((argKey) => {
         text = text.replace(`{${argKey}}`, args[argKey]);
       });
     }
-    
+
     return text;
   }
 
@@ -116,9 +146,11 @@ export class NotificationService {
   async createNotification(dto: CreateNotificationDto): Promise<void> {
     // Verificar preferencias del usuario antes de enviar
     const preferences = await this.getUserPreferences(dto.userId);
-    
+
     if (!this.shouldSendNotification(dto.type, preferences)) {
-      this.logger.debug(`Notification skipped due to user preferences: ${dto.type} for user ${dto.userId}`);
+      this.logger.debug(
+        `Notification skipped due to user preferences: ${dto.type} for user ${dto.userId}`,
+      );
       return;
     }
 
@@ -127,7 +159,7 @@ export class NotificationService {
       // Programar para después de las horas de silencio
       await this.scheduleNotification({
         ...dto,
-        scheduledFor: this.getNextAvailableTime(preferences).toISOString()
+        scheduledFor: this.getNextAvailableTime(preferences).toISOString(),
       });
       return;
     }
@@ -144,8 +176,8 @@ export class NotificationService {
         priority: dto.priority || NotificationPriority.NORMAL,
         channel: dto.channel,
         groupKey: dto.groupKey,
-        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined
-      }
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+      },
     });
 
     // Enviar via WebSocket en tiempo real (si está habilitado)
@@ -157,25 +189,32 @@ export class NotificationService {
         message: notification.message,
         data: notification.data,
         priority: notification.priority,
-        createdAt: notification.createdAt
+        createdAt: notification.createdAt,
       });
     }
 
     // Enviar email de forma asíncrona (si está habilitado)
     if (preferences.emailEnabled) {
-      this.sendEmailNotification(notification).catch(error => {
+      this.sendEmailNotification(notification).catch((error) => {
         this.logger.error('Error sending email notification', error.stack);
       });
     }
 
     // Registrar analytics
-    await this.trackNotificationAnalytics(notification.id, dto.userId, dto.type, NotificationChannel.IN_APP);
+    await this.trackNotificationAnalytics(
+      notification.id,
+      dto.userId,
+      dto.type,
+      NotificationChannel.IN_APP,
+    );
   }
 
   /**
    * 🆕 NUEVO: Crear notificación programada
    */
-  async scheduleNotification(dto: CreateScheduledNotificationDto): Promise<void> {
+  async scheduleNotification(
+    dto: CreateScheduledNotificationDto,
+  ): Promise<void> {
     await this.prisma.scheduledNotification.create({
       data: {
         userId: dto.userId,
@@ -187,8 +226,8 @@ export class NotificationService {
         maxAttempts: dto.maxAttempts || 3,
         orderId: dto.orderId,
         productId: dto.productId,
-        reviewId: dto.reviewId
-      }
+        reviewId: dto.reviewId,
+      },
     });
   }
 
@@ -196,16 +235,16 @@ export class NotificationService {
    * 🆕 NUEVO: Gestión de preferencias de notificación
    */
   async updateNotificationPreferences(
-    userId: string, 
-    dto: UpdateNotificationPreferencesDto
+    userId: string,
+    dto: UpdateNotificationPreferencesDto,
   ): Promise<void> {
     await this.prisma.notificationPreference.upsert({
       where: { userId },
       create: {
         userId,
-        ...dto
+        ...dto,
       },
-      update: dto
+      update: dto,
     });
   }
 
@@ -214,39 +253,48 @@ export class NotificationService {
    */
   async getUserPreferences(userId: string) {
     const preferences = await this.prisma.notificationPreference.findUnique({
-      where: { userId }
+      where: { userId },
     });
 
     // Retornar preferencias por defecto si no existen
-    return preferences || {
-      emailEnabled: true,
-      webPushEnabled: true,
-      inAppEnabled: true,
-      orderNotifications: true,
-      paymentNotifications: true,
-      reviewNotifications: true,
-      marketingEmails: false,
-      systemNotifications: true,
-      reviewReceived: true,
-      reviewResponses: true,
-      reviewHelpfulVotes: true,
-      reviewMilestones: true,
-      reviewReminders: true,
-      digestFrequency: DigestFrequency.WEEKLY,
-      quietHoursEnabled: false,
-      timezone: 'UTC'
-    };
+    return (
+      preferences || {
+        emailEnabled: true,
+        webPushEnabled: true,
+        inAppEnabled: true,
+        orderNotifications: true,
+        paymentNotifications: true,
+        reviewNotifications: true,
+        marketingEmails: false,
+        systemNotifications: true,
+        reviewReceived: true,
+        reviewResponses: true,
+        reviewHelpfulVotes: true,
+        reviewMilestones: true,
+        reviewReminders: true,
+        digestFrequency: DigestFrequency.WEEKLY,
+        quietHoursEnabled: false,
+        timezone: 'UTC',
+      }
+    );
   }
 
   /**
    * 🆕 NUEVO: Verificar si debe enviar notificación según preferencias
    */
-  private shouldSendNotification(type: NotificationType, preferences: any): boolean {
+  private shouldSendNotification(
+    type: NotificationType,
+    preferences: any,
+  ): boolean {
     // Verificar configuraciones generales
-    if (type.startsWith('ORDER_') && !preferences.orderNotifications) return false;
-    if (type.startsWith('PAYMENT_') && !preferences.paymentNotifications) return false;
-    if (type.startsWith('REVIEW_') && !preferences.reviewNotifications) return false;
-    if (type === 'SYSTEM_NOTIFICATION' && !preferences.systemNotifications) return false;
+    if (type.startsWith('ORDER_') && !preferences.orderNotifications)
+      return false;
+    if (type.startsWith('PAYMENT_') && !preferences.paymentNotifications)
+      return false;
+    if (type.startsWith('REVIEW_') && !preferences.reviewNotifications)
+      return false;
+    if (type === 'SYSTEM_NOTIFICATION' && !preferences.systemNotifications)
+      return false;
 
     // Verificar configuraciones específicas de reviews
     switch (type) {
@@ -273,7 +321,7 @@ export class NotificationService {
 
     const now = new Date();
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
+
     const start = preferences.quietHoursStart || '22:00';
     const end = preferences.quietHoursEnd || '08:00';
 
@@ -292,10 +340,10 @@ export class NotificationService {
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     const endTime = preferences.quietHoursEnd || '08:00';
     const [hours, minutes] = endTime.split(':').map(Number);
-    
+
     tomorrow.setHours(hours, minutes, 0, 0);
     return tomorrow;
   }
@@ -307,7 +355,10 @@ export class NotificationService {
   /**
    * Notificación de review recibida
    */
-  async sendReviewReceivedNotification(review: any, lang = 'en'): Promise<void> {
+  async sendReviewReceivedNotification(
+    review: any,
+    lang = 'en',
+  ): Promise<void> {
     await this.createNotification({
       userId: review.sellerId,
       type: NotificationType.REVIEW_RECEIVED,
@@ -315,38 +366,45 @@ export class NotificationService {
       message: this.getTranslation('notifications.reviewReceivedMsg', lang, {
         rating: review.rating,
         productTitle: review.product?.title || 'Unknown Product',
-        comment: review.comment?.substring(0, 100) + (review.comment?.length > 100 ? '...' : '')
+        comment:
+          review.comment?.substring(0, 100) +
+          (review.comment?.length > 100 ? '...' : ''),
       }),
       data: {
         reviewId: review.id,
         productId: review.productId,
         rating: review.rating,
-        buyerName: review.buyer?.firstName + ' ' + review.buyer?.lastName
+        buyerName: review.buyer?.firstName + ' ' + review.buyer?.lastName,
       },
       priority: NotificationPriority.HIGH,
-      groupKey: `review_${review.productId}`
+      groupKey: `review_${review.productId}`,
     });
   }
 
   /**
    * Notificación de respuesta a review
    */
-  async sendReviewResponseNotification(review: any, response: any, lang = 'en'): Promise<void> {
+  async sendReviewResponseNotification(
+    review: any,
+    response: any,
+    lang = 'en',
+  ): Promise<void> {
     await this.createNotification({
       userId: review.buyerId,
       type: NotificationType.REVIEW_RESPONSE_RECEIVED,
       title: this.getTranslation('notifications.reviewResponse', lang),
       message: this.getTranslation('notifications.reviewResponseMsg', lang, {
-        productTitle: review.product?.title || 'Unknown Product'
+        productTitle: review.product?.title || 'Unknown Product',
       }),
       data: {
         reviewId: review.id,
         responseId: response.id,
         productId: review.productId,
-        sellerName: response.seller?.firstName + ' ' + response.seller?.lastName
+        sellerName:
+          response.seller?.firstName + ' ' + response.seller?.lastName,
       },
       priority: NotificationPriority.NORMAL,
-      groupKey: `review_response_${review.id}`
+      groupKey: `review_response_${review.id}`,
     });
   }
 
@@ -359,23 +417,28 @@ export class NotificationService {
       type: NotificationType.REVIEW_HELPFUL_VOTE,
       title: this.getTranslation('notifications.reviewHelpful', lang),
       message: this.getTranslation('notifications.reviewHelpfulMsg', lang, {
-        productTitle: review.product?.title || 'Unknown Product'
+        productTitle: review.product?.title || 'Unknown Product',
       }),
       data: {
         reviewId: review.id,
-        productId: review.productId
+        productId: review.productId,
       },
       priority: NotificationPriority.LOW,
-      groupKey: `helpful_${review.id}`
+      groupKey: `helpful_${review.id}`,
     });
   }
 
   /**
    * 🆕 NUEVO: Enviar digest semanal de reviews
    */
-  async sendReviewWeeklyDigest(dto: SendReviewDigestDto, lang = 'en'): Promise<void> {
+  async sendReviewWeeklyDigest(
+    dto: SendReviewDigestDto,
+    lang = 'en',
+  ): Promise<void> {
     const endDate = dto.endDate ? new Date(dto.endDate) : new Date();
-    const startDate = dto.startDate ? new Date(dto.startDate) : new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startDate = dto.startDate
+      ? new Date(dto.startDate)
+      : new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     // Obtener reviews del período
     const reviews = await this.prisma.review.findMany({
@@ -383,46 +446,51 @@ export class NotificationService {
         sellerId: dto.sellerId,
         createdAt: {
           gte: startDate,
-          lte: endDate
+          lte: endDate,
         },
-        status: 'PUBLISHED'
+        status: 'PUBLISHED',
       },
       include: {
         product: { select: { title: true } },
-        buyer: { select: { firstName: true, lastName: true } }
-      }
+        buyer: { select: { firstName: true, lastName: true } },
+      },
     });
 
     if (reviews.length === 0 && !dto.forceGenerate) {
       return; // No enviar digest vacío
     }
 
-    const averageRating = reviews.length > 0 
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length 
-      : 0;
+    const averageRating =
+      reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 0;
 
     await this.createNotification({
       userId: dto.sellerId,
       type: NotificationType.REVIEW_WEEKLY_DIGEST,
       title: this.getTranslation('notifications.reviewWeeklyDigest', lang),
-      message: this.getTranslation('notifications.reviewWeeklyDigestMsg', lang, {
-        count: reviews.length,
-        averageRating: averageRating.toFixed(1)
-      }),
+      message: this.getTranslation(
+        'notifications.reviewWeeklyDigestMsg',
+        lang,
+        {
+          count: reviews.length,
+          averageRating: averageRating.toFixed(1),
+        },
+      ),
       data: {
         period: { startDate, endDate },
         reviewCount: reviews.length,
         averageRating,
-        reviews: reviews.map(r => ({
+        reviews: reviews.map((r) => ({
           id: r.id,
           rating: r.rating,
           productTitle: r.product?.title,
           buyerName: r.buyer?.firstName + ' ' + r.buyer?.lastName,
-          comment: r.comment?.substring(0, 100)
-        }))
+          comment: r.comment?.substring(0, 100),
+        })),
       },
       priority: NotificationPriority.LOW,
-      channel: NotificationChannel.EMAIL
+      channel: NotificationChannel.EMAIL,
     });
   }
 
@@ -434,20 +502,20 @@ export class NotificationService {
     const sellers = await this.prisma.user.findMany({
       where: {
         role: 'SELLER',
-        isActive: true
+        isActive: true,
       },
       include: {
-        notificationPreferences: true
-      }
+        notificationPreferences: true,
+      },
     });
 
     for (const seller of sellers) {
       const preferences = seller.notificationPreferences;
-      
+
       if (preferences?.digestFrequency === DigestFrequency.WEEKLY) {
         await this.sendReviewWeeklyDigest({
           sellerId: seller.id,
-          frequency: DigestFrequency.WEEKLY
+          frequency: DigestFrequency.WEEKLY,
         });
       }
     }
@@ -459,20 +527,18 @@ export class NotificationService {
   @Cron(CronExpression.EVERY_MINUTE)
   async processScheduledNotifications(): Promise<void> {
     const now = new Date();
-    
-    const scheduledNotifications = await this.prisma.scheduledNotification.findMany({
-      where: {
-        status: 'pending',
-        scheduledFor: {
-          lte: now
+
+    const scheduledNotifications =
+      await this.prisma.scheduledNotification.findMany({
+        where: {
+          status: 'pending',
+          scheduledFor: {
+            lte: now,
+          },
+          OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }],
         },
-        OR: [
-          { nextAttemptAt: null },
-          { nextAttemptAt: { lte: now } }
-        ]
-      },
-      take: 50 // Procesar máximo 50 por vez
-    });
+        take: 50, // Procesar máximo 50 por vez
+      });
 
     for (const scheduled of scheduledNotifications) {
       try {
@@ -483,7 +549,7 @@ export class NotificationService {
           message: scheduled.message,
           data: scheduled.data as any,
           orderId: scheduled.orderId || undefined,
-          productId: scheduled.productId || undefined
+          productId: scheduled.productId || undefined,
         });
 
         // Marcar como enviada
@@ -491,16 +557,18 @@ export class NotificationService {
           where: { id: scheduled.id },
           data: {
             status: 'sent',
-            processedAt: now
-          }
+            processedAt: now,
+          },
         });
-
       } catch (error) {
-        this.logger.error(`Error processing scheduled notification ${scheduled.id}`, error.stack);
-        
+        this.logger.error(
+          `Error processing scheduled notification ${scheduled.id}`,
+          error.stack,
+        );
+
         // Incrementar intentos
         const newAttempts = scheduled.attempts + 1;
-        
+
         if (newAttempts >= scheduled.maxAttempts) {
           // Marcar como fallida
           await this.prisma.scheduledNotification.update({
@@ -508,20 +576,22 @@ export class NotificationService {
             data: {
               status: 'failed',
               attempts: newAttempts,
-              lastAttemptAt: now
-            }
+              lastAttemptAt: now,
+            },
           });
         } else {
           // Programar reintento
-          const nextAttempt = new Date(now.getTime() + Math.pow(2, newAttempts) * 60000); // Backoff exponencial
-          
+          const nextAttempt = new Date(
+            now.getTime() + Math.pow(2, newAttempts) * 60000,
+          ); // Backoff exponencial
+
           await this.prisma.scheduledNotification.update({
             where: { id: scheduled.id },
             data: {
               attempts: newAttempts,
               lastAttemptAt: now,
-              nextAttemptAt: nextAttempt
-            }
+              nextAttemptAt: nextAttempt,
+            },
           });
         }
       }
@@ -531,12 +601,15 @@ export class NotificationService {
   /**
    * 🆕 NUEVO: Tracking de engagement
    */
-  async trackEngagement(dto: TrackEngagementDto, userId: string): Promise<void> {
+  async trackEngagement(
+    dto: TrackEngagementDto,
+    userId: string,
+  ): Promise<void> {
     const notification = await this.prisma.notification.findFirst({
       where: {
         id: dto.notificationId,
-        userId
-      }
+        userId,
+      },
     });
 
     if (!notification) {
@@ -547,7 +620,7 @@ export class NotificationService {
 
     // Actualizar notificación según la acción
     const updateData: any = {};
-    
+
     switch (dto.action) {
       case 'read':
         if (!notification.isRead) {
@@ -555,7 +628,7 @@ export class NotificationService {
           updateData.readAt = now;
         }
         break;
-      
+
       case 'clicked':
         updateData.clickedAt = now;
         updateData.clickCount = notification.clickCount + 1;
@@ -565,7 +638,7 @@ export class NotificationService {
     if (Object.keys(updateData).length > 0) {
       await this.prisma.notification.update({
         where: { id: dto.notificationId },
-        data: updateData
+        data: updateData,
       });
     }
 
@@ -579,8 +652,8 @@ export class NotificationService {
         action: dto.action,
         deviceType: dto.deviceType,
         platform: dto.platform,
-        userAgent: dto.userAgent
-      }
+        userAgent: dto.userAgent,
+      },
     );
   }
 
@@ -592,7 +665,7 @@ export class NotificationService {
     userId: string,
     type: NotificationType,
     channel: NotificationChannel,
-    metadata?: any
+    metadata?: any,
   ): Promise<void> {
     await this.prisma.notificationAnalytics.create({
       data: {
@@ -610,18 +683,21 @@ export class NotificationService {
         read: metadata?.action === 'read',
         readAt: metadata?.action === 'read' ? new Date() : null,
         clicked: metadata?.action === 'clicked',
-        clickedAt: metadata?.action === 'clicked' ? new Date() : null
-      }
+        clickedAt: metadata?.action === 'clicked' ? new Date() : null,
+      },
     });
   }
 
   /**
    * 🔄 MÉTODO EXISTENTE MANTENIDO: Obtener notificaciones del usuario
    */
-  async getUserNotifications(userId: string, filters: FilterNotificationsDto = {}) {
+  async getUserNotifications(
+    userId: string,
+    filters: FilterNotificationsDto = {},
+  ) {
     const page = filters.page || 1;
     const limit = Math.min(filters.limit || 20, 100);
-    
+
     const where: Prisma.NotificationWhereInput = {
       userId,
       ...(filters.type && { type: filters.type }),
@@ -629,29 +705,24 @@ export class NotificationService {
       ...(filters.channel && { channel: filters.channel }),
       ...(filters.isRead !== undefined && { isRead: filters.isRead }),
       ...(filters.groupKey && { groupKey: filters.groupKey }),
-      ...(filters.startDate && filters.endDate && {
-        createdAt: {
-          gte: new Date(filters.startDate),
-          lte: new Date(filters.endDate)
-        }
-      }),
+      ...(filters.startDate &&
+        filters.endDate && {
+          createdAt: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          },
+        }),
       // Filtrar notificaciones expiradas
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } }
-      ]
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     };
 
     const total = await this.prisma.notification.count({ where });
 
     const notifications = await this.prisma.notification.findMany({
       where,
-      orderBy: [
-        { priority: 'desc' },
-        { createdAt: 'desc' }
-      ],
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
       skip: (page - 1) * limit,
-      take: limit
+      take: limit,
     });
 
     return {
@@ -660,30 +731,30 @@ export class NotificationService {
       page,
       limit,
       unreadCount: await this.prisma.notification.count({
-        where: { userId, isRead: false }
-      })
+        where: { userId, isRead: false },
+      }),
     };
   }
 
   /**
    * 🔄 MÉTODOS EXISTENTES MANTENIDOS (sin cambios)
    */
-  
+
   async sendOrderCreatedNotification(order: any, lang = 'en'): Promise<void> {
     await this.createNotification({
       userId: order.buyerId,
       type: NotificationType.ORDER_CREATED,
       title: this.getTranslation('notifications.orderCreated', lang),
-      message: this.getTranslation('notifications.orderCreatedMsg', lang, { 
-        orderNumber: order.orderNumber 
+      message: this.getTranslation('notifications.orderCreatedMsg', lang, {
+        orderNumber: order.orderNumber,
       }),
       data: {
         orderId: order.id,
         orderNumber: order.orderNumber,
-        totalAmount: order.totalAmount
+        totalAmount: order.totalAmount,
       },
       orderId: order.id,
-      priority: NotificationPriority.HIGH
+      priority: NotificationPriority.HIGH,
     });
   }
 
@@ -693,34 +764,41 @@ export class NotificationService {
       userId: order.buyerId,
       type: NotificationType.ORDER_PAID,
       title: this.getTranslation('notifications.orderPaid', lang),
-      message: this.getTranslation('notifications.orderPaidMsg', lang, { 
-        orderNumber: order.orderNumber 
+      message: this.getTranslation('notifications.orderPaidMsg', lang, {
+        orderNumber: order.orderNumber,
       }),
       data: {
         orderId: order.id,
         orderNumber: order.orderNumber,
-        totalAmount: order.totalAmount
+        totalAmount: order.totalAmount,
       },
       orderId: order.id,
-      priority: NotificationPriority.HIGH
+      priority: NotificationPriority.HIGH,
     });
-    
-    const sellerIds: string[] = [...new Set(
-      (order.items as any[]).map((item: any) => item.sellerId as string)
-    )];
+
+    const sellerIds: string[] = [
+      ...new Set(
+        (order.items as any[]).map((item: any) => item.sellerId as string),
+      ),
+    ];
 
     // Notificar a cada seller
     for (const currentSellerId of sellerIds) {
-      const sellerItems = order.items.filter((item: any) => item.sellerId === currentSellerId);
-      const sellerAmount = sellerItems.reduce((sum: number, item: any) => sum + item.price, 0);
+      const sellerItems = order.items.filter(
+        (item: any) => item.sellerId === currentSellerId,
+      );
+      const sellerAmount = sellerItems.reduce(
+        (sum: number, item: any) => sum + item.price,
+        0,
+      );
 
       await this.createNotification({
-        userId: currentSellerId, 
+        userId: currentSellerId,
         type: NotificationType.PRODUCT_SOLD,
         title: this.getTranslation('notifications.productSold', lang),
         message: this.getTranslation('notifications.productSoldMsg', lang, {
           itemCount: sellerItems.length,
-          sellerAmount: sellerAmount.toFixed(2)
+          sellerAmount: sellerAmount.toFixed(2),
         }),
         data: {
           orderId: order.id,
@@ -730,10 +808,10 @@ export class NotificationService {
           items: sellerItems.map((item: any) => ({
             productTitle: item.productTitle,
             price: item.price,
-          }))
+          })),
         },
         orderId: order.id,
-        priority: NotificationPriority.HIGH
+        priority: NotificationPriority.HIGH,
       });
     }
   }
@@ -743,16 +821,16 @@ export class NotificationService {
       userId: order.buyerId,
       type: NotificationType.ORDER_COMPLETED,
       title: this.getTranslation('notifications.orderCompleted', lang),
-      message: this.getTranslation('notifications.orderCompletedMsg', lang, { 
-        orderNumber: order.orderNumber 
+      message: this.getTranslation('notifications.orderCompletedMsg', lang, {
+        orderNumber: order.orderNumber,
       }),
       data: {
         orderId: order.id,
         orderNumber: order.orderNumber,
-        downloadUrl: `${this.frontendUrl}/orders/${order.id}/downloads`
+        downloadUrl: `${this.frontendUrl}/orders/${order.id}/downloads`,
       },
       orderId: order.id,
-      priority: NotificationPriority.HIGH
+      priority: NotificationPriority.HIGH,
     });
   }
 
@@ -760,12 +838,12 @@ export class NotificationService {
     await this.prisma.notification.updateMany({
       where: {
         id: notificationId,
-        userId
+        userId,
       },
       data: {
         isRead: true,
-        readAt: new Date()
-      }
+        readAt: new Date(),
+      },
     });
   }
 
@@ -773,12 +851,12 @@ export class NotificationService {
     await this.prisma.notification.updateMany({
       where: {
         userId,
-        isRead: false
+        isRead: false,
       },
       data: {
         isRead: true,
-        readAt: new Date()
-      }
+        readAt: new Date(),
+      },
     });
   }
 
@@ -787,7 +865,7 @@ export class NotificationService {
    */
   private async sendEmailNotification(notification: any): Promise<void> {
     const user = await this.prisma.user.findUnique({
-      where: { id: notification.userId }
+      where: { id: notification.userId },
     });
 
     if (!user) return;
@@ -796,7 +874,7 @@ export class NotificationService {
     let emailData: any = {
       userName: `${user.firstName} ${user.lastName}`,
       title: notification.title,
-      message: notification.message
+      message: notification.message,
     };
 
     switch (notification.type) {
@@ -806,7 +884,7 @@ export class NotificationService {
           ...emailData,
           orderNumber: notification.data?.orderNumber,
           totalAmount: notification.data?.totalAmount,
-          paymentUrl: `${this.frontendUrl}/orders/${notification.data?.orderId}/pay`
+          paymentUrl: `${this.frontendUrl}/orders/${notification.data?.orderId}/pay`,
         };
         break;
 
@@ -815,7 +893,7 @@ export class NotificationService {
         emailData = {
           ...emailData,
           orderNumber: notification.data?.orderNumber,
-          totalAmount: notification.data?.totalAmount
+          totalAmount: notification.data?.totalAmount,
         };
         break;
 
@@ -824,7 +902,7 @@ export class NotificationService {
         emailData = {
           ...emailData,
           orderNumber: notification.data?.orderNumber,
-          downloadUrl: notification.data?.downloadUrl
+          downloadUrl: notification.data?.downloadUrl,
         };
         break;
 
@@ -835,7 +913,7 @@ export class NotificationService {
           orderNumber: notification.data?.orderNumber,
           sellerAmount: notification.data?.sellerAmount,
           itemCount: notification.data?.itemCount,
-          items: notification.data?.items
+          items: notification.data?.items,
         };
         break;
 
@@ -847,7 +925,7 @@ export class NotificationService {
           rating: notification.data?.rating,
           productTitle: notification.data?.productTitle,
           buyerName: notification.data?.buyerName,
-          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`
+          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`,
         };
         break;
 
@@ -857,7 +935,7 @@ export class NotificationService {
           ...emailData,
           productTitle: notification.data?.productTitle,
           sellerName: notification.data?.sellerName,
-          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`
+          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`,
         };
         break;
 
@@ -868,7 +946,7 @@ export class NotificationService {
           reviewCount: notification.data?.reviewCount,
           averageRating: notification.data?.averageRating,
           reviews: notification.data?.reviews,
-          dashboardUrl: `${this.frontendUrl}/seller/dashboard/reviews`
+          dashboardUrl: `${this.frontendUrl}/seller/dashboard/reviews`,
         };
         break;
 
@@ -877,7 +955,7 @@ export class NotificationService {
         emailData = {
           ...emailData,
           productTitle: notification.data?.productTitle,
-          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`
+          reviewUrl: `${this.frontendUrl}/products/${notification.data?.productId}/reviews`,
         };
         break;
 
@@ -887,7 +965,7 @@ export class NotificationService {
           ...emailData,
           milestone: notification.data?.milestone,
           averageRating: notification.data?.averageRating,
-          dashboardUrl: `${this.frontendUrl}/seller/dashboard/reviews`
+          dashboardUrl: `${this.frontendUrl}/seller/dashboard/reviews`,
         };
         break;
 
@@ -900,7 +978,7 @@ export class NotificationService {
         to: user.email,
         subject: notification.title,
         template: emailTemplate,
-        data: emailData
+        data: emailData,
       });
 
       // Marcar email como enviado y registrar analytics
@@ -908,8 +986,8 @@ export class NotificationService {
         where: { id: notification.id },
         data: {
           emailSent: true,
-          sentAt: new Date()
-        }
+          sentAt: new Date(),
+        },
       });
 
       // Registrar en analytics de email
@@ -917,11 +995,13 @@ export class NotificationService {
         notification.id,
         notification.userId,
         notification.type,
-        NotificationChannel.EMAIL
+        NotificationChannel.EMAIL,
       );
-
     } catch (error) {
-      this.logger.error(`Error sending email notification ${notification.id}`, error.stack);
+      this.logger.error(
+        `Error sending email notification ${notification.id}`,
+        error.stack,
+      );
       // No lanzar error para que no afecte el flujo principal
     }
   }
@@ -929,37 +1009,42 @@ export class NotificationService {
   /**
    * 🆕 NUEVO: Obtener analytics de notificaciones
    */
-  async getNotificationAnalytics(filters: NotificationAnalyticsDto): Promise<any> {
+  async getNotificationAnalytics(
+    filters: NotificationAnalyticsDto,
+  ): Promise<any> {
     const where: Prisma.NotificationAnalyticsWhereInput = {
       ...(filters.userId && { userId: filters.userId }),
       ...(filters.type && { type: filters.type }),
       ...(filters.channel && { channel: filters.channel }),
-      ...(filters.startDate && filters.endDate && {
-        sentAt: {
-          gte: new Date(filters.startDate),
-          lte: new Date(filters.endDate)
-        }
-      })
+      ...(filters.startDate &&
+        filters.endDate && {
+          sentAt: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          },
+        }),
     };
 
     const groupBy = filters.groupBy || 'day';
-    
+
     // Métricas básicas
     const totalSent = await this.prisma.notificationAnalytics.count({ where });
     const totalDelivered = await this.prisma.notificationAnalytics.count({
-      where: { ...where, delivered: true }
+      where: { ...where, delivered: true },
     });
     const totalRead = await this.prisma.notificationAnalytics.count({
-      where: { ...where, read: true }
+      where: { ...where, read: true },
     });
     const totalClicked = await this.prisma.notificationAnalytics.count({
-      where: { ...where, clicked: true }
+      where: { ...where, clicked: true },
     });
 
     // Tasas de engagement
     const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
-    const openRate = totalDelivered > 0 ? (totalRead / totalDelivered) * 100 : 0;
-    const clickRate = totalDelivered > 0 ? (totalClicked / totalDelivered) * 100 : 0;
+    const openRate =
+      totalDelivered > 0 ? (totalRead / totalDelivered) * 100 : 0;
+    const clickRate =
+      totalDelivered > 0 ? (totalClicked / totalDelivered) * 100 : 0;
 
     // Agrupación temporal
     let timeGrouping = {};
@@ -988,8 +1073,8 @@ export class NotificationService {
       by: ['type'],
       where,
       _count: {
-        _all: true
-      }
+        _all: true,
+      },
     });
 
     // Agrupación por canal
@@ -997,8 +1082,8 @@ export class NotificationService {
       by: ['channel'],
       where,
       _count: {
-        _all: true
-      }
+        _all: true,
+      },
     });
 
     return {
@@ -1009,11 +1094,11 @@ export class NotificationService {
         totalClicked,
         deliveryRate: Math.round(deliveryRate * 100) / 100,
         openRate: Math.round(openRate * 100) / 100,
-        clickRate: Math.round(clickRate * 100) / 100
+        clickRate: Math.round(clickRate * 100) / 100,
       },
       timeGrouping,
       typeStats,
-      channelStats
+      channelStats,
     };
   }
 
@@ -1023,27 +1108,27 @@ export class NotificationService {
   @Cron('0 0 * * *') // Diariamente a medianoche
   async cleanupExpiredNotifications(): Promise<void> {
     const now = new Date();
-    
+
     // Marcar notificaciones expiradas como leídas
     await this.prisma.notification.updateMany({
       where: {
         expiresAt: { lt: now },
-        isRead: false
+        isRead: false,
       },
       data: {
         isRead: true,
-        readAt: now
-      }
+        readAt: now,
+      },
     });
 
     // Eliminar notificaciones muy antiguas (más de 90 días)
     const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-    
+
     await this.prisma.notification.deleteMany({
       where: {
         createdAt: { lt: ninetyDaysAgo },
-        isRead: true
-      }
+        isRead: true,
+      },
     });
 
     this.logger.log('Expired notifications cleanup completed');
@@ -1062,47 +1147,57 @@ export class NotificationService {
         status: 'COMPLETED',
         completedAt: {
           gte: new Date(threeDaysAgo.getTime() - 24 * 60 * 60 * 1000), // Entre 3-4 días
-          lte: threeDaysAgo
-        }
+          lte: threeDaysAgo,
+        },
       },
       include: {
         items: {
           include: {
-            product: true
-          }
+            product: true,
+          },
         },
         buyer: true,
-        reviews: true
-      }
+        reviews: true,
+      },
     });
 
     for (const order of ordersWithoutReviews) {
       // Verificar si ya tiene reviews para todos los productos
-      const productIds = order.items.map(item => item.productId);
-      const reviewedProductIds = order.reviews.map(review => review.productId);
-      const unreviewed = productIds.filter(id => !reviewedProductIds.includes(id));
+      const productIds = order.items.map((item) => item.productId);
+      const reviewedProductIds = order.reviews.map(
+        (review) => review.productId,
+      );
+      const unreviewed = productIds.filter(
+        (id) => !reviewedProductIds.includes(id),
+      );
 
       if (unreviewed.length > 0) {
         // Obtener preferencias del usuario
         const preferences = await this.getUserPreferences(order.buyerId);
-        
+
         if (preferences.reviewReminders) {
           for (const productId of unreviewed) {
-            const product = order.items.find(item => item.productId === productId)?.product;
-            
+            const product = order.items.find(
+              (item) => item.productId === productId,
+            )?.product;
+
             await this.scheduleNotification({
               userId: order.buyerId,
               type: NotificationType.REVIEW_PENDING_REMINDER,
               title: this.getTranslation('notifications.reviewReminder', 'en'),
-              message: this.getTranslation('notifications.reviewReminderMsg', 'en', {
-                productTitle: product?.title || 'Unknown Product'
-              }),
+              message: this.getTranslation(
+                'notifications.reviewReminderMsg',
+                'en',
+                {
+                  productTitle: product?.title || 'Unknown Product',
+                },
+              ),
               scheduledFor: new Date().toISOString(), // Enviar inmediatamente
               data: {
                 orderId: order.id,
                 productId,
-                productTitle: product?.title
-              }
+                productTitle: product?.title,
+              },
             });
           }
         }
@@ -1115,7 +1210,7 @@ export class NotificationService {
    */
   async checkReviewMilestones(sellerId: string): Promise<void> {
     const sellerRating = await this.prisma.sellerRating.findUnique({
-      where: { sellerId }
+      where: { sellerId },
     });
 
     if (!sellerRating) return;
@@ -1124,8 +1219,8 @@ export class NotificationService {
     const currentCount = sellerRating.totalReviews;
 
     // Verificar si acabamos de alcanzar un hito
-    const reachedMilestone = milestones.find(milestone => 
-      currentCount >= milestone && currentCount < milestone + 5 // Ventana de 5 reviews
+    const reachedMilestone = milestones.find(
+      (milestone) => currentCount >= milestone && currentCount < milestone + 5, // Ventana de 5 reviews
     );
 
     if (reachedMilestone) {
@@ -1135,14 +1230,14 @@ export class NotificationService {
         title: this.getTranslation('notifications.reviewMilestone', 'en'),
         message: this.getTranslation('notifications.reviewMilestoneMsg', 'en', {
           milestone: reachedMilestone,
-          averageRating: sellerRating.averageRating.toFixed(1)
+          averageRating: sellerRating.averageRating.toFixed(1),
         }),
         data: {
           milestone: reachedMilestone,
           totalReviews: currentCount,
-          averageRating: sellerRating.averageRating
+          averageRating: sellerRating.averageRating,
         },
-        priority: NotificationPriority.HIGH
+        priority: NotificationPriority.HIGH,
       });
     }
   }

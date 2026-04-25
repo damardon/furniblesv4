@@ -37,8 +37,8 @@ import { UserRole } from '@prisma/client';
 
 enum FileType {
   PDF = 'PDF',
-  IMAGE = 'IMAGE', 
-  THUMBNAIL = 'THUMBNAIL'
+  IMAGE = 'IMAGE',
+  THUMBNAIL = 'THUMBNAIL',
 }
 
 interface JwtUser {
@@ -156,7 +156,7 @@ export class FilesController {
       throw new Error('No files uploaded');
     }
 
-    const uploadedFiles = files.map(file => ({
+    const uploadedFiles = files.map((file) => ({
       fieldname: file.fieldname,
       originalname: file.originalname,
       encoding: file.encoding,
@@ -170,11 +170,11 @@ export class FilesController {
 
   @Get('my')
   @ApiOperation({ summary: 'Obtener mis archivos subidos' })
-  @ApiQuery({ 
-    name: 'type', 
-    required: false, 
+  @ApiQuery({
+    name: 'type',
+    required: false,
     enum: FileType,
-    description: 'Filtrar por tipo de archivo' 
+    description: 'Filtrar por tipo de archivo',
   })
   @ApiResponse({
     status: 200,
@@ -214,16 +214,16 @@ export class FilesController {
   @ApiResponse({ status: 404, description: 'Archivo no encontrado' })
   async downloadPdf(@Param('key') key: string, @Res() res: Response) {
     const { file, filePath } = await this.filesService.getFileByKey(key);
-    
+
     const fileBuffer = await fs.readFile(filePath);
-    
+
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${file.filename}"`,
       'Content-Length': file.size,
       'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
+      Pragma: 'no-cache',
+      Expires: '0',
     });
 
     res.send(fileBuffer);
@@ -237,14 +237,14 @@ export class FilesController {
   @ApiResponse({ status: 404, description: 'Imagen no encontrada' })
   async getImage(@Param('key') key: string, @Res() res: Response) {
     const { file, filePath } = await this.filesService.getFileByKey(key);
-    
+
     const fileBuffer = await fs.readFile(filePath);
-    
+
     res.set({
       'Content-Type': file.mimeType,
       'Content-Length': file.size,
       'Cache-Control': 'public, max-age=86400', // Cache por 1 día
-      'ETag': file.checksum,
+      ETag: file.checksum,
     });
 
     res.send(fileBuffer);
@@ -258,14 +258,14 @@ export class FilesController {
   @ApiResponse({ status: 404, description: 'Thumbnail no encontrado' })
   async getThumbnail(@Param('key') key: string, @Res() res: Response) {
     const { file, filePath } = await this.filesService.getFileByKey(key);
-    
+
     const fileBuffer = await fs.readFile(filePath);
-    
+
     res.set({
       'Content-Type': 'image/jpeg',
       'Content-Length': file.size,
       'Cache-Control': 'public, max-age=86400', // Cache por 1 día
-      'ETag': file.checksum,
+      ETag: file.checksum,
     });
 
     res.send(fileBuffer);
@@ -321,16 +321,16 @@ export class FilesController {
 
   @Post('cleanup')
   @ApiOperation({ summary: 'Limpiar archivos huérfanos (admin)' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Limpieza completada',
     schema: {
       type: 'object',
       properties: {
         deletedFiles: { type: 'number' },
         freedSpace: { type: 'string' },
-      }
-    }
+      },
+    },
   })
   @ApiBearerAuth()
   @Roles(UserRole.ADMIN)
@@ -350,8 +350,8 @@ export class FilesController {
         totalSize: { type: 'string' },
         filesByType: { type: 'object' },
         storageUsage: { type: 'object' },
-      }
-    }
+      },
+    },
   })
   @ApiBearerAuth()
   @Roles(UserRole.ADMIN)

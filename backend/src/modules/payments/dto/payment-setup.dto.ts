@@ -1,5 +1,13 @@
 // src/modules/payments/dto/payment-setup.dto.ts
-import { IsString, IsBoolean, IsOptional, IsIn, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsBoolean,
+  IsOptional,
+  IsIn,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaymentSetupDto {
@@ -31,7 +39,7 @@ export class PaymentSetupDto {
 
   @ApiPropertyOptional({
     description: 'Minimum payout amount (in dollars)',
-    example: 25.00,
+    example: 25.0,
     minimum: 1,
     maximum: 10000,
   })

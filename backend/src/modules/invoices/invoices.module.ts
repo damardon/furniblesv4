@@ -6,10 +6,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    forwardRef(() => StripeModule),
-  ],
+  imports: [PrismaModule, forwardRef(() => StripeModule)],
   controllers: [InvoicesController],
   providers: [InvoicesService],
   exports: [InvoicesService],

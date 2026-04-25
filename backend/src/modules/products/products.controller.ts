@@ -24,13 +24,16 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFiltersDto } from './dto/product-filters.dto';
-import { ProductResponseDto, PaginatedProductsDto } from './dto/product-response.dto';
+import {
+  ProductResponseDto,
+  PaginatedProductsDto,
+} from './dto/product-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
-import { UserRole, ProductStatus} from '@prisma/client';
+import { UserRole, ProductStatus } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
 
 interface JwtUser {
@@ -60,7 +63,10 @@ export class ProductsController {
     @Body() createProductDto: CreateProductDto,
     @CurrentUser() user: JwtUser,
   ) {
-    const product = await this.productsService.create(user.id, createProductDto);
+    const product = await this.productsService.create(
+      user.id,
+      createProductDto,
+    );
     return plainToClass(ProductResponseDto, product, {
       excludeExtraneousValues: false,
     });
@@ -74,15 +80,31 @@ export class ProductsController {
     description: 'Lista de productos',
     type: PaginatedProductsDto,
   })
-  @ApiQuery({ name: 'q', required: false, description: 'Búsqueda en título y descripción' })
-  @ApiQuery({ name: 'category', required: false, description: 'Filtrar por categoría' })
-  @ApiQuery({ name: 'difficulty', required: false, description: 'Filtrar por dificultad' })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description: 'Búsqueda en título y descripción',
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    description: 'Filtrar por categoría',
+  })
+  @ApiQuery({
+    name: 'difficulty',
+    required: false,
+    description: 'Filtrar por dificultad',
+  })
   @ApiQuery({ name: 'priceMin', required: false, description: 'Precio mínimo' })
   @ApiQuery({ name: 'priceMax', required: false, description: 'Precio máximo' })
   @ApiQuery({ name: 'tags', required: false, description: 'Filtrar por tags' })
   @ApiQuery({ name: 'sortBy', required: false, description: 'Ordenar por' })
   @ApiQuery({ name: 'page', required: false, description: 'Número de página' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Elementos por página' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Elementos por página',
+  })
   async findAll(
     @Query() filters: ProductFiltersDto,
     @CurrentUser() user?: JwtUser,
@@ -90,7 +112,7 @@ export class ProductsController {
     const result = await this.productsService.findAll(filters);
     return {
       ...result,
-      data: result.data.map(product =>
+      data: result.data.map((product) =>
         plainToClass(ProductResponseDto, product, {
           excludeExtraneousValues: false,
         }),
@@ -110,7 +132,7 @@ export class ProductsController {
     const result = await this.productsService.findAll(filters);
     return {
       ...result,
-      data: result.data.map(product =>
+      data: result.data.map((product) =>
         plainToClass(ProductResponseDto, product, {
           excludeExtraneousValues: false,
         }),
@@ -136,7 +158,9 @@ export class ProductsController {
   }
 
   @Get('pending')
-  @ApiOperation({ summary: 'Obtener productos pendientes de moderación (admin)' })
+  @ApiOperation({
+    summary: 'Obtener productos pendientes de moderación (admin)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de productos pendientes',
@@ -168,7 +192,6 @@ export class ProductsController {
       excludeExtraneousValues: false,
     });
   }
-  
 
   @Get('slug/:slug')
   @Public()
@@ -179,10 +202,7 @@ export class ProductsController {
     type: ProductResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Producto no encontrado' })
-  async findBySlug(
-    @Param('slug') slug: string,
-    @CurrentUser() user?: JwtUser,
-  ) {
+  async findBySlug(@Param('slug') slug: string, @CurrentUser() user?: JwtUser) {
     const product = await this.productsService.findBySlug(slug, user?.id);
     return plainToClass(ProductResponseDto, product, {
       excludeExtraneousValues: false,
@@ -312,7 +332,7 @@ export class ProductsController {
     return this.productsService.getProductStats(id);
   }
   // backend/src/modules/products/products.controller.ts
-// ✅ AGREGAR AL FINAL DE TU CLASE, antes del último }
+  // ✅ AGREGAR AL FINAL DE TU CLASE, antes del último }
 
   /**
    * 🆕 CRÍTICO: Productos destacados para homepage
@@ -334,12 +354,12 @@ export class ProductsController {
       sortBy: 'createdAt',
       sortOrder: 'desc',
     };
-    
+
     const result = await this.productsService.findAll(filters);
     return {
       success: true,
       ...result,
-      data: result.data.map(product =>
+      data: result.data.map((product) =>
         plainToClass(ProductResponseDto, product, {
           excludeExtraneousValues: false,
         }),
@@ -366,12 +386,12 @@ export class ProductsController {
       sortBy: 'createdAt',
       sortOrder: 'desc',
     };
-    
+
     const result = await this.productsService.findAll(filters);
     return {
       success: true,
       ...result,
-      data: result.data.map(product =>
+      data: result.data.map((product) =>
         plainToClass(ProductResponseDto, product, {
           excludeExtraneousValues: false,
         }),
@@ -452,6 +472,4 @@ export class ProductsController {
       };
     }
   }
-
-
 }

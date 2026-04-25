@@ -1,4 +1,12 @@
-import { IsEmail, IsString, IsOptional, IsIn, MinLength, MaxLength, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsIn,
+  MinLength,
+  MaxLength,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SellerOnboardingDto {
@@ -34,12 +42,43 @@ export class SellerOnboardingDto {
   @ApiProperty({
     description: 'Country code where seller operates',
     example: 'US',
-    enum: ['US', 'CA', 'MX', 'AR', 'CL', 'CO', 'PE', 'BR', 'GB', 'DE', 'FR', 'ES', 'IT'],
+    enum: [
+      'US',
+      'CA',
+      'MX',
+      'AR',
+      'CL',
+      'CO',
+      'PE',
+      'BR',
+      'GB',
+      'DE',
+      'FR',
+      'ES',
+      'IT',
+    ],
   })
   @IsString({ message: 'country.invalid' })
-  @IsIn(['US', 'CA', 'MX', 'AR', 'CL', 'CO', 'PE', 'BR', 'GB', 'DE', 'FR', 'ES', 'IT'], {
-    message: 'country.notSupported',
-  })
+  @IsIn(
+    [
+      'US',
+      'CA',
+      'MX',
+      'AR',
+      'CL',
+      'CO',
+      'PE',
+      'BR',
+      'GB',
+      'DE',
+      'FR',
+      'ES',
+      'IT',
+    ],
+    {
+      message: 'country.notSupported',
+    },
+  )
   country: string;
 
   @ApiPropertyOptional({

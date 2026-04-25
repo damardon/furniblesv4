@@ -1,5 +1,13 @@
 // src/modules/transactions/dto/transaction-filter.dto.ts
-import { IsOptional, IsIn, IsDateString, IsString, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsIn,
+  IsDateString,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { TransactionType, TransactionStatus } from '@prisma/client';
@@ -8,12 +16,22 @@ export class TransactionFilterDto {
   @ApiPropertyOptional({
     description: 'Filter by transaction type',
     example: 'SALE',
-    enum: ['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'],
+    enum: [
+      'SALE',
+      'PLATFORM_FEE',
+      'STRIPE_FEE',
+      'PAYOUT',
+      'REFUND',
+      'CHARGEBACK',
+    ],
   })
   @IsOptional()
-  @IsIn(['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'], {
-    message: 'type.invalid',
-  })
+  @IsIn(
+    ['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'],
+    {
+      message: 'type.invalid',
+    },
+  )
   type?: TransactionType;
 
   @ApiPropertyOptional({
@@ -80,7 +98,7 @@ export class TransactionFilterDto {
 
   @ApiPropertyOptional({
     description: 'Minimum transaction amount',
-    example: 1.00,
+    example: 1.0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'minAmount.invalid' })
@@ -89,7 +107,7 @@ export class TransactionFilterDto {
 
   @ApiPropertyOptional({
     description: 'Maximum transaction amount',
-    example: 10000.00,
+    example: 10000.0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'maxAmount.invalid' })

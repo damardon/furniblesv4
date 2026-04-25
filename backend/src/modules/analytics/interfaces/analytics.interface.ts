@@ -16,22 +16,22 @@ export interface SellerDashboardMetrics {
   totalRevenue: MetricValue;
   monthlyRevenue: MetricValue;
   averageOrderValue: MetricValue;
-  
+
   // Order Metrics
   totalOrders: MetricValue;
   monthlyOrders: MetricValue;
   completionRate: MetricValue;
-  
+
   // Product Metrics
   totalProducts: MetricValue;
   activeProducts: MetricValue;
   topPerformingProducts: ProductMetric[];
-  
+
   // Review Metrics
   averageRating: MetricValue;
   totalReviews: MetricValue;
   responseRate: MetricValue;
-  
+
   // Recent Activity
   recentOrders: RecentOrderMetric[];
   recentReviews: RecentReviewMetric[];
@@ -72,26 +72,26 @@ export interface AdminPlatformMetrics {
   totalSellers: MetricValue;
   totalBuyers: MetricValue;
   activeUsers: MetricValue;
-  
+
   // Revenue Metrics
   totalPlatformRevenue: MetricValue;
   monthlyPlatformRevenue: MetricValue;
   averagePlatformFee: MetricValue;
-  
+
   // Order Metrics
   totalOrders: MetricValue;
   monthlyOrders: MetricValue;
   averageOrderValue: MetricValue;
-  
+
   // Product Metrics
   totalProducts: MetricValue;
   activeProducts: MetricValue;
   pendingModeration: MetricValue;
-  
+
   // Review Metrics
   totalReviews: MetricValue;
   averagePlatformRating: MetricValue;
-  
+
   // Top Performers
   topSellers: SellerMetric[];
   topProducts: ProductMetric[];
@@ -125,14 +125,14 @@ export interface ConversionFunnelMetrics {
   orders: number;
   completedOrders: number;
   reviews: number;
-  
+
   // Conversion Rates
   productViewRate: number;
   cartConversionRate: number;
   checkoutConversionRate: number;
   orderCompletionRate: number;
   reviewRate: number;
-  
+
   // Drop-off Analysis
   dropOffs: {
     viewToCart: number;
@@ -168,7 +168,7 @@ export interface NotificationEngagementMetrics {
   deliveryRate: number;
   openRate: number;
   clickRate: number;
-  
+
   // By Type
   byType: {
     type: string;
@@ -180,7 +180,7 @@ export interface NotificationEngagementMetrics {
     openRate: number;
     clickRate: number;
   }[];
-  
+
   // By Channel
   byChannel: {
     channel: string;
@@ -192,7 +192,7 @@ export interface NotificationEngagementMetrics {
     openRate: number;
     clickRate: number;
   }[];
-  
+
   // Trends
   trends: {
     date: string;

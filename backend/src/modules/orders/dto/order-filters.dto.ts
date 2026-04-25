@@ -7,7 +7,7 @@ export class OrderFiltersDto {
   @ApiProperty({
     description: 'Filtrar por estado de orden',
     enum: OrderStatus,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsEnum(OrderStatus)
@@ -15,7 +15,7 @@ export class OrderFiltersDto {
 
   @ApiProperty({
     description: 'Filtrar desde fecha (ISO string)',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsDateString()
@@ -23,7 +23,7 @@ export class OrderFiltersDto {
 
   @ApiProperty({
     description: 'Filtrar hasta fecha (ISO string)',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsDateString()
@@ -31,7 +31,7 @@ export class OrderFiltersDto {
 
   @ApiProperty({
     description: 'Buscar por número de orden o email',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -42,17 +42,22 @@ export class OrderFiltersDto {
     description: 'Campo por el cual ordenar',
     enum: ['createdAt', 'updatedAt', 'totalAmount', 'status', 'orderNumber'],
     default: 'createdAt',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
-  sortBy?: 'createdAt' | 'updatedAt' | 'totalAmount' | 'status' | 'orderNumber' = 'createdAt';
+  sortBy?:
+    | 'createdAt'
+    | 'updatedAt'
+    | 'totalAmount'
+    | 'status'
+    | 'orderNumber' = 'createdAt';
 
   @ApiProperty({
     description: 'Dirección del ordenamiento',
     enum: ['asc', 'desc'],
     default: 'desc',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -61,7 +66,7 @@ export class OrderFiltersDto {
   @ApiProperty({
     description: 'Página',
     default: 1,
-    required: false
+    required: false,
   })
   @IsOptional()
   @Transform(({ value }) => parseInt(value))
@@ -70,7 +75,7 @@ export class OrderFiltersDto {
   @ApiProperty({
     description: 'Elementos por página',
     default: 10,
-    required: false
+    required: false,
   })
   @IsOptional()
   @Transform(({ value }) => parseInt(value))

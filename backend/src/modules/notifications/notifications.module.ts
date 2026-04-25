@@ -8,11 +8,11 @@ import { WebSocketModule } from '../websocket/websocket.module';
 
 @Module({
   imports: [
-    PrismaModule, 
-    EmailModule, 
+    PrismaModule,
+    EmailModule,
     WebSocketModule,
     // I18nModule removido temporalmente
-    ScheduleModule.forRoot() // 🆕 Habilitar cron jobs
+    ScheduleModule.forRoot(), // 🆕 Habilitar cron jobs
   ],
   controllers: [NotificationsController],
   providers: [NotificationService],

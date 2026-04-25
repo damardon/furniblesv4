@@ -101,8 +101,8 @@ describe('AnalyticsCalculationService', () => {
     it('groups by month correctly', () => {
       const result = service.groupRevenueByPeriod(orders, 'month');
       expect(result).toHaveLength(2);
-      expect(result.find(r => r.date === '2024-01')?.value).toBe(300);
-      expect(result.find(r => r.date === '2024-02')?.value).toBe(150);
+      expect(result.find((r) => r.date === '2024-01')?.value).toBe(300);
+      expect(result.find((r) => r.date === '2024-02')?.value).toBe(150);
     });
 
     it('groups by day correctly', () => {

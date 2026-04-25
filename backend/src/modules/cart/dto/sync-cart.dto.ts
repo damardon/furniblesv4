@@ -1,11 +1,19 @@
-import { IsArray, IsString, IsNotEmpty, IsNumber, IsPositive, ValidateNested, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsPositive,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CartItemSyncDto {
   @ApiProperty({
     description: 'ID del producto',
-    example: 'clrk123456789'
+    example: 'clrk123456789',
   })
   @IsString()
   @IsNotEmpty()
@@ -13,7 +21,7 @@ export class CartItemSyncDto {
 
   @ApiProperty({
     description: 'Cantidad del producto (siempre 1 para productos digitales)',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsPositive()
@@ -22,7 +30,7 @@ export class CartItemSyncDto {
   @ApiProperty({
     description: 'Precio snapshot del producto en el momento de agregarlo',
     example: 29.99,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber()
@@ -36,8 +44,8 @@ export class SyncCartDto {
     type: [CartItemSyncDto],
     example: [
       { productId: 'clrk123456789', quantity: 1, priceSnapshot: 29.99 },
-      { productId: 'clrk987654321', quantity: 1, priceSnapshot: 15.50 }
-    ]
+      { productId: 'clrk987654321', quantity: 1, priceSnapshot: 15.5 },
+    ],
   })
   @IsArray()
   @ValidateNested({ each: true })

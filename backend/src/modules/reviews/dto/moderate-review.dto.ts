@@ -1,4 +1,10 @@
-import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ReviewStatus } from '@prisma/client';
 
@@ -6,18 +12,18 @@ export class ModerateReviewDto {
   @ApiProperty({
     description: 'New review status',
     enum: ReviewStatus,
-    example: 'PUBLISHED'
+    example: 'PUBLISHED',
   })
   @IsNotEmpty({ message: 'status.required' })
   @IsIn(['PENDING_MODERATION', 'PUBLISHED', 'FLAGGED', 'REMOVED'], {
-    message: 'status.invalid'
+    message: 'status.invalid',
   })
   status: ReviewStatus;
 
   @ApiPropertyOptional({
     description: 'Reason for moderation action',
     maxLength: 500,
-    example: 'Review contains inappropriate language'
+    example: 'Review contains inappropriate language',
   })
   @IsOptional()
   @IsString({ message: 'reason.mustBeString' })

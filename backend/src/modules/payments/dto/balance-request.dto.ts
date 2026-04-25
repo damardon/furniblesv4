@@ -1,5 +1,11 @@
 // src/modules/payments/dto/balance-request.dto.ts
-import { IsString, IsOptional, IsIn, IsBoolean, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsIn,
+  IsBoolean,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BalanceRequestDto {

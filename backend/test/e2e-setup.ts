@@ -3,9 +3,11 @@ import { Difficulty, PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL_TEST || 'postgresql://test:test@localhost:5432/furnibles_test'
-    }
-  }
+      url:
+        process.env.DATABASE_URL_TEST ||
+        'postgresql://test:test@localhost:5432/furnibles_test',
+    },
+  },
 });
 
 export async function setupTestDb() {
@@ -18,7 +20,7 @@ export async function setupTestDb() {
   await prisma.product.deleteMany();
   await prisma.sellerProfile.deleteMany();
   await prisma.user.deleteMany();
-  
+
   // Create test users
   const buyer = await prisma.user.create({
     data: {
@@ -26,10 +28,10 @@ export async function setupTestDb() {
       password: 'hashedpassword',
       firstName: 'Test',
       lastName: 'Buyer',
-      role: 'BUYER',      
-    }
+      role: 'BUYER',
+    },
   });
-  
+
   const seller = await prisma.user.create({
     data: {
       email: 'seller@test.com',
@@ -37,13 +39,10 @@ export async function setupTestDb() {
       firstName: 'Test',
       lastName: 'Seller',
       role: 'SELLER',
-      sellerProfile: {
-        
-        }
-      }
-    })
-  
-  
+      sellerProfile: {},
+    },
+  });
+
   // Create test product
   const product = await prisma.product.create({
     data: {
@@ -53,14 +52,14 @@ export async function setupTestDb() {
       slug: 'test-product',
       price: 5,
       category: 'TABLES',
-      difficulty: "BEGINNER",
+      difficulty: 'BEGINNER',
       status: 'DRAFT',
       seller: {
-        connect: { id: seller.id }
-    }
-    }
+        connect: { id: seller.id },
+      },
+    },
   });
-  
+
   return { buyer, seller, product };
 }
 

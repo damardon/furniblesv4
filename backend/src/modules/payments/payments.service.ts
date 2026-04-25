@@ -1,5 +1,10 @@
 // src/modules/payments/payments.service.ts
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { StripeService } from '../stripe/stripe.service';
@@ -37,7 +42,9 @@ export class PaymentsService {
 
       // 2. Verificar si ya tiene cuenta de Stripe
       if (user.stripeConnectId) {
-        throw new BadRequestException('Seller already has Stripe Connect account');
+        throw new BadRequestException(
+          'Seller already has Stripe Connect account',
+        );
       }
 
       // 3. Crear cuenta de Stripe Connect
@@ -49,7 +56,6 @@ export class PaymentsService {
         businessType: dto.businessType,
         phone: dto.phone,
       });
-      
 
       // 4. Actualizar usuario con ID de Stripe
       await this.prisma.user.update({
@@ -63,10 +69,14 @@ export class PaymentsService {
       });
 
       // 5. Generar link de onboarding
-      const accountLink = await this.stripeService.createAccountLink(stripeAccount.id);
+      const accountLink = await this.stripeService.createAccountLink(
+        stripeAccount.id,
+      );
 
       // 6. Registrar en logs para seguimiento
-      this.logger.log(`Stripe Connect account created: ${stripeAccount.id} for user ${userId}`);
+      this.logger.log(
+        `Stripe Connect account created: ${stripeAccount.id} for user ${userId}`,
+      );
 
       return {
         accountId: stripeAccount.id,
@@ -100,7 +110,9 @@ export class PaymentsService {
       }
 
       // Obtener estado actual de la cuenta de Stripe
-      const account = await this.stripeService.retrieveAccount(user.stripeConnectId);
+      const account = await this.stripeService.retrieveAccount(
+        user.stripeConnectId,
+      );
 
       return {
         stripeConnectId: user.stripeConnectId,
@@ -130,12 +142,14 @@ export class PaymentsService {
       });
 
       if (!user?.stripeConnectId) {
-        throw new BadRequestException('Seller does not have Stripe Connect account');
+        throw new BadRequestException(
+          'Seller does not have Stripe Connect account',
+        );
       }
 
       // TODO: Implementar configuración de preferencias
       // Por ahora solo guardamos las preferencias básicas
-      
+
       return {
         automaticPayouts: dto.automaticPayouts ?? true,
         payoutSchedule: dto.payoutSchedule ?? 'weekly',
@@ -165,26 +179,31 @@ export class PaymentsService {
       });
 
       if (!user?.stripeConnectId) {
-        throw new BadRequestException('Seller does not have Stripe Connect account');
+        throw new BadRequestException(
+          'Seller does not have Stripe Connect account',
+        );
       }
 
       // Obtener balance de Stripe
-      const balance = await this.stripeService.getAccountBalance(user.stripeConnectId);
+      const balance = await this.stripeService.getAccountBalance(
+        user.stripeConnectId,
+      );
 
       // Formatear datos para respuesta
       const formattedBalance = {
-        available: balance.available.map(b => ({
+        available: balance.available.map((b) => ({
           amount: b.amount / 100, // Convertir de centavos a dólares
           currency: b.currency.toUpperCase(),
         })),
-        pending: balance.pending.map(b => ({
+        pending: balance.pending.map((b) => ({
           amount: b.amount / 100,
           currency: b.currency.toUpperCase(),
         })),
-        connectReserved: balance.connect_reserved?.map(b => ({
-          amount: b.amount / 100,
-          currency: b.currency.toUpperCase(),
-        })) || [],
+        connectReserved:
+          balance.connect_reserved?.map((b) => ({
+            amount: b.amount / 100,
+            currency: b.currency.toUpperCase(),
+          })) || [],
       };
 
       return formattedBalance;
@@ -197,7 +216,11 @@ export class PaymentsService {
   /**
    * 🆕 Solicitar payout para seller
    */
-  async requestSellerPayout(userId: string, amount?: number, currency: string = 'USD') {
+  async requestSellerPayout(
+    userId: string,
+    amount?: number,
+    currency: string = 'USD',
+  ) {
     try {
       this.logger.log(`Processing payout request for seller ${userId}`);
 
@@ -208,20 +231,31 @@ export class PaymentsService {
       });
 
       if (!user?.stripeConnectId) {
-        throw new BadRequestException('Seller does not have Stripe Connect account');
+        throw new BadRequestException(
+          'Seller does not have Stripe Connect account',
+        );
       }
 
       // Verificar que la cuenta puede recibir payouts
-      const canReceivePayouts = await this.stripeService.isAccountReadyForPayments(user.stripeConnectId);
+      const canReceivePayouts =
+        await this.stripeService.isAccountReadyForPayments(
+          user.stripeConnectId,
+        );
       if (!canReceivePayouts) {
-        throw new BadRequestException('Account is not ready to receive payouts');
+        throw new BadRequestException(
+          'Account is not ready to receive payouts',
+        );
       }
 
       // Si no se especifica amount, usar todo el balance disponible
       let payoutAmount = amount;
       if (!payoutAmount) {
-        const balance = await this.stripeService.getAccountBalance(user.stripeConnectId);
-        const availableInCurrency = balance.available.find(b => b.currency === currency.toLowerCase());
+        const balance = await this.stripeService.getAccountBalance(
+          user.stripeConnectId,
+        );
+        const availableInCurrency = balance.available.find(
+          (b) => b.currency === currency.toLowerCase(),
+        );
         if (!availableInCurrency || availableInCurrency.amount < 100) {
           throw new BadRequestException('Insufficient balance for payout');
         }
@@ -266,7 +300,10 @@ export class PaymentsService {
   /**
    * 🆕 Obtener historial de payouts del seller
    */
-  async getSellerPayoutHistory(userId: string, options: { limit?: number; startingAfter?: string } = {}) {
+  async getSellerPayoutHistory(
+    userId: string,
+    options: { limit?: number; startingAfter?: string } = {},
+  ) {
     try {
       this.logger.log(`Getting payout history for seller ${userId}`);
 
@@ -290,12 +327,14 @@ export class PaymentsService {
       if (user?.stripeConnectId) {
         const stripePayouts = await this.stripeService.listPayouts(
           user.stripeConnectId,
-          options.limit || 20
+          options.limit || 20,
         );
 
         // Combinar datos de Stripe con nuestros registros
-        const combinedData = payouts.map(payout => {
-          const stripePayout = stripePayouts.data.find(sp => sp.id === payout.stripePayoutId);
+        const combinedData = payouts.map((payout) => {
+          const stripePayout = stripePayouts.data.find(
+            (sp) => sp.id === payout.stripePayoutId,
+          );
           return {
             id: payout.id,
             amount: payout.amount,
@@ -304,11 +343,13 @@ export class PaymentsService {
             requestedAt: payout.requestedAt,
             processedAt: payout.processedAt,
             description: payout.description,
-            stripeData: stripePayout ? {
-              arrivalDate: new Date(stripePayout.arrival_date * 1000),
-              method: stripePayout.method,
-              type: stripePayout.type,
-            } : null,
+            stripeData: stripePayout
+              ? {
+                  arrivalDate: new Date(stripePayout.arrival_date * 1000),
+                  method: stripePayout.method,
+                  type: stripePayout.type,
+                }
+              : null,
           };
         });
 
@@ -341,10 +382,14 @@ export class PaymentsService {
       });
 
       if (!user?.stripeConnectId) {
-        throw new BadRequestException('Seller does not have Stripe Connect account');
+        throw new BadRequestException(
+          'Seller does not have Stripe Connect account',
+        );
       }
 
-      const loginLink = await this.stripeService.createLoginLink(user.stripeConnectId);
+      const loginLink = await this.stripeService.createLoginLink(
+        user.stripeConnectId,
+      );
 
       return {
         url: loginLink.url,
@@ -369,10 +414,14 @@ export class PaymentsService {
       });
 
       if (!user?.stripeConnectId) {
-        throw new NotFoundException('Seller does not have Stripe Connect account');
+        throw new NotFoundException(
+          'Seller does not have Stripe Connect account',
+        );
       }
 
-      const account = await this.stripeService.retrieveAccount(user.stripeConnectId);
+      const account = await this.stripeService.retrieveAccount(
+        user.stripeConnectId,
+      );
 
       return {
         accountId: account.id,
@@ -380,18 +429,18 @@ export class PaymentsService {
         country: account.country,
         currency: account.default_currency,
         businessType: account.business_type,
-        
+
         // Estados principales
         chargesEnabled: account.charges_enabled,
         payoutsEnabled: account.payouts_enabled,
         detailsSubmitted: account.details_submitted,
-        
+
         // Capacidades
         capabilities: {
           cardPayments: account.capabilities?.card_payments,
           transfers: account.capabilities?.transfers,
         },
-        
+
         // Requerimientos
         requirements: {
           currentlyDue: account.requirements?.currently_due || [],
@@ -399,13 +448,13 @@ export class PaymentsService {
           pastDue: account.requirements?.past_due || [],
           pendingVerification: account.requirements?.pending_verification || [],
         },
-        
+
         // Configuración de payouts
         payouts: {
           schedule: account.settings?.payouts?.schedule,
           statementDescriptor: account.settings?.payouts?.statement_descriptor,
         },
-        
+
         // Fechas importantes
         created: new Date(account.created * 1000),
       };
@@ -424,14 +473,14 @@ export class PaymentsService {
 
       // Obtener estadísticas de sellers
       const totalSellers = await this.prisma.user.count({
-        where: { 
+        where: {
           role: 'SELLER',
           stripeConnectId: { not: null },
         },
       });
 
       const activeSellers = await this.prisma.user.count({
-        where: { 
+        where: {
           role: 'SELLER',
           stripeConnectId: { not: null },
           payoutsEnabled: true,
@@ -449,7 +498,10 @@ export class PaymentsService {
       });
 
       const totalPayouts = recentPayouts.length;
-      const totalPayoutAmount = recentPayouts.reduce((sum, payout) => sum + Number(payout.amount), 0);
+      const totalPayoutAmount = recentPayouts.reduce(
+        (sum, payout) => sum + Number(payout.amount),
+        0,
+      );
 
       // Obtener estadísticas de transacciones
       const recentTransactions = await this.prisma.transaction.count({
@@ -468,7 +520,8 @@ export class PaymentsService {
         payouts: {
           count: totalPayouts,
           totalAmount: totalPayoutAmount,
-          averageAmount: totalPayouts > 0 ? totalPayoutAmount / totalPayouts : 0,
+          averageAmount:
+            totalPayouts > 0 ? totalPayoutAmount / totalPayouts : 0,
         },
         transactions: {
           recentSales: recentTransactions,
@@ -537,7 +590,9 @@ export class PaymentsService {
 
       this.logger.log(`Payout ${payoutData.id} marked as completed`);
     } catch (error) {
-      this.logger.error(`Failed to process payout completion: ${error.message}`);
+      this.logger.error(
+        `Failed to process payout completion: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -565,7 +620,10 @@ export class PaymentsService {
           type: 'PAYOUT_FAILED',
           title: 'Payout Failed',
           message: `Your payout of $${payout.amount.toFixed(2)} could not be processed. Reason: ${payoutData.failure_message || 'Unknown error'}.`,
-          data: { stripePayoutId: payoutData.id, reason: payoutData.failure_message },
+          data: {
+            stripePayoutId: payoutData.id,
+            reason: payoutData.failure_message,
+          },
         });
       }
 

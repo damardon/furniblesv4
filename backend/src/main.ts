@@ -4,11 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-
-// Usar require para evitar problemas de tipos con ES modules
-const compression = require('compression');
-const cookieParser = require('cookie-parser');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,14 +23,14 @@ async function bootstrap() {
 
   // Get backend and frontend URLs from config
   const nodeEnv = configService.get('NODE_ENV', 'development');
-  const backendUrl = configService.get('BACKEND_URL', `http://localhost:${port}`);
+  const backendUrl = configService.get(
+    'BACKEND_URL',
+    `http://localhost:${port}`,
+  );
   const corsOrigin = configService.get('CORS_ORIGIN');
 
   // CORS configuration with environment-based origins
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-  ];
+  const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
 
   if (corsOrigin) {
     allowedOrigins.push(corsOrigin);

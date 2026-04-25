@@ -13,7 +13,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     PrismaModule,
     AdminAnalyticsModule,
     forwardRef(() => OrdersModule), // Para AdminOrdersController
-    forwardRef(() => UsersModule),  // Para AdminService
+    forwardRef(() => UsersModule), // Para AdminService
     forwardRef(() => ProductsModule), // Para AdminService
   ],
   controllers: [

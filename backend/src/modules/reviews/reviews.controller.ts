@@ -11,14 +11,14 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiParam
+  ApiParam,
 } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -26,14 +26,14 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
-import { 
-  CreateReviewDto, 
-  UpdateReviewDto, 
+import {
+  CreateReviewDto,
+  UpdateReviewDto,
   CreateReviewResponseDto,
   ReviewVoteDto,
   ReportReviewDto,
   FilterReviewDto,
-  ModerateReviewDto
+  ModerateReviewDto,
 } from './dto';
 
 @ApiTags('Reviews')
@@ -91,7 +91,7 @@ export class ReviewsController {
   @ApiResponse({ status: 409, description: 'Review already exists' })
   async create(
     @CurrentUser('sub') userId: string,
-    @Body() createReviewDto: CreateReviewDto
+    @Body() createReviewDto: CreateReviewDto,
   ) {
     return this.reviewsService.createReview(userId, createReviewDto);
   }
@@ -102,12 +102,15 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Update own review' })
   @ApiParam({ name: 'id', description: 'Review ID' })
   @ApiResponse({ status: 200, description: 'Review updated successfully' })
-  @ApiResponse({ status: 403, description: 'Not authorized to update this review' })
+  @ApiResponse({
+    status: 403,
+    description: 'Not authorized to update this review',
+  })
   @ApiResponse({ status: 404, description: 'Review not found' })
   async update(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateReviewDto: UpdateReviewDto
+    @Body() updateReviewDto: UpdateReviewDto,
   ) {
     return this.reviewsService.updateReview(userId, id, updateReviewDto);
   }
@@ -119,12 +122,15 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Respond to a review' })
   @ApiParam({ name: 'id', description: 'Review ID' })
   @ApiResponse({ status: 201, description: 'Response created successfully' })
-  @ApiResponse({ status: 403, description: 'Not authorized to respond to this review' })
+  @ApiResponse({
+    status: 403,
+    description: 'Not authorized to respond to this review',
+  })
   @ApiResponse({ status: 409, description: 'Response already exists' })
   async createResponse(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseUUIDPipe) reviewId: string,
-    @Body() responseDto: CreateReviewResponseDto
+    @Body() responseDto: CreateReviewResponseDto,
   ) {
     return this.reviewsService.createResponse(userId, reviewId, responseDto);
   }
@@ -140,7 +146,7 @@ export class ReviewsController {
   async voteReview(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseUUIDPipe) reviewId: string,
-    @Body() voteDto: ReviewVoteDto
+    @Body() voteDto: ReviewVoteDto,
   ) {
     return this.reviewsService.voteReview(userId, reviewId, voteDto);
   }
@@ -156,7 +162,7 @@ export class ReviewsController {
   async reportReview(
     @CurrentUser('sub') userId: string,
     @Param('id', ParseUUIDPipe) reviewId: string,
-    @Body() reportDto: ReportReviewDto
+    @Body() reportDto: ReportReviewDto,
   ) {
     return this.reviewsService.reportReview(userId, reviewId, reportDto);
   }
@@ -170,7 +176,10 @@ export class ReviewsController {
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get admin review statistics' })
-  @ApiResponse({ status: 200, description: 'Admin stats retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Admin stats retrieved successfully',
+  })
   async getAdminStats() {
     return this.reviewsService.getAdminStats();
   }
@@ -180,10 +189,13 @@ export class ReviewsController {
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get pending reviews for moderation' })
-  @ApiResponse({ status: 200, description: 'Pending reviews retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pending reviews retrieved successfully',
+  })
   async getPendingReviews(
     @Query('page') page?: number,
-    @Query('limit') limit?: number
+    @Query('limit') limit?: number,
   ) {
     return this.reviewsService.getPendingReviews(page, limit);
   }
@@ -199,7 +211,7 @@ export class ReviewsController {
   async moderateReview(
     @CurrentUser('sub') adminId: string,
     @Param('id', ParseUUIDPipe) reviewId: string,
-    @Body() moderateDto: ModerateReviewDto
+    @Body() moderateDto: ModerateReviewDto,
   ) {
     return this.reviewsService.moderateReview(adminId, reviewId, moderateDto);
   }

@@ -49,12 +49,35 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all users (Admin only)' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-  @ApiQuery({ name: 'role', required: false, enum: UserRole, description: 'Filter by role' })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by status' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    enum: UserRole,
+    description: 'Filter by role',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    description: 'Filter by status',
+  })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -110,7 +133,10 @@ export class UsersController {
   @ApiParam({ name: 'id', type: String, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
@@ -123,7 +149,10 @@ export class UsersController {
   @ApiParam({ name: 'id', type: String, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
@@ -136,7 +165,10 @@ export class UsersController {
   @ApiParam({ name: 'id', type: String, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User status updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
   updateStatus(
     @Param('id') id: string,
     @Body() statusDto: { isActive: boolean },
@@ -144,57 +176,57 @@ export class UsersController {
     return this.usersService.updateStatus(id, statusDto.isActive);
   }
   @Get('sellers/featured')
-@Public()
-@ApiOperation({ summary: 'Get featured sellers' })
-async getFeaturedSellers() {
-  try {
-    const sellers = await this.prisma.user.findMany({
-      where: {
-        role: 'SELLER',
-        sellerProfile: {
-          isVerified: true,
-        }
-      },
-      include: {
-        sellerProfile: {
-          select: {
-            storeName: true,
-            slug: true,
-            description: true,
-            avatar: true,
+  @Public()
+  @ApiOperation({ summary: 'Get featured sellers' })
+  async getFeaturedSellers() {
+    try {
+      const sellers = await this.prisma.user.findMany({
+        where: {
+          role: 'SELLER',
+          sellerProfile: {
             isVerified: true,
-          }
+          },
         },
-        _count: {
-          select: {
-            products: {
-              where: { status: 'APPROVED' }
-            }
-          }
-        }
-      },
-      take: 8,
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+        include: {
+          sellerProfile: {
+            select: {
+              storeName: true,
+              slug: true,
+              description: true,
+              avatar: true,
+              isVerified: true,
+            },
+          },
+          _count: {
+            select: {
+              products: {
+                where: { status: 'APPROVED' },
+              },
+            },
+          },
+        },
+        take: 8,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
-    return {
-      success: true,
-      data: sellers.map(seller => ({
-        id: seller.id,
-        firstName: seller.firstName,
-        lastName: seller.lastName,
-        avatar: seller.avatar,
-        sellerProfile: seller.sellerProfile,
-        productCount: seller._count.products,
-      }))
-    };
-  } catch (error) {
-    return {
-      success: false,
-      data: []
-    };
+      return {
+        success: true,
+        data: sellers.map((seller) => ({
+          id: seller.id,
+          firstName: seller.firstName,
+          lastName: seller.lastName,
+          avatar: seller.avatar,
+          sellerProfile: seller.sellerProfile,
+          productCount: seller._count.products,
+        })),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: [],
+      };
+    }
   }
-}
 }

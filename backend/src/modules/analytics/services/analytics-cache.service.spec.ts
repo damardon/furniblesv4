@@ -2,7 +2,9 @@ import { ConfigService } from '@nestjs/config';
 import { AnalyticsCacheService } from './analytics-cache.service';
 
 const makeService = (redisUrl?: string) => {
-  const config = { get: jest.fn().mockReturnValue(redisUrl) } as unknown as ConfigService;
+  const config = {
+    get: jest.fn().mockReturnValue(redisUrl),
+  } as unknown as ConfigService;
   const svc = new AnalyticsCacheService(config);
   return svc;
 };
@@ -42,14 +44,18 @@ describe('AnalyticsCacheService', () => {
     });
 
     it('invalidatePattern is a no-op', async () => {
-      await expect(svc.invalidatePattern('analytics:*')).resolves.toBeUndefined();
+      await expect(
+        svc.invalidatePattern('analytics:*'),
+      ).resolves.toBeUndefined();
     });
   });
 
   describe('buildKey', () => {
     it('prefixes with analytics:', () => {
       const svc = makeService(undefined);
-      expect(svc.buildKey('seller', 'abc', 'dashboard')).toBe('analytics:seller:abc:dashboard');
+      expect(svc.buildKey('seller', 'abc', 'dashboard')).toBe(
+        'analytics:seller:abc:dashboard',
+      );
     });
 
     it('joins single part', () => {

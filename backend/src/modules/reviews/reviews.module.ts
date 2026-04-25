@@ -8,10 +8,10 @@ import { NotificationModule } from '../notifications/notifications.module';
 @Module({
   imports: [
     PrismaModule, // Corregido: usar PrismaModule en lugar de DatabaseModule
-    NotificationModule
+    NotificationModule,
   ],
   controllers: [ReviewsController],
   providers: [ReviewsService],
-  exports: [ReviewsService]
+  exports: [ReviewsService],
 })
 export class ReviewsModule {}

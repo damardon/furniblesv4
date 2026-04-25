@@ -8,7 +8,7 @@ import {
   UseGuards,
   Request,
   HttpCode,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +16,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery
+  ApiQuery,
 } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -38,88 +38,92 @@ export class OrdersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Roles(UserRole.BUYER)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Crear orden desde carrito',
-    description: 'Crea una nueva orden basada en los productos del carrito del usuario.'
+    description:
+      'Crea una nueva orden basada en los productos del carrito del usuario.',
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Orden creada exitosamente',
-    type: OrderResponseDto 
+    type: OrderResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Carrito vacío o productos inválidos' 
+  @ApiResponse({
+    status: 400,
+    description: 'Carrito vacío o productos inválidos',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Solo compradores pueden crear órdenes' 
+  @ApiResponse({
+    status: 403,
+    description: 'Solo compradores pueden crear órdenes',
   })
   async createOrder(
     @Request() req,
-    @Body() dto: CreateOrderDto
+    @Body() dto: CreateOrderDto,
   ): Promise<OrderResponseDto> {
     return this.ordersService.createOrder(req.user.id, dto);
   }
 
   @Get('my')
   @Roles(UserRole.BUYER)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener mis órdenes como comprador',
-    description: 'Retorna todas las órdenes del usuario autenticado como comprador.'
+    description:
+      'Retorna todas las órdenes del usuario autenticado como comprador.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Órdenes obtenidas exitosamente',
-    type: PaginatedOrdersDto 
+    type: PaginatedOrdersDto,
   })
   async getMyOrders(
     @Request() req,
-    @Query() filters: OrderFiltersDto
+    @Query() filters: OrderFiltersDto,
   ): Promise<PaginatedOrdersDto> {
     return this.ordersService.getBuyerOrders(req.user.id, filters);
   }
 
   @Get('sales')
   @Roles(UserRole.SELLER)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener mis ventas como seller',
-    description: 'Retorna todas las órdenes donde el usuario autenticado ha vendido productos.'
+    description:
+      'Retorna todas las órdenes donde el usuario autenticado ha vendido productos.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Ventas obtenidas exitosamente',
-    type: PaginatedOrdersDto 
+    type: PaginatedOrdersDto,
   })
   async getMySales(
     @Request() req,
-    @Query() filters: OrderFiltersDto
+    @Query() filters: OrderFiltersDto,
   ): Promise<PaginatedOrdersDto> {
     return this.ordersService.getSellerOrders(req.user.id, filters);
   }
 
   @Get(':id')
   @Roles(UserRole.BUYER, UserRole.SELLER)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener orden por ID',
-    description: 'Retorna los detalles de una orden específica. Solo visible para el comprador o sellers involucrados.'
+    description:
+      'Retorna los detalles de una orden específica. Solo visible para el comprador o sellers involucrados.',
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'ID de la orden' 
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la orden',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Orden obtenida exitosamente',
-    type: OrderResponseDto 
+    type: OrderResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Orden no encontrada o sin permisos' 
+  @ApiResponse({
+    status: 404,
+    description: 'Orden no encontrada o sin permisos',
   })
   async getOrderById(
     @Request() req,
-    @Param('id') orderId: string
+    @Param('id') orderId: string,
   ): Promise<OrderResponseDto> {
     return this.ordersService.getOrderById(orderId, req.user.id);
   }
@@ -127,30 +131,31 @@ export class OrdersController {
   @Post(':id/cancel')
   @HttpCode(HttpStatus.OK)
   @Roles(UserRole.BUYER, UserRole.ADMIN)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Cancelar orden',
-    description: 'Cancela una orden pendiente. Solo el comprador o admin pueden cancelar.'
+    description:
+      'Cancela una orden pendiente. Solo el comprador o admin pueden cancelar.',
   })
-  @ApiParam({ 
-    name: 'id', 
-    description: 'ID de la orden' 
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la orden',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Orden cancelada exitosamente' 
+  @ApiResponse({
+    status: 200,
+    description: 'Orden cancelada exitosamente',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Orden no encontrada' 
+  @ApiResponse({
+    status: 404,
+    description: 'Orden no encontrada',
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Orden no se puede cancelar en su estado actual' 
+  @ApiResponse({
+    status: 400,
+    description: 'Orden no se puede cancelar en su estado actual',
   })
   async cancelOrder(
     @Request() req,
     @Param('id') orderId: string,
-    @Body() body: { reason?: string }
+    @Body() body: { reason?: string },
   ): Promise<void> {
     return this.ordersService.cancelOrder(orderId, body.reason);
   }

@@ -1,21 +1,21 @@
 // backend/src/modules/payments/payment-checkout.controller.ts - CORREGIDO
-import { 
-  Controller, 
-  Post, 
+import {
+  Controller,
+  Post,
   Get,
-  Body, 
+  Body,
   Param,
   Query,
-  Logger, 
+  Logger,
   UseGuards,
   BadRequestException,
-  NotFoundException
+  NotFoundException,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
+import {
+  ApiTags,
+  ApiOperation,
   ApiResponse,
-  ApiBearerAuth 
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -72,11 +72,14 @@ export class PaymentCheckoutController {
    * 🆕 CRÍTICO: Crear Payment Intent para checkout
    */
   @Post('stripe/create-intent')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create Stripe Payment Intent',
-    description: 'Creates a payment intent for Stripe checkout'
+    description: 'Creates a payment intent for Stripe checkout',
   })
-  @ApiResponse({ status: 201, description: 'Payment intent created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Payment intent created successfully',
+  })
   @ApiResponse({ status: 400, description: 'Invalid request or empty cart' })
   async createStripePaymentIntent(
     @Body() createIntentDto: CreatePaymentIntentDto,
@@ -90,7 +93,10 @@ export class PaymentCheckoutController {
         throw new BadRequestException('Amount must be greater than 0');
       }
 
-      if (!createIntentDto.cartItems || createIntentDto.cartItems.length === 0) {
+      if (
+        !createIntentDto.cartItems ||
+        createIntentDto.cartItems.length === 0
+      ) {
         throw new BadRequestException('Cart items are required');
       }
 
@@ -102,12 +108,12 @@ export class PaymentCheckoutController {
             include: {
               seller: {
                 include: {
-                  sellerProfile: true
-                }
-              }
-            }
-          }
-        }
+                  sellerProfile: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!cartItems || cartItems.length === 0) {
@@ -127,7 +133,7 @@ export class PaymentCheckoutController {
           customerName: createIntentDto.customerInfo.name,
           orderNumber: orderNumber,
           itemCount: cartItems.length.toString(),
-        }
+        },
       );
 
       // ✅ CORREGIDO: Crear orden pendiente con estructura completa de OrderItem
@@ -137,10 +143,10 @@ export class PaymentCheckoutController {
           buyerId: user.id,
           subtotal: createIntentDto.amount,
           subtotalAmount: createIntentDto.amount,
-          platformFeeRate: 0.10, // 10% fee
-          platformFee: createIntentDto.amount * 0.10,
+          platformFeeRate: 0.1, // 10% fee
+          platformFee: createIntentDto.amount * 0.1,
           totalAmount: createIntentDto.amount,
-          sellerAmount: createIntentDto.amount * 0.90,
+          sellerAmount: createIntentDto.amount * 0.9,
           status: 'PENDING',
           paymentIntentId: paymentIntent.id,
           paymentStatus: 'pending',
@@ -154,7 +160,7 @@ export class PaymentCheckoutController {
           },
           // ✅ CORREGIDO: Crear OrderItems con TODOS los campos requeridos
           items: {
-            create: cartItems.map(item => ({
+            create: cartItems.map((item) => ({
               productId: item.productId,
               sellerId: item.product.sellerId,
               productTitle: item.product.title,
@@ -162,17 +168,20 @@ export class PaymentCheckoutController {
               price: item.priceSnapshot,
               quantity: item.quantity,
               sellerName: `${item.product.seller.firstName} ${item.product.seller.lastName}`,
-              storeName: item.product.seller.sellerProfile?.storeName || 'Unknown Store',
-            }))
-          }
+              storeName:
+                item.product.seller.sellerProfile?.storeName || 'Unknown Store',
+            })),
+          },
         },
         include: {
           items: true,
-          buyer: true
-        }
+          buyer: true,
+        },
       });
 
-      this.logger.log(`Payment Intent created: ${paymentIntent.id} for order ${order.id}`);
+      this.logger.log(
+        `Payment Intent created: ${paymentIntent.id} for order ${order.id}`,
+      );
 
       return {
         success: true,
@@ -181,10 +190,11 @@ export class PaymentCheckoutController {
         orderId: order.id,
         orderNumber: order.orderNumber,
       };
-
     } catch (error) {
       this.logger.error(`Failed to create Payment Intent: ${error.message}`);
-      throw new BadRequestException(`Failed to create payment intent: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create payment intent: ${error.message}`,
+      );
     }
   }
 
@@ -192,9 +202,9 @@ export class PaymentCheckoutController {
    * 🆕 CRÍTICO: Confirmar pago Stripe (webhook o manual)
    */
   @Post('stripe/confirm-payment/:paymentIntentId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Confirm Stripe payment',
-    description: 'Confirms a Stripe payment and completes the order'
+    description: 'Confirms a Stripe payment and completes the order',
   })
   @ApiResponse({ status: 200, description: 'Payment confirmed successfully' })
   @ApiResponse({ status: 404, description: 'Payment intent not found' })
@@ -203,27 +213,30 @@ export class PaymentCheckoutController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
-      this.logger.log(`Confirming Stripe payment ${paymentIntentId} for user ${user.id}`);
+      this.logger.log(
+        `Confirming Stripe payment ${paymentIntentId} for user ${user.id}`,
+      );
 
       // Buscar orden por Payment Intent ID
       const order = await this.prisma.order.findFirst({
-        where: { 
+        where: {
           paymentIntentId: paymentIntentId,
-          buyerId: user.id 
+          buyerId: user.id,
         },
         include: {
           items: true,
-          buyer: true
-        }
+          buyer: true,
+        },
       });
-      
+
       if (!order) {
         throw new NotFoundException('Order not found or unauthorized');
       }
 
       // Verificar estado del pago en Stripe
-      const paymentIntent = await this.stripeService.retrievePaymentIntent(paymentIntentId);
-      
+      const paymentIntent =
+        await this.stripeService.retrievePaymentIntent(paymentIntentId);
+
       if (paymentIntent.status !== 'succeeded') {
         throw new BadRequestException('Payment has not been completed');
       }
@@ -237,35 +250,38 @@ export class PaymentCheckoutController {
           paidAt: new Date(),
           completedAt: new Date(),
           metadata: {
-            ...order.metadata as any,
+            ...(order.metadata as any),
             paymentId: paymentIntent.id,
             stripeChargeId: paymentIntent.latest_charge,
             completedAt: new Date().toISOString(),
-          }
-        }
+          },
+        },
       });
 
       // Limpiar carrito
       await this.prisma.cartItem.deleteMany({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
 
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      const { count: downloadTokenCount } = await this.prisma.downloadToken.createMany({
-        data: order.items.map((item: any) => ({
-          token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-          orderId: order.id,
-          productId: item.productId,
-          buyerId: user.id,
-          downloadLimit: 5,
-          downloadCount: 0,
-          expiresAt,
-          isActive: true,
-        })),
-        skipDuplicates: true,
-      });
+      const { count: downloadTokenCount } =
+        await this.prisma.downloadToken.createMany({
+          data: order.items.map((item: any) => ({
+            token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+            orderId: order.id,
+            productId: item.productId,
+            buyerId: user.id,
+            downloadLimit: 5,
+            downloadCount: 0,
+            expiresAt,
+            isActive: true,
+          })),
+          skipDuplicates: true,
+        });
 
-      this.logger.log(`Stripe payment completed for order ${order.id} with ${downloadTokenCount} download tokens`);
+      this.logger.log(
+        `Stripe payment completed for order ${order.id} with ${downloadTokenCount} download tokens`,
+      );
 
       return {
         success: true,
@@ -275,10 +291,11 @@ export class PaymentCheckoutController {
         orderNumber: order.orderNumber,
         downloadTokensCount: downloadTokenCount,
       };
-
     } catch (error) {
       this.logger.error(`Failed to confirm Stripe payment: ${error.message}`);
-      throw new BadRequestException(`Failed to confirm payment: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to confirm payment: ${error.message}`,
+      );
     }
   }
 
@@ -290,11 +307,14 @@ export class PaymentCheckoutController {
    * 🆕 CRÍTICO: Crear orden PayPal
    */
   @Post('paypal/create-order')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create PayPal order',
-    description: 'Creates a PayPal order for checkout'
+    description: 'Creates a PayPal order for checkout',
   })
-  @ApiResponse({ status: 201, description: 'PayPal order created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'PayPal order created successfully',
+  })
   @ApiResponse({ status: 400, description: 'Invalid request or empty cart' })
   async createPayPalOrder(
     @Body() createOrderDto: CreatePayPalOrderDto,
@@ -316,12 +336,12 @@ export class PaymentCheckoutController {
             include: {
               seller: {
                 include: {
-                  sellerProfile: true
-                }
-              }
-            }
-          }
-        }
+                  sellerProfile: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!cartItems || cartItems.length === 0) {
@@ -329,7 +349,7 @@ export class PaymentCheckoutController {
       }
 
       // Preparar items para PayPal
-      const paypalItems = cartItems.map(item => ({
+      const paypalItems = cartItems.map((item) => ({
         name: item.product.title,
         price: item.product.price,
         quantity: item.quantity,
@@ -347,7 +367,7 @@ export class PaymentCheckoutController {
           userId: user.id.toString(),
           orderNumber: orderNumber,
           customerEmail: createOrderDto.customerInfo.email,
-        }
+        },
       });
 
       // ✅ CORREGIDO: Crear orden pendiente con estructura completa
@@ -357,10 +377,10 @@ export class PaymentCheckoutController {
           buyerId: user.id,
           subtotal: createOrderDto.amount,
           subtotalAmount: createOrderDto.amount,
-          platformFeeRate: 0.10,
-          platformFee: createOrderDto.amount * 0.10,
+          platformFeeRate: 0.1,
+          platformFee: createOrderDto.amount * 0.1,
           totalAmount: createOrderDto.amount,
-          sellerAmount: createOrderDto.amount * 0.90,
+          sellerAmount: createOrderDto.amount * 0.9,
           status: 'PENDING',
           paymentStatus: 'pending',
           paypalOrderId: paypalOrder.orderId, // ✅ CORREGIDO: Usar campo PayPal del schema
@@ -375,7 +395,7 @@ export class PaymentCheckoutController {
           },
           // ✅ CORREGIDO: Crear OrderItems con TODOS los campos requeridos
           items: {
-            create: cartItems.map(item => ({
+            create: cartItems.map((item) => ({
               productId: item.productId,
               sellerId: item.product.sellerId,
               productTitle: item.product.title,
@@ -383,17 +403,20 @@ export class PaymentCheckoutController {
               price: item.priceSnapshot,
               quantity: item.quantity,
               sellerName: `${item.product.seller.firstName} ${item.product.seller.lastName}`,
-              storeName: item.product.seller.sellerProfile?.storeName || 'Unknown Store',
-            }))
-          }
+              storeName:
+                item.product.seller.sellerProfile?.storeName || 'Unknown Store',
+            })),
+          },
         },
         include: {
           items: true,
-          buyer: true
-        }
+          buyer: true,
+        },
       });
 
-      this.logger.log(`PayPal order created: ${paypalOrder.orderId} for order ${order.id}`);
+      this.logger.log(
+        `PayPal order created: ${paypalOrder.orderId} for order ${order.id}`,
+      );
 
       return {
         success: true,
@@ -402,10 +425,11 @@ export class PaymentCheckoutController {
         localOrderId: order.id,
         orderNumber: order.orderNumber,
       };
-
     } catch (error) {
       this.logger.error(`Failed to create PayPal order: ${error.message}`);
-      throw new BadRequestException(`Failed to create PayPal order: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create PayPal order: ${error.message}`,
+      );
     }
   }
 
@@ -413,21 +437,28 @@ export class PaymentCheckoutController {
    * 🆕 CRÍTICO: Capturar pago PayPal
    */
   @Post('paypal/capture-order')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Capture PayPal payment',
-    description: 'Captures a PayPal payment after user approval'
+    description: 'Captures a PayPal payment after user approval',
   })
-  @ApiResponse({ status: 200, description: 'PayPal payment captured successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'PayPal payment captured successfully',
+  })
   @ApiResponse({ status: 400, description: 'Capture failed' })
   async capturePayPalOrder(
     @Body() captureDto: CapturePayPalOrderDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
-      this.logger.log(`Capturing PayPal order ${captureDto.orderId} for user ${user.id}`);
+      this.logger.log(
+        `Capturing PayPal order ${captureDto.orderId} for user ${user.id}`,
+      );
 
       // Capturar pago en PayPal
-      const captureResult = await this.paypalService.captureOrder(captureDto.orderId);
+      const captureResult = await this.paypalService.captureOrder(
+        captureDto.orderId,
+      );
 
       if (captureResult.status !== 'COMPLETED') {
         throw new BadRequestException('PayPal payment was not completed');
@@ -435,16 +466,16 @@ export class PaymentCheckoutController {
 
       // ✅ CORREGIDO: Buscar orden por campo PayPal directo del schema
       const order = await this.prisma.order.findFirst({
-        where: { 
+        where: {
           paypalOrderId: captureDto.orderId, // ✅ Usar campo directo del schema
-          buyerId: user.id 
+          buyerId: user.id,
         },
         include: {
           items: true,
-          buyer: true
-        }
+          buyer: true,
+        },
       });
-      
+
       if (!order) {
         throw new NotFoundException('Order not found or unauthorized');
       }
@@ -459,34 +490,37 @@ export class PaymentCheckoutController {
           paidAt: new Date(),
           completedAt: new Date(),
           metadata: {
-            ...order.metadata as any,
+            ...(order.metadata as any),
             paymentId: captureResult.paymentId,
             capturedAt: new Date().toISOString(),
-          }
-        }
+          },
+        },
       });
 
       // Limpiar carrito
       await this.prisma.cartItem.deleteMany({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
 
       const paypalExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      const { count: paypalTokenCount } = await this.prisma.downloadToken.createMany({
-        data: order.items.map((item: any) => ({
-          token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-          orderId: order.id,
-          productId: item.productId,
-          buyerId: user.id,
-          downloadLimit: 5,
-          downloadCount: 0,
-          expiresAt: paypalExpiresAt,
-          isActive: true,
-        })),
-        skipDuplicates: true,
-      });
+      const { count: paypalTokenCount } =
+        await this.prisma.downloadToken.createMany({
+          data: order.items.map((item: any) => ({
+            token: `DT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+            orderId: order.id,
+            productId: item.productId,
+            buyerId: user.id,
+            downloadLimit: 5,
+            downloadCount: 0,
+            expiresAt: paypalExpiresAt,
+            isActive: true,
+          })),
+          skipDuplicates: true,
+        });
 
-      this.logger.log(`PayPal payment completed for order ${order.id} with ${paypalTokenCount} download tokens`);
+      this.logger.log(
+        `PayPal payment completed for order ${order.id} with ${paypalTokenCount} download tokens`,
+      );
 
       return {
         success: true,
@@ -496,10 +530,11 @@ export class PaymentCheckoutController {
         orderNumber: order.orderNumber,
         downloadTokensCount: paypalTokenCount,
       };
-
     } catch (error) {
       this.logger.error(`Failed to capture PayPal payment: ${error.message}`);
-      throw new BadRequestException(`Failed to capture PayPal payment: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to capture PayPal payment: ${error.message}`,
+      );
     }
   }
 
@@ -511,11 +546,14 @@ export class PaymentCheckoutController {
    * 🆕 ÚTIL: Obtener estado de orden por ID
    */
   @Get('order-status/:orderId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get order status',
-    description: 'Gets the current status of an order'
+    description: 'Gets the current status of an order',
   })
-  @ApiResponse({ status: 200, description: 'Order status retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Order status retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getOrderStatus(
     @Param('orderId') orderId: string,
@@ -523,17 +561,17 @@ export class PaymentCheckoutController {
   ) {
     try {
       const order = await this.prisma.order.findFirst({
-        where: { 
+        where: {
           id: orderId,
-          buyerId: user.id 
+          buyerId: user.id,
         },
         include: {
           items: {
             include: {
-              product: true
-            }
-          }
-        }
+              product: true,
+            },
+          },
+        },
       });
 
       if (!order) {
@@ -552,12 +590,13 @@ export class PaymentCheckoutController {
           paidAt: order.paidAt,
           completedAt: order.completedAt,
           itemsCount: order.items.length,
-        }
+        },
       };
-
     } catch (error) {
       this.logger.error(`Failed to get order status: ${error.message}`);
-      throw new BadRequestException(`Failed to get order status: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get order status: ${error.message}`,
+      );
     }
   }
 }

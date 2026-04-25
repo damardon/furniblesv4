@@ -4,13 +4,13 @@ import {
   Query,
   UseGuards,
   HttpCode,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AdminAnalyticsService } from './admin-analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,30 +30,31 @@ export class AdminAnalyticsController {
 
   @Get('dashboard')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener dashboard completo de analytics',
-    description: 'Retorna todas las métricas y estadísticas del marketplace para administradores.'
+    description:
+      'Retorna todas las métricas y estadísticas del marketplace para administradores.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Dashboard de analytics obtenido exitosamente',
-    type: AdminDashboardDto 
+    type: AdminDashboardDto,
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Solo administradores pueden acceder a analytics' 
+  @ApiResponse({
+    status: 403,
+    description: 'Solo administradores pueden acceder a analytics',
   })
   async getDashboard(
-    @Query() filters: AdminAnalyticsFiltersDto
+    @Query() filters: AdminAnalyticsFiltersDto,
   ): Promise<AdminDashboardDto> {
     return this.analyticsService.getDashboard(filters);
   }
 
   @Get('orders')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Analytics específicos de órdenes',
-    description: 'Métricas detalladas sobre órdenes, ventas y conversiones.'
+    description: 'Métricas detalladas sobre órdenes, ventas y conversiones.',
   })
   async getOrderAnalytics(@Query() filters: AdminAnalyticsFiltersDto) {
     return this.analyticsService.getOrderAnalytics(filters);
@@ -61,9 +62,9 @@ export class AdminAnalyticsController {
 
   @Get('products')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Analytics específicos de productos',
-    description: 'Métricas sobre productos, descargas y ratings.'
+    description: 'Métricas sobre productos, descargas y ratings.',
   })
   async getProductAnalytics(@Query() filters: AdminAnalyticsFiltersDto) {
     return this.analyticsService.getProductAnalytics(filters);
@@ -71,9 +72,9 @@ export class AdminAnalyticsController {
 
   @Get('users')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Analytics específicos de usuarios',
-    description: 'Métricas sobre usuarios, sellers y buyers.'
+    description: 'Métricas sobre usuarios, sellers y buyers.',
   })
   async getUserAnalytics(@Query() filters: AdminAnalyticsFiltersDto) {
     return this.analyticsService.getUserAnalytics(filters);
@@ -81,9 +82,9 @@ export class AdminAnalyticsController {
 
   @Get('financial')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Analytics financieros',
-    description: 'Métricas sobre ingresos, fees y payouts.'
+    description: 'Métricas sobre ingresos, fees y payouts.',
   })
   async getFinancialAnalytics(@Query() filters: AdminAnalyticsFiltersDto) {
     return this.analyticsService.getFinancialAnalytics(filters);

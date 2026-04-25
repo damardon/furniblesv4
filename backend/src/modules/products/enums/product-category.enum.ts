@@ -6,5 +6,5 @@ export enum ProductCategory {
   STORAGE = 'STORAGE',
   DESKS = 'DESKS',
   OUTDOOR = 'OUTDOOR',
-  DECORATIVE = 'DECORATIVE'
+  DECORATIVE = 'DECORATIVE',
 }

@@ -1,20 +1,20 @@
 // src/modules/transactions/transactions.controller.ts
-import { 
-  Controller, 
-  Get, 
-  Param, 
+import {
+  Controller,
+  Get,
+  Param,
   Query,
-  Logger, 
+  Logger,
   UseGuards,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
   ApiQuery,
-  ApiBearerAuth 
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import { TransactionFilterDto } from './dto/transaction-filter.dto';
@@ -38,20 +38,58 @@ export class TransactionsController {
   @Get('my-transactions')
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get seller transactions',
-    description: 'Get paginated list of transactions for authenticated seller'
+    description: 'Get paginated list of transactions for authenticated seller',
   })
-  @ApiQuery({ name: 'type', required: false, enum: ['SALE', 'PLATFORM_FEE', 'STRIPE_FEE', 'PAYOUT', 'REFUND', 'CHARGEBACK'] })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'] })
-  @ApiQuery({ name: 'currency', required: false, enum: ['USD', 'EUR', 'MXN', 'COP', 'CLP', 'ARS'] })
-  @ApiQuery({ name: 'orderId', required: false, description: 'Filter by order ID' })
-  @ApiQuery({ name: 'payoutId', required: false, description: 'Filter by payout ID' })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (ISO format)' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date (ISO format)' })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: [
+      'SALE',
+      'PLATFORM_FEE',
+      'STRIPE_FEE',
+      'PAYOUT',
+      'REFUND',
+      'CHARGEBACK',
+    ],
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'],
+  })
+  @ApiQuery({
+    name: 'currency',
+    required: false,
+    enum: ['USD', 'EUR', 'MXN', 'COP', 'CLP', 'ARS'],
+  })
+  @ApiQuery({
+    name: 'orderId',
+    required: false,
+    description: 'Filter by order ID',
+  })
+  @ApiQuery({
+    name: 'payoutId',
+    required: false,
+    description: 'Filter by payout ID',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date (ISO format)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date (ISO format)',
+  })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiResponse({ status: 200, description: 'Transactions retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Transactions retrieved successfully',
+  })
   async getMyTransactions(
     @CurrentUser() user: any,
     @Query() filters: TransactionFilterDto,
@@ -59,7 +97,10 @@ export class TransactionsController {
     try {
       this.logger.log(`Getting transactions for seller ${user.id}`);
 
-      const result = await this.transactionsService.getSellerTransactions(user.id, filters);
+      const result = await this.transactionsService.getSellerTransactions(
+        user.id,
+        filters,
+      );
 
       return {
         success: true,
@@ -68,7 +109,9 @@ export class TransactionsController {
       };
     } catch (error) {
       this.logger.error(`Failed to get transactions: ${error.message}`);
-      throw new BadRequestException(`Failed to get transactions: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get transactions: ${error.message}`,
+      );
     }
   }
 
@@ -76,21 +119,30 @@ export class TransactionsController {
    * 🆕 Obtener detalles de transacción específica
    */
   @Get(':transactionId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get transaction details',
-    description: 'Get detailed information about a specific transaction'
+    description: 'Get detailed information about a specific transaction',
   })
   @ApiParam({ name: 'transactionId', description: 'Transaction ID' })
-  @ApiResponse({ status: 200, description: 'Transaction details retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Transaction details retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   async getTransactionDetails(
     @Param('transactionId') transactionId: string,
     @CurrentUser() user: any,
   ) {
     try {
-      this.logger.log(`Getting transaction details ${transactionId} for user ${user.id}`);
+      this.logger.log(
+        `Getting transaction details ${transactionId} for user ${user.id}`,
+      );
 
-      const transaction = await this.transactionsService.getTransactionById(transactionId, user.id, user.role);
+      const transaction = await this.transactionsService.getTransactionById(
+        transactionId,
+        user.id,
+        user.role,
+      );
 
       return {
         success: true,
@@ -98,7 +150,9 @@ export class TransactionsController {
       };
     } catch (error) {
       this.logger.error(`Failed to get transaction details: ${error.message}`);
-      throw new BadRequestException(`Failed to get transaction details: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get transaction details: ${error.message}`,
+      );
     }
   }
 
@@ -108,13 +162,24 @@ export class TransactionsController {
   @Get('my-transactions/statistics')
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get seller transaction statistics',
-    description: 'Get transaction statistics for authenticated seller'
+    description: 'Get transaction statistics for authenticated seller',
   })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date for stats' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date for stats' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date for stats',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date for stats',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+  })
   async getMyTransactionStatistics(
     @CurrentUser() user: any,
     @Query('startDate') startDate?: string,
@@ -123,10 +188,10 @@ export class TransactionsController {
     try {
       this.logger.log(`Getting transaction statistics for seller ${user.id}`);
 
-      const stats = await this.transactionsService.getTransactionStatistics({ 
-        startDate, 
-        endDate, 
-        sellerId: user.id 
+      const stats = await this.transactionsService.getTransactionStatistics({
+        startDate,
+        endDate,
+        sellerId: user.id,
       });
 
       return {
@@ -134,8 +199,12 @@ export class TransactionsController {
         data: stats,
       };
     } catch (error) {
-      this.logger.error(`Failed to get transaction statistics: ${error.message}`);
-      throw new BadRequestException(`Failed to get transaction statistics: ${error.message}`);
+      this.logger.error(
+        `Failed to get transaction statistics: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Failed to get transaction statistics: ${error.message}`,
+      );
     }
   }
 
@@ -149,18 +218,37 @@ export class TransactionsController {
   @Get('admin/all')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all transactions (Admin)',
-    description: 'Get paginated list of all transactions across all sellers'
+    description: 'Get paginated list of all transactions across all sellers',
   })
   @ApiQuery({ name: 'type', required: false })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'currency', required: false })
-  @ApiQuery({ name: 'sellerId', required: false, description: 'Filter by seller ID' })
-  @ApiQuery({ name: 'orderId', required: false, description: 'Filter by order ID' })
-  @ApiQuery({ name: 'payoutId', required: false, description: 'Filter by payout ID' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search in descriptions and IDs' })
-  @ApiResponse({ status: 200, description: 'All transactions retrieved successfully' })
+  @ApiQuery({
+    name: 'sellerId',
+    required: false,
+    description: 'Filter by seller ID',
+  })
+  @ApiQuery({
+    name: 'orderId',
+    required: false,
+    description: 'Filter by order ID',
+  })
+  @ApiQuery({
+    name: 'payoutId',
+    required: false,
+    description: 'Filter by payout ID',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search in descriptions and IDs',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'All transactions retrieved successfully',
+  })
   async getAllTransactions(
     @CurrentUser() user: any,
     @Query() filters: TransactionFilterDto,
@@ -178,7 +266,9 @@ export class TransactionsController {
       };
     } catch (error) {
       this.logger.error(`Failed to get all transactions: ${error.message}`);
-      throw new BadRequestException(`Failed to get all transactions: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get all transactions: ${error.message}`,
+      );
     }
   }
 
@@ -188,14 +278,30 @@ export class TransactionsController {
   @Get('admin/statistics')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get transaction statistics (Admin)',
-    description: 'Get comprehensive statistics about transactions across the platform'
+    description:
+      'Get comprehensive statistics about transactions across the platform',
   })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date for stats' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date for stats' })
-  @ApiQuery({ name: 'sellerId', required: false, description: 'Filter by specific seller' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date for stats',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date for stats',
+  })
+  @ApiQuery({
+    name: 'sellerId',
+    required: false,
+    description: 'Filter by specific seller',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+  })
   async getTransactionStatistics(
     @CurrentUser() user: any,
     @Query('startDate') startDate?: string,
@@ -205,10 +311,10 @@ export class TransactionsController {
     try {
       this.logger.log(`Admin ${user.id} getting transaction statistics`);
 
-      const stats = await this.transactionsService.getTransactionStatistics({ 
-        startDate, 
-        endDate, 
-        sellerId 
+      const stats = await this.transactionsService.getTransactionStatistics({
+        startDate,
+        endDate,
+        sellerId,
       });
 
       return {
@@ -216,8 +322,12 @@ export class TransactionsController {
         data: stats,
       };
     } catch (error) {
-      this.logger.error(`Failed to get transaction statistics: ${error.message}`);
-      throw new BadRequestException(`Failed to get transaction statistics: ${error.message}`);
+      this.logger.error(
+        `Failed to get transaction statistics: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Failed to get transaction statistics: ${error.message}`,
+      );
     }
   }
 
@@ -227,21 +337,29 @@ export class TransactionsController {
   @Get('admin/seller/:sellerId')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get transactions by seller (Admin)',
-    description: 'Get all transactions for a specific seller'
+    description: 'Get all transactions for a specific seller',
   })
   @ApiParam({ name: 'sellerId', description: 'Seller user ID' })
-  @ApiResponse({ status: 200, description: 'Seller transactions retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Seller transactions retrieved successfully',
+  })
   async getSellerTransactionsAdmin(
     @Param('sellerId') sellerId: string,
     @CurrentUser() user: any,
     @Query() filters: TransactionFilterDto,
   ) {
     try {
-      this.logger.log(`Admin ${user.id} getting transactions for seller ${sellerId}`);
+      this.logger.log(
+        `Admin ${user.id} getting transactions for seller ${sellerId}`,
+      );
 
-      const result = await this.transactionsService.getSellerTransactions(sellerId, filters);
+      const result = await this.transactionsService.getSellerTransactions(
+        sellerId,
+        filters,
+      );
 
       return {
         success: true,
@@ -251,7 +369,9 @@ export class TransactionsController {
       };
     } catch (error) {
       this.logger.error(`Failed to get seller transactions: ${error.message}`);
-      throw new BadRequestException(`Failed to get seller transactions: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get seller transactions: ${error.message}`,
+      );
     }
   }
 }

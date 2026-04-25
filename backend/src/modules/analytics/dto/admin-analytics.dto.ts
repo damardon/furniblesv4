@@ -1,9 +1,21 @@
 // src/modules/analytics/dto/admin-analytics.dto.ts
 
-import { IsOptional, IsEnum, IsUUID, IsBoolean, IsArray, IsString } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsBoolean,
+  IsArray,
+  IsString,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AdminAnalyticsFiltersDto, ConversionAnalyticsFiltersDto, CohortAnalyticsFiltersDto, NotificationAnalyticsFiltersDto } from './filters.dto';
+import {
+  AdminAnalyticsFiltersDto,
+  ConversionAnalyticsFiltersDto,
+  CohortAnalyticsFiltersDto,
+  NotificationAnalyticsFiltersDto,
+} from './filters.dto';
 import { SortBy, SortOrder } from './seller-analytics.dto';
 
 export enum PlatformMetric {
@@ -13,20 +25,20 @@ export enum PlatformMetric {
   PRODUCTS = 'products',
   REVIEWS = 'reviews',
   NOTIFICATIONS = 'notifications',
-  CONVERSION = 'conversion'
+  CONVERSION = 'conversion',
 }
 
 export enum TopPerformerType {
   SELLERS = 'sellers',
   PRODUCTS = 'products',
   CATEGORIES = 'categories',
-  BUYERS = 'buyers'
+  BUYERS = 'buyers',
 }
 
 export class GetPlatformOverviewDto extends AdminAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include comparison with previous period',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -35,7 +47,7 @@ export class GetPlatformOverviewDto extends AdminAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include growth trends',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -46,11 +58,18 @@ export class GetPlatformOverviewDto extends AdminAnalyticsFiltersDto {
     description: 'Metrics to include',
     enum: PlatformMetric,
     isArray: true,
-    example: [PlatformMetric.USERS, PlatformMetric.REVENUE, PlatformMetric.ORDERS]
+    example: [
+      PlatformMetric.USERS,
+      PlatformMetric.REVENUE,
+      PlatformMetric.ORDERS,
+    ],
   })
   @IsOptional()
   @IsArray({ message: 'metrics must be an array' })
-  @IsEnum(PlatformMetric, { each: true, message: 'Each metric must be a valid platform metric' })
+  @IsEnum(PlatformMetric, {
+    each: true,
+    message: 'Each metric must be a valid platform metric',
+  })
   @Type(() => String)
   metrics?: PlatformMetric[];
 }
@@ -58,24 +77,29 @@ export class GetPlatformOverviewDto extends AdminAnalyticsFiltersDto {
 export class GetTopPerformersDto extends AdminAnalyticsFiltersDto {
   @ApiProperty({
     description: 'Type of performers to retrieve',
-    enum: TopPerformerType
+    enum: TopPerformerType,
   })
-  @IsEnum(TopPerformerType, { message: 'type must be one of: sellers, products, categories, buyers' })
+  @IsEnum(TopPerformerType, {
+    message: 'type must be one of: sellers, products, categories, buyers',
+  })
   type: TopPerformerType;
 
   @ApiPropertyOptional({
     description: 'Sort performers by',
     enum: SortBy,
-    default: SortBy.REVENUE
+    default: SortBy.REVENUE,
   })
   @IsOptional()
-  @IsEnum(SortBy, { message: 'sortBy must be one of: revenue, orders, rating, reviews, createdAt, updatedAt' })
+  @IsEnum(SortBy, {
+    message:
+      'sortBy must be one of: revenue, orders, rating, reviews, createdAt, updatedAt',
+  })
   sortBy?: SortBy = SortBy.REVENUE;
 
   @ApiPropertyOptional({
     description: 'Sort order',
     enum: SortOrder,
-    default: SortOrder.DESC
+    default: SortOrder.DESC,
   })
   @IsOptional()
   @IsEnum(SortOrder, { message: 'sortOrder must be either asc or desc' })
@@ -83,7 +107,7 @@ export class GetTopPerformersDto extends AdminAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include detailed metrics',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -95,7 +119,7 @@ export class GetSellerComparisonDto extends AdminAnalyticsFiltersDto {
   @ApiProperty({
     description: 'Seller IDs to compare',
     type: [String],
-    example: ['seller1_id', 'seller2_id']
+    example: ['seller1_id', 'seller2_id'],
   })
   @IsArray({ message: 'sellerIds must be an array' })
   @IsUUID(4, { each: true, message: 'Each sellerId must be a valid UUID' })
@@ -105,19 +129,30 @@ export class GetSellerComparisonDto extends AdminAnalyticsFiltersDto {
     description: 'Metrics to compare',
     enum: PlatformMetric,
     isArray: true,
-    default: [PlatformMetric.REVENUE, PlatformMetric.ORDERS, PlatformMetric.REVIEWS]
+    default: [
+      PlatformMetric.REVENUE,
+      PlatformMetric.ORDERS,
+      PlatformMetric.REVIEWS,
+    ],
   })
   @IsOptional()
   @IsArray({ message: 'metrics must be an array' })
-  @IsEnum(PlatformMetric, { each: true, message: 'Each metric must be a valid platform metric' })
+  @IsEnum(PlatformMetric, {
+    each: true,
+    message: 'Each metric must be a valid platform metric',
+  })
   @Type(() => String)
-  metrics?: PlatformMetric[] = [PlatformMetric.REVENUE, PlatformMetric.ORDERS, PlatformMetric.REVIEWS];
+  metrics?: PlatformMetric[] = [
+    PlatformMetric.REVENUE,
+    PlatformMetric.ORDERS,
+    PlatformMetric.REVIEWS,
+  ];
 }
 
 export class GetConversionFunnelDto extends ConversionAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include step-by-step breakdown',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -126,7 +161,7 @@ export class GetConversionFunnelDto extends ConversionAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include drop-off analysis',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -137,7 +172,7 @@ export class GetConversionFunnelDto extends ConversionAnalyticsFiltersDto {
 export class GetCohortAnalysisDto extends CohortAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include revenue per user analysis',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -146,7 +181,7 @@ export class GetCohortAnalysisDto extends CohortAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include retention heatmap data',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -157,7 +192,7 @@ export class GetCohortAnalysisDto extends CohortAnalyticsFiltersDto {
 export class GetNotificationAnalyticsDto extends NotificationAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include engagement trends',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -166,7 +201,7 @@ export class GetNotificationAnalyticsDto extends NotificationAnalyticsFiltersDto
 
   @ApiPropertyOptional({
     description: 'Include breakdown by type and channel',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -177,7 +212,7 @@ export class GetNotificationAnalyticsDto extends NotificationAnalyticsFiltersDto
 export class GetUserBehaviorDto extends AdminAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include user journey analysis',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -186,7 +221,7 @@ export class GetUserBehaviorDto extends AdminAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include activity patterns',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -197,7 +232,7 @@ export class GetUserBehaviorDto extends AdminAnalyticsFiltersDto {
 export class GetFinancialReportDto extends AdminAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include detailed breakdown by seller',
-    default: false
+    default: false,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -206,7 +241,7 @@ export class GetFinancialReportDto extends AdminAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include platform fees analysis',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -215,7 +250,7 @@ export class GetFinancialReportDto extends AdminAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include payment method breakdown',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
