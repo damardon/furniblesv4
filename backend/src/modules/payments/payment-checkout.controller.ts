@@ -23,6 +23,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { StripeService } from '../stripe/stripe.service';
 import { PayPalService } from './paypal.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
 // DTOs
 interface CreatePaymentIntentDto {
@@ -79,7 +80,7 @@ export class PaymentCheckoutController {
   @ApiResponse({ status: 400, description: 'Invalid request or empty cart' })
   async createStripePaymentIntent(
     @Body() createIntentDto: CreatePaymentIntentDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Creating Stripe Payment Intent for user ${user.id}`);
@@ -199,7 +200,7 @@ export class PaymentCheckoutController {
   @ApiResponse({ status: 404, description: 'Payment intent not found' })
   async confirmStripePayment(
     @Param('paymentIntentId') paymentIntentId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Confirming Stripe payment ${paymentIntentId} for user ${user.id}`);
@@ -297,7 +298,7 @@ export class PaymentCheckoutController {
   @ApiResponse({ status: 400, description: 'Invalid request or empty cart' })
   async createPayPalOrder(
     @Body() createOrderDto: CreatePayPalOrderDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Creating PayPal order for user ${user.id}`);
@@ -420,7 +421,7 @@ export class PaymentCheckoutController {
   @ApiResponse({ status: 400, description: 'Capture failed' })
   async capturePayPalOrder(
     @Body() captureDto: CapturePayPalOrderDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Capturing PayPal order ${captureDto.orderId} for user ${user.id}`);
@@ -518,7 +519,7 @@ export class PaymentCheckoutController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   async getOrderStatus(
     @Param('orderId') orderId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       const order = await this.prisma.order.findFirst({

@@ -14,7 +14,7 @@ export interface FindAllUsersOptions {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private excludeFields<T extends Record<string, any>>(
+  private excludeFields<T extends Record<string, unknown>>(
     user: T,
     keys: (keyof T)[]
   ): Omit<T, keyof T> {
@@ -23,7 +23,7 @@ export class UsersService {
     return result;
   }
 
-  async create(createUserData: any) {
+  async create(createUserData: Prisma.UserCreateInput & { emailVerificationToken?: string }) {
     // Verificar si el email ya existe
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserData.email },
@@ -149,7 +149,7 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateData: any) {
+  async update(id: string, updateData: Prisma.UserUpdateInput) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });

@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { SellersService } from './sellers.service';
-import { SellerProfile } from '@prisma/client';
+import { SellerProfile, Prisma, ProductCategory, Difficulty } from '@prisma/client';
 
 @ApiTags('sellers')
 @Controller('sellers')
@@ -26,7 +26,7 @@ export class SellersController {
   @ApiOperation({ summary: 'Create a new seller' })
   @ApiResponse({ status: 201, description: 'Seller created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  create(@Body() createSellerDto: any) {
+  create(@Body() createSellerDto: Prisma.SellerProfileCreateInput) {
     return this.sellersService.create(createSellerDto);
   }
 
@@ -103,11 +103,11 @@ export class SellersController {
     const filters = {
       page: pageNum,
       limit: limitNum,
-      category,
-      difficulty,
+      category: category as ProductCategory | undefined,
+      difficulty: difficulty as Difficulty | undefined,
       priceMin: priceMinNum,
       priceMax: priceMaxNum,
-      sortBy: validSortBy,
+      sortBy: validSortBy as 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'rating' | 'popular',
       search,
     };
 
@@ -134,7 +134,7 @@ export class SellersController {
   @ApiParam({ name: 'id', description: 'Seller ID' })
   @ApiResponse({ status: 200, description: 'Seller updated successfully' })
   @ApiResponse({ status: 404, description: 'Seller not found' })
-  update(@Param('id') id: string, @Body() updateSellerDto: any) {
+  update(@Param('id') id: string, @Body() updateSellerDto: Prisma.SellerProfileUpdateInput) {
     return this.sellersService.update(id, updateSellerDto);
   }
 

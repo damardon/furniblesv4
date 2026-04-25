@@ -27,6 +27,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
 @ApiTags('payouts')
 @Controller('api/payouts')
@@ -51,7 +52,7 @@ export class PayoutsController {
   @ApiResponse({ status: 400, description: 'Invalid request or insufficient balance' })
   async requestPayout(
     @Body() requestDto: RequestPayoutDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Payout request from seller ${user.id}`);
@@ -80,7 +81,7 @@ export class PayoutsController {
     description: 'Check if seller is eligible for payouts and available balance'
   })
   @ApiResponse({ status: 200, description: 'Eligibility checked successfully' })
-  async checkEligibility(@CurrentUser() user: any) {
+  async checkEligibility(@CurrentUser() user: AuthenticatedUser) {
     try {
       this.logger.log(`Checking payout eligibility for seller ${user.id}`);
 
@@ -114,7 +115,7 @@ export class PayoutsController {
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiResponse({ status: 200, description: 'Payouts retrieved successfully' })
   async getMyPayouts(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Query() filters: PayoutFilterDto,
   ) {
     try {
@@ -146,7 +147,7 @@ export class PayoutsController {
   @ApiResponse({ status: 404, description: 'Payout not found' })
   async getPayoutDetails(
     @Param('payoutId') payoutId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Getting payout details ${payoutId} for user ${user.id}`);
@@ -183,7 +184,7 @@ export class PayoutsController {
   @ApiQuery({ name: 'search', required: false, description: 'Search in descriptions and seller names' })
   @ApiResponse({ status: 200, description: 'All payouts retrieved successfully' })
   async getAllPayouts(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Query() filters: PayoutFilterDto,
   ) {
     try {
@@ -218,7 +219,7 @@ export class PayoutsController {
   async updatePayout(
     @Param('payoutId') payoutId: string,
     @Body() updateDto: UpdatePayoutDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Admin ${user.id} updating payout ${payoutId}`);
@@ -251,7 +252,7 @@ export class PayoutsController {
   async executePayoutAction(
     @Param('payoutId') payoutId: string,
     @Body() actionDto: PayoutActionDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Admin ${user.id} executing action ${actionDto.action} on payout ${payoutId}`);
@@ -283,7 +284,7 @@ export class PayoutsController {
   @ApiQuery({ name: 'endDate', required: false, description: 'End date for stats' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
   async getPayoutStatistics(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {

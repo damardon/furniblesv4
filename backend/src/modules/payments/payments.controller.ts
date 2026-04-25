@@ -37,6 +37,7 @@ import { UserRole } from '@prisma/client';
 // ✅ NUEVOS imports para frontend checkout
 import { StripeService } from '../stripe/stripe.service';
 import { PayPalService } from './paypal.service'; // Nuevo servicio que vamos a crear
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
 // ✅ NUEVOS DTOs para frontend
 interface CreatePaymentIntentDto {
@@ -93,7 +94,7 @@ export class PaymentsController {
   @ApiResponse({ status: 400, description: 'Invalid request data' })
   async createStripePaymentIntent(
     @Body() createIntentDto: CreatePaymentIntentDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Creating Stripe Payment Intent for user ${user.id}, amount: ${createIntentDto.amount}`);
@@ -143,7 +144,7 @@ export class PaymentsController {
   @ApiResponse({ status: 400, description: 'Invalid request data' })
   async createPayPalOrder(
     @Body() createOrderDto: CreatePayPalOrderDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Creating PayPal order for user ${user.id}, amount: ${createOrderDto.amount}`);
@@ -201,7 +202,7 @@ export class PaymentsController {
   @ApiResponse({ status: 400, description: 'Capture failed' })
   async capturePayPalOrder(
     @Body() captureDto: CapturePayPalOrderDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Capturing PayPal order ${captureDto.orderId} for user ${user.id}`);
@@ -240,9 +241,9 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Payment details retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Payment not found' })
   async getPaymentDetails(
+    @CurrentUser() user: AuthenticatedUser,
     @Query('payment_id') paymentId?: string,
     @Query('order_id') orderId?: string,
-    @CurrentUser() user?: any,
   ) {
     try {
       if (!paymentId && !orderId) {
@@ -321,7 +322,7 @@ export class PaymentsController {
   @ApiResponse({ status: 409, description: 'Seller already has payment setup' })
   async setupSeller(
     @Body() onboardingDto: SellerOnboardingDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Setting up seller payment for user ${user.id}`);
@@ -365,7 +366,7 @@ export class PaymentsController {
   })
   @ApiResponse({ status: 200, description: 'Setup status retrieved successfully' })
   @ApiResponse({ status: 404, description: 'No payment setup found' })
-  async getSellerSetupStatus(@CurrentUser() user: any) {
+  async getSellerSetupStatus(@CurrentUser() user: AuthenticatedUser) {
     try {
       this.logger.log(`Getting setup status for seller ${user.id}`);
 
@@ -408,7 +409,7 @@ export class PaymentsController {
   @ApiResponse({ status: 400, description: 'Invalid configuration or seller not setup' })
   async configurePayments(
     @Body() setupDto: PaymentSetupDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     try {
       this.logger.log(`Configuring payments for seller ${user.id}`);
@@ -437,7 +438,7 @@ export class PaymentsController {
     description: 'Returns the current balance and pending amounts for a seller'
   })
   @ApiResponse({ status: 200, description: 'Balance retrieved successfully' })
-  async getSellerBalance(@CurrentUser() user: any) {
+  async getSellerBalance(@CurrentUser() user: AuthenticatedUser) {
     try {
       this.logger.log(`Getting balance for seller ${user.id}`);
 
