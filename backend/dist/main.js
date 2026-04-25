@@ -37947,10 +37947,29 @@ let AdminAnalyticsService = class AdminAnalyticsService {
                 }
             }
         });
+        const topSellerRevenues = await this.prisma.orderItem.groupBy({
+            by: ['sellerId'],
+            where: {
+                order: {
+                    is: {
+                        status: 'COMPLETED',
+                        ...whereClause
+                    }
+                }
+            },
+            _sum: { price: true },
+            orderBy: { _sum: { price: 'desc' } },
+            take: 10
+        });
         const topSellers = await this.prisma.sellerProfile.findMany({
             take: 10,
             orderBy: { totalSales: 'desc' },
             include: { user: true }
+        });
+        const topSellerRevenueById = Object.fromEntries(topSellerRevenues.map(item => [item.sellerId, item._sum.price || 0]));
+        const ordersWithCountry = await this.prisma.order.findMany({
+            where: { ...whereClause, billingData: { not: null } },
+            select: { buyerId: true, billingData: true }
         });
         return {
             totalUsers,
@@ -37963,9 +37982,9 @@ let AdminAnalyticsService = class AdminAnalyticsService {
                 name: `${seller.user.firstName} ${seller.user.lastName}`,
                 storeName: seller.storeName,
                 sales: seller.totalSales,
-                revenue: 0
+                revenue: topSellerRevenueById[seller.userId] || 0
             })),
-            usersByCountry: {}
+            usersByCountry: this.aggregateUsersByCountry(ordersWithCountry)
         };
     }
     async getFinancialAnalytics(filters) {
@@ -37974,7 +37993,11 @@ let AdminAnalyticsService = class AdminAnalyticsService {
             where: { ...whereClause, status: 'COMPLETED' },
             _sum: { totalAmount: true, platformFee: true, sellerAmount: true }
         });
-        const revenueByCountry = {};
+        const revenueByCountryOrders = await this.prisma.order.findMany({
+            where: { ...whereClause, status: 'COMPLETED' },
+            select: { totalAmount: true, billingData: true }
+        });
+        const revenueByCountry = this.aggregateRevenueByCountry(revenueByCountryOrders);
         const feeBreakdownOrders = await this.prisma.order.findMany({
             where: { ...whereClause, status: 'COMPLETED' },
             select: { feeBreakdown: true }
@@ -38012,6 +38035,32 @@ let AdminAnalyticsService = class AdminAnalyticsService {
             });
         });
         return feesByType;
+    }
+    normalizeCountry(value) {
+        if (typeof value !== 'string') {
+            return null;
+        }
+        const normalized = value.trim();
+        return normalized.length ? normalized : null;
+    }
+    aggregateUsersByCountry(orders) {
+        const usersByCountry = new Map();
+        orders.forEach(order => {
+            const country = this.normalizeCountry(order.billingData?.country) || 'Unknown';
+            if (!usersByCountry.has(country)) {
+                usersByCountry.set(country, new Set());
+            }
+            usersByCountry.get(country)?.add(order.buyerId);
+        });
+        return Object.fromEntries(Array.from(usersByCountry.entries()).map(([country, buyers]) => [country, buyers.size]));
+    }
+    aggregateRevenueByCountry(orders) {
+        const revenueByCountry = {};
+        orders.forEach(order => {
+            const country = this.normalizeCountry(order.billingData?.country) || 'Unknown';
+            revenueByCountry[country] = (revenueByCountry[country] || 0) + (order.totalAmount || 0);
+        });
+        return revenueByCountry;
     }
     buildWhereClause(filters) {
         const where = {};

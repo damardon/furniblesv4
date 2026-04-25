@@ -29,4 +29,5 @@
 - No package-level `tsconfig.json` compile errors were found in current `backend/tsconfig.json` or `frontend/tsconfig.json`.
 - Added root `tsconfig.json` for consistent monorepo editor support and workspace type-checking.
 - Existing PR open for this branch: https://github.com/damardon/furniblesv4/pull/1
+- Implemented admin analytics country aggregation from `order.billingData.country` and calculated top seller revenue from completed order items.
 - Backup available at `/tmp/backend-furniblesv4-backup-*.tar.gz`.

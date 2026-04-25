@@ -176,10 +176,34 @@ export class AdminAnalyticsService {
     });
 
     // Top sellers
+    const topSellerRevenues = await this.prisma.orderItem.groupBy({
+      by: ['sellerId'],
+      where: {
+        order: {
+          is: {
+            status: 'COMPLETED',
+            ...whereClause
+          }
+        }
+      },
+      _sum: { price: true },
+      orderBy: { _sum: { price: 'desc' } },
+      take: 10
+    });
+
     const topSellers = await this.prisma.sellerProfile.findMany({
       take: 10,
       orderBy: { totalSales: 'desc' },
       include: { user: true }
+    });
+
+    const topSellerRevenueById = Object.fromEntries(
+      topSellerRevenues.map(item => [item.sellerId, item._sum.price || 0])
+    );
+
+    const ordersWithCountry = await this.prisma.order.findMany({
+      where: { ...whereClause, billingData: { not: null } },
+      select: { buyerId: true, billingData: true }
     });
 
     return {
@@ -193,9 +217,9 @@ export class AdminAnalyticsService {
         name: `${seller.user.firstName} ${seller.user.lastName}`,
         storeName: seller.storeName,
         sales: seller.totalSales,
-        revenue: 0 // TODO: Calcular revenue real
+        revenue: topSellerRevenueById[seller.userId] || 0
       })),
-      usersByCountry: {} // TODO: Implementar cuando tengamos info de país
+      usersByCountry: this.aggregateUsersByCountry(ordersWithCountry)
     };
   }
 
@@ -210,8 +234,12 @@ export class AdminAnalyticsService {
       _sum: { totalAmount: true, platformFee: true, sellerAmount: true }
     });
 
-    // Revenue por país (cuando implementemos geo-data)
-    const revenueByCountry = {}; // TODO: Implementar
+    const revenueByCountryOrders = await this.prisma.order.findMany({
+      where: { ...whereClause, status: 'COMPLETED' },
+      select: { totalAmount: true, billingData: true }
+    });
+
+    const revenueByCountry = this.aggregateRevenueByCountry(revenueByCountryOrders);
 
     // Fees por tipo
     const feeBreakdownOrders = await this.prisma.order.findMany({
@@ -264,6 +292,51 @@ export class AdminAnalyticsService {
     });
 
     return feesByType;
+  }
+
+  /**
+   * Helper: Normalizar valor de país
+   */
+  private normalizeCountry(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalized = value.trim();
+    return normalized.length ? normalized : null;
+  }
+
+  /**
+   * Helper: Agrupar usuarios únicos por país usando billingData
+   */
+  private aggregateUsersByCountry(orders: Array<{ buyerId: string; billingData: any }>) {
+    const usersByCountry = new Map<string, Set<string>>();
+
+    orders.forEach(order => {
+      const country = this.normalizeCountry(order.billingData?.country) || 'Unknown';
+      if (!usersByCountry.has(country)) {
+        usersByCountry.set(country, new Set());
+      }
+      usersByCountry.get(country)?.add(order.buyerId);
+    });
+
+    return Object.fromEntries(
+      Array.from(usersByCountry.entries()).map(([country, buyers]) => [country, buyers.size])
+    );
+  }
+
+  /**
+   * Helper: Sumar revenue por país usando billingData
+   */
+  private aggregateRevenueByCountry(orders: Array<{ totalAmount: number; billingData: any }>) {
+    const revenueByCountry: Record<string, number> = {};
+
+    orders.forEach(order => {
+      const country = this.normalizeCountry(order.billingData?.country) || 'Unknown';
+      revenueByCountry[country] = (revenueByCountry[country] || 0) + (order.totalAmount || 0);
+    });
+
+    return revenueByCountry;
   }
 
   /**
