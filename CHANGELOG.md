@@ -32,3 +32,27 @@
 - Implemented admin analytics country aggregation from `order.billingData.country` and calculated top seller revenue from completed order items.
 - Optimized `getMonthlyGrowth` method with 12-month limit and improved edge case handling for zero revenue periods.
 - Backup available at `/tmp/backend-furniblesv4-backup-*.tar.gz`.
+
+## Próximos Pasos - Auditoría de Producción
+
+### 1. Evaluación de Artefactos de Build
+- **Decidir sobre `backend/dist/main.js`**: ¿mantener versionado o excluir como artefacto de compilación?
+- **Revisar archivos `.tsbuildinfo`**: evaluar si deben estar en `.gitignore`
+
+### 2. Auditoría de Campos JSON/Metadata
+- **Verificar consistencia**: `feeBreakdown`, `metadata`, `specifications` entre Prisma schema y DTOs
+- **Validar serialización**: asegurar que los campos JSON se manejen correctamente en servicios
+- **Documentar contratos**: crear documentación clara de estructuras JSON esperadas
+
+### 3. TODOs Críticos Pendientes
+- **Auth**: implementar "forgot password" en login modal
+- **Payments**: integrar reembolso real con Stripe, implementar configuración de preferencias
+- **Webhooks**: completar verificación PayPal, implementar `processSplitPayments`
+- **Files**: agregar verificación de permisos en file service
+- **Reports**: implementar generación de reportes en cron service
+
+### 4. Validación Final
+- **Tests completos**: ejecutar suite completa de tests end-to-end
+- **Performance**: revisar queries N+1 y optimizaciones de base de datos
+- **Security**: auditoría final de endpoints y validaciones
+- **Documentation**: actualizar README y docs de API
