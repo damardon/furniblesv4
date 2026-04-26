@@ -385,6 +385,7 @@ export class AnalyticsController {
     @Query(ValidationPipe) dto: GetTopPerformersDto,
     @Req() req: any,
   ): Promise<AdminAnalyticsResponseDto> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.getTopPerformers(dto, req.user.id);
   }
 
@@ -403,6 +404,7 @@ export class AnalyticsController {
     @Query(ValidationPipe) dto: GetSellerComparisonDto,
     @Req() req: any,
   ): Promise<AdminAnalyticsResponseDto> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.getSellerComparison(dto, req.user.id);
   }
 
@@ -422,6 +424,7 @@ export class AnalyticsController {
     @Query(ValidationPipe) dto: GetConversionFunnelDto,
     @Req() req: any,
   ): Promise<AdminAnalyticsResponseDto> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.getConversionFunnel(dto, req.user.id);
   }
 
@@ -440,6 +443,7 @@ export class AnalyticsController {
     @Query(ValidationPipe) dto: GetCohortAnalysisDto,
     @Req() req: any,
   ): Promise<AdminAnalyticsResponseDto> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.getCohortAnalysis(dto, req.user.id);
   }
 
@@ -459,6 +463,7 @@ export class AnalyticsController {
     @Query(ValidationPipe) dto: GetNotificationAnalyticsDto,
     @Req() req: any,
   ): Promise<AdminAnalyticsResponseDto> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.getNotificationAnalytics(dto, req.user.id);
   }
 
@@ -478,6 +483,7 @@ export class AnalyticsController {
     @Query(ValidationPipe) dto: GetUserBehaviorDto,
     @Req() req: any,
   ): Promise<AdminAnalyticsResponseDto> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.getUserBehavior(dto, req.user.id);
   }
 
@@ -497,6 +503,7 @@ export class AnalyticsController {
     @Query(ValidationPipe) dto: GetFinancialReportDto,
     @Req() req: any,
   ): Promise<AdminAnalyticsResponseDto> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.getFinancialReport(dto, req.user.id);
   }
 
@@ -576,6 +583,7 @@ export class AnalyticsController {
     @Body(ValidationPipe) dto: ScheduleReportDto,
     @Req() req: any,
   ): Promise<{ success: boolean; message: string; reportId: string }> {
+    if (req.user.role !== 'ADMIN') throw new ForbiddenException('Access denied');
     return this.analyticsService.scheduleReport(dto, req.user.id);
   }
 

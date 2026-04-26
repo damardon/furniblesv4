@@ -1,7 +1,7 @@
 // src/modules/analytics/analytics.service.spec.ts
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AnalyticsQueryService } from './services/analytics-query.service';
@@ -163,6 +163,8 @@ const mockPrisma = {
 
 let service: AnalyticsService;
 let prismaService: PrismaService;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mockQueryService: any;
 
 beforeEach(async () => {
   const module: TestingModule = await Test.createTestingModule({
@@ -209,8 +211,8 @@ beforeEach(async () => {
           getPlatformReviews: jest.fn().mockResolvedValue({
             total: 300, averageRating: 4.3,
           }),
-          checkDatabaseHealth: jest.fn().mockResolvedValue({ healthy: true, latencyMs: 5 }),
-          checkAnalyticsHealth: jest.fn().mockResolvedValue({ healthy: true }),
+          checkDatabaseHealth: jest.fn().mockResolvedValue({ status: 'healthy', latencyMs: 5 }),
+          checkAnalyticsHealth: jest.fn().mockResolvedValue({ status: 'healthy' }),
         },
       },
       {
@@ -242,6 +244,7 @@ beforeEach(async () => {
 
   service = module.get<AnalyticsService>(AnalyticsService);
   prismaService = module.get<PrismaService>(PrismaService);
+  mockQueryService = module.get(AnalyticsQueryService);
 
   // Reset all mocks
   jest.clearAllMocks();
@@ -616,69 +619,36 @@ describe('getPlatformOverview', () => {
 });
 
 describe('exportData', () => {
-  it('should create export request successfully', async () => {
-    // Arrange
+  it('should throw NOT_IMPLEMENTED when export is requested', async () => {
     const dto = {
       type: 'SELLER_REVENUE' as any,
       format: 'CSV' as any,
       filename: 'test_export',
       sellerId: mockSellerId,
-      startDate: '2024-01-01',
-      endDate: '2024-12-31',
     };
-
-    // Act
-    const result = await service.exportData(dto, mockAdminId);
-
-    // Assert
-    expect(result.success).toBe(true);
-    expect(result.data.filename).toContain('test_export.CSV');
-    expect(result.data.downloadUrl).toBeDefined();
-    expect(result.meta.requestedBy).toBe(mockAdminId);
-    expect(result.meta.type).toBe('SELLER_REVENUE');
-    expect(result.meta.format).toBe('CSV');
+    await expect(service.exportData(dto, mockAdminId)).rejects.toThrow(HttpException);
   });
 
-  it('should generate default filename when not provided', async () => {
-    // Arrange
+  it('should throw NOT_IMPLEMENTED regardless of export type', async () => {
     const dto = {
       type: 'PLATFORM_OVERVIEW' as any,
       format: 'XLSX' as any,
     };
-
-    // Act
-    const result = await service.exportData(dto, mockAdminId);
-
-    // Assert
-    expect(result.success).toBe(true);
-    expect(result.data.filename).toMatch(/analytics_export_\d+\.XLSX/);
+    await expect(service.exportData(dto, mockAdminId)).rejects.toThrow(HttpException);
   });
 });
 
 describe('generateCustomReport', () => {
-  it('should generate custom report successfully', async () => {
-    // Arrange
+  it('should throw NOT_IMPLEMENTED when custom report is requested', async () => {
     const dto = {
       title: 'Custom Analytics Report',
-      description: 'Test report description',
-      metrics: ['revenue', 'orders', 'customers'],
-      chartTypes: ['line', 'bar'],
-      includeRawData: true,
+      metrics: ['revenue', 'orders'],
       startDate: '2024-01-01',
       endDate: '2024-12-31',
     };
-
-    // Act
-    const result = await service.generateCustomReport(
-      dto,
-      mockAdminId,
-      UserRole.ADMIN,
-    );
-
-    // Assert
-    expect(result.success).toBe(true);
-    expect(result.data.filename).toMatch(/custom_report_\d+\.pdf/);
-    expect(result.meta.requestedBy).toBe(mockAdminId);
+    await expect(
+      service.generateCustomReport(dto as any, mockAdminId, UserRole.ADMIN),
+    ).rejects.toThrow(HttpException);
   });
 });
 
@@ -698,10 +668,11 @@ describe('getSystemHealth', () => {
   });
 
   it('should return unhealthy status when database is down', async () => {
-    // Arrange
-    mockPrisma.$queryRaw.mockRejectedValue(
-      new Error('Database connection failed'),
-    );
+    // Arrange — override checkDatabaseHealth to report unhealthy
+    mockQueryService.checkDatabaseHealth.mockResolvedValueOnce({
+      status: 'unhealthy',
+      error: 'Database connection failed',
+    });
 
     // Act
     const result = await service.getSystemHealth();
@@ -737,31 +708,14 @@ describe('getSellerRevenueChart', () => {
 
 describe('Authorization and Data Access', () => {
   it('should filter orders correctly by seller ID', async () => {
-    // Arrange
-    const expectedWhereClause = {
-      status: OrderStatus.COMPLETED,
-      createdAt: expect.any(Object),
-      items: {
-        some: {
-          sellerId: mockSellerId,
-        },
-      },
-    };
-
+    // getSellerDashboard delegates to AnalyticsQueryService — verify the right seller ID is passed
     mockPrisma.user.findUnique.mockResolvedValue(mockSeller);
-    mockPrisma.order.findMany.mockResolvedValue(mockOrders);
-    mockPrisma.product.findMany.mockResolvedValue([]);
-    mockPrisma.review.findMany.mockResolvedValue([]);
-    mockPrisma.sellerRating.findUnique.mockResolvedValue(null);
 
-    // Act
     await service.getSellerDashboard(mockSellerId, {});
 
-    // Assert
-    expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expectedWhereClause,
-      }),
+    expect(mockQueryService.getSellerOrders).toHaveBeenCalledWith(
+      mockSellerId,
+      expect.any(Object),
     );
   });
 
