@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { 
   User, 
@@ -599,41 +600,41 @@ export function UserProfile({
           </h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a
+            <Link
               href="/pedidos"
               className="flex flex-col items-center gap-2 p-4 bg-blue-400 border-3 border-black hover:bg-yellow-400 transition-all text-center"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
               <ShoppingBag className="w-6 h-6 text-black" />
               <span className="font-black text-black text-sm uppercase">{t('actions.orders')}</span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/descargas"
               className="flex flex-col items-center gap-2 p-4 bg-green-400 border-3 border-black hover:bg-yellow-400 transition-all text-center"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
               <Download className="w-6 h-6 text-black" />
               <span className="font-black text-black text-sm uppercase">{t('actions.downloads')}</span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/favoritos"
               className="flex flex-col items-center gap-2 p-4 bg-red-400 border-3 border-black hover:bg-yellow-400 transition-all text-center"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
               <Heart className="w-6 h-6 text-black" />
               <span className="font-black text-black text-sm uppercase">{t('actions.favorites')}</span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/reviews"
               className="flex flex-col items-center gap-2 p-4 bg-orange-400 border-3 border-black hover:bg-yellow-400 transition-all text-center"
               style={{ boxShadow: '3px 3px 0 #000000' }}
             >
               <Star className="w-6 h-6 text-black" />
               <span className="font-black text-black text-sm uppercase">{t('actions.reviews')}</span>
-            </a>
+            </Link>
           </div>
         </div>
       )}

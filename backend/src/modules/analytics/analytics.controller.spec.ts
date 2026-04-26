@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import { TopPerformerType } from './dto/admin-analytics.dto';
 import { GroupByPeriod } from './dto/filters.dto';
@@ -196,6 +197,10 @@ describe('AnalyticsController', () => {
         {
           provide: AnalyticsService,
           useValue: mockAnalyticsService,
+        },
+        {
+          provide: PrismaService,
+          useValue: { user: { findUnique: jest.fn() } },
         },
       ],
     }).compile();

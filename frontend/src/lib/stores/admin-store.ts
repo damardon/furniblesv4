@@ -14,7 +14,7 @@ import {
   Difficulty
 } from '@/types'
 import { ApiResponse } from '@/types/additional'
-import { registerStore } from './store-manager'
+import { registerStore, storeManager } from './store-manager'
 
 // DASHBOARD METRICS INTERFACE (coincide con uso en componente)
 interface DashboardMetrics {
@@ -386,8 +386,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         
         try {
           // Obtener token del auth store
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -498,8 +497,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         
         try {
           // Obtener token del auth store
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -538,8 +536,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -584,8 +581,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -620,8 +616,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       approveProduct: async (productId: string, reason?: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -655,8 +650,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       rejectProduct: async (productId: string, reason: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -690,8 +684,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       suspendProduct: async (productId: string, reason: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -720,8 +713,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -758,8 +750,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -794,8 +785,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       approveReview: async (reviewId: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -828,8 +818,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       removeReview: async (reviewId: string, reason: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -868,8 +857,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       flagReview: async (reviewId: string, reason: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -898,8 +886,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -945,8 +932,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -981,8 +967,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       updateUserStatus: async (userId: string, status: UserStatus, reason?: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1024,8 +1009,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       promoteUser: async (userId: string, newRole: UserRole) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1067,8 +1051,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       resetUserPassword: async (userId: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1096,8 +1079,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1142,8 +1124,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       updateProductStatus: async (productId: string, status: ProductStatus, reason?: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1185,8 +1166,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       featureProduct: async (productId: string, featured: boolean) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1231,8 +1211,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
         set({ isLoading: true, error: null })
         
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1267,8 +1246,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       updateSystemConfig: async (config: Partial<AdminState['systemConfig']>) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1302,8 +1280,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       enableMaintenanceMode: async (enabled: boolean, message?: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1338,8 +1315,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
       // ANALYTICS AVANZADO
       exportData: async (type: 'users' | 'products' | 'orders' | 'analytics', format: 'csv' | 'xlsx' | 'json') => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')
@@ -1371,8 +1347,7 @@ export const useAdminStore = create<AdminState & AdminActions>()(
 
       generateReport: async (type: string, period: string) => {
         try {
-          const authStore = (window as any).storeManager?.getStore('auth')
-          const token = authStore?.getState().token
+          const token = storeManager.getToken()
           
           if (!token) {
             throw new Error('No autorizado')

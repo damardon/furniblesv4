@@ -1,5 +1,82 @@
 # CHANGELOG
 
+## [Unreleased] - 2026-04-26 (Session 3)
+
+### Security: Next.js Upgrade to 16.2.4 — `refactor/production-ready-v1`
+
+Fixed the Vercel deployment warning "Vulnerable version of Next.js detected" by upgrading the entire Next.js ecosystem to the latest stable versions.
+
+#### Package Upgrades
+
+| Package | Before | After | Reason |
+|---------|--------|-------|--------|
+| `next` | `15.3.5` | `16.2.4` | Secure latest stable; fixes CVEs in 15.x |
+| `next-intl` | `3.4.0` | `4.9.1` | Required for Next.js 16 compatibility |
+| `next-auth` | `4.24.11` | `4.24.14` | Adds Next.js 16 peer dep support |
+| `eslint-config-next` | `14.0.4` | `16.2.4` | Must match Next.js major version |
+| `@next/bundle-analyzer` | `14.0.4` | `16.2.4` | Must match Next.js major version |
+| `eslint` | `8.57.1` | `9.x` | `eslint-config-next` v16 requires ESLint ≥9 |
+| `@eslint/eslintrc` | — | `^3.3.1` | Flat config compatibility layer |
+
+#### ESLint Migration: Legacy → Flat Config
+
+ESLint 9 deprecated the legacy `.eslintrc.*` format in favour of `eslint.config.js` (flat config). The migration:
+
+- **Deleted** `frontend/.eslintrc.js` (legacy format)
+- **Created** `frontend/eslint.config.mjs` (flat config)
+
+```js
+import coreWebVitals from 'eslint-config-next/core-web-vitals'
+
+export default [
+  ...coreWebVitals,
+  { rules: { '@typescript-eslint/no-explicit-any': 'warn', ... } },
+  { ignores: ['next.config.js', 'tailwind.config.js', 'postcss.config.js'] },
+]
+```
+
+`eslint-config-next` v16 exports a flat config array natively from `core-web-vitals`, so no FlatCompat wrapper is needed.
+
+#### next-intl v3 → v4: No Breaking Changes for This Project
+
+next-intl v4 added support for Next.js 16 and React 19. The APIs used in this project (`useTranslations`, `useLocale`, `getLocale`, `getMessages`, `NextIntlClientProvider`, `getRequestConfig`, `createNextIntlPlugin`) are all stable across both versions. The `./plugin` export remains unchanged, so `next.config.js` required no modification.
+
+---
+
+### Frontend: `any` Type Fixes (Critical API Files)
+
+Eliminated high-risk `any` types in the API communication layer and admin store.
+
+**`src/lib/homepage-api.ts`**
+- Added `SellerApiResponse` interface to type the raw API seller shape.
+- Changed `result.data.map((seller: any) => ...)` → `result.data.map((seller: SellerApiResponse) => ...)`.
+
+**`src/lib/orders-api.ts`**
+- `Order.billingData: any` → `Record<string, unknown>` (unstructured JSON from API)
+- `Order.metadata: any` → `Record<string, unknown>`
+- `Order.feeBreakdown: any` → `Record<string, unknown>`
+- Same for matching fields in `createOrder()` parameter type.
+
+**`src/lib/stores/admin-store.ts`**
+- Replaced ~25 occurrences of `(window as any).storeManager?.getStore('auth')` + manual token extraction with `storeManager.getToken()` from the already-available `store-manager` import. The `storeManager` singleton already encapsulates safe auth state access.
+
+---
+
+### Próximos Pasos (Pendiente)
+
+Items deferred from this audit session:
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| Correr tests del backend (`npm test --passWithNoTests --forceExit`) | High | Verify N+1 and DI refactors didn't break anything |
+| Correr `npm run build` frontend con Next.js 16.2.4 | High | Verify no breaking changes in runtime |
+| PayPal webhook `processSplitPayments` — implementación real | Medium | Marked TODO in payments.service.ts |
+| File permissions: verificar permisos S3 en producción | Medium | Hardcoded local paths in files.service.ts |
+| Tests e2e con Cypress | Low | No test suite exists yet |
+| Migrar `next-auth` v4 → v5 (Auth.js) | Low | v4 supported until next-auth v6; no rush |
+
+---
+
 ## [Unreleased] - 2026-04-25 (Session 2)
 
 ### Frontend: ESLint ERRORS Fixed — `refactor/production-ready-v1`

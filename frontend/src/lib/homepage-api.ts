@@ -31,6 +31,21 @@ interface FeaturedProduct {
   }
 }
 
+interface SellerApiResponse {
+  id: string
+  firstName: string
+  lastName: string
+  avatar?: string
+  productCount?: number
+  sellerProfile?: {
+    storeName?: string
+    slug?: string
+    description?: string
+    avatar?: string
+    isVerified?: boolean
+  }
+}
+
 interface TopSeller {
   id: string
   storeName: string
@@ -198,7 +213,7 @@ export async function getTopSellers(): Promise<TopSeller[]> {
     const result = await response.json()
     
     if (result.success && result.data) {
-      const sellers = result.data.map((seller: any) => ({
+      const sellers = result.data.map((seller: SellerApiResponse) => ({
         id: seller.id,
         storeName: seller.sellerProfile?.storeName || `${seller.firstName} Store`,
         slug: seller.sellerProfile?.slug || `seller-${seller.id}`,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Shield, Eye, EyeOff, AlertTriangle, Database, Server, Activity } from 'lucide-react'
 import { useAuthStore } from '@/lib/stores/auth-store'
@@ -196,12 +197,12 @@ export default function AdminLoginPage() {
           <div className="mt-8 pt-6 border-t-2 border-gray-200 text-center">
             <p className="text-sm text-gray-600 font-bold">
               {t('not_admin')}{' '}
-              <a 
-                href="/" 
+              <Link
+                href="/"
                 className="text-red-600 hover:text-red-800 font-black underline"
               >
                 {t('back_to_site')}
-              </a>
+              </Link>
             </p>
           </div>
         </div>

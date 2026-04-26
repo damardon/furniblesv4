@@ -18,9 +18,9 @@ interface Order {
   paymentIntentId?: string
   paymentStatus?: string
   buyerEmail: string
-  billingData?: any
-  metadata?: any
-  feeBreakdown?: any
+  billingData?: Record<string, unknown>
+  metadata?: Record<string, unknown>
+  feeBreakdown?: Record<string, unknown>
   createdAt: string
   paidAt?: string
   completedAt?: string
@@ -171,8 +171,8 @@ export async function createOrder(orderData: {
     price: number
   }>
   totalAmount: number
-  billingData?: any
-  metadata?: any
+  billingData?: Record<string, unknown>
+  metadata?: Record<string, unknown>
 }): Promise<ApiResponse<Order>> {
   try {
     const token = getAuthToken()
