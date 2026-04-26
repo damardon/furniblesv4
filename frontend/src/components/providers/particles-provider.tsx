@@ -339,7 +339,6 @@ export function ParticlesProvider({ children }: ParticlesProviderProps) {
         const initialConfig = isDark ? defaultDarkConfig : defaultLightConfig
         setConfig(initialConfig)
         
-        console.log('✨ Particles.js cargado exitosamente')
       } catch (error) {
         console.error('❌ Error cargando particles.js:', error)
       }
@@ -378,7 +377,6 @@ export function ParticlesProvider({ children }: ParticlesProviderProps) {
       
       // Inicializar nuevas partículas
       particlesJS(elementId, config)
-      console.log('✨ Partículas inicializadas en:', elementId)
     } catch (error) {
       console.error('❌ Error inicializando partículas:', error)
     }
@@ -399,7 +397,6 @@ export function ParticlesProvider({ children }: ParticlesProviderProps) {
         window.pJSDom = []
       }
       
-      console.log('🧹 Partículas destruidas')
     } catch (error) {
       console.error('❌ Error destruyendo partículas:', error)
     }

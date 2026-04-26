@@ -5,7 +5,7 @@ export default registerAs('email', () => ({
   apiKey: process.env.EMAIL_API_KEY,
   from: process.env.EMAIL_FROM || 'noreply@furnibles.com',
   fromName: process.env.EMAIL_FROM_NAME || 'Furnibles',
-  
+
   // SendGrid specific
   sendgrid: {
     apiKey: process.env.EMAIL_API_KEY,

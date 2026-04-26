@@ -12,7 +12,6 @@ const setCookie = (name: string, value: string, days: number = 7) => {
   try {
     const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString()
     document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
-    console.log('✅ Cookie set:', name)
   } catch (error) {
     console.error('❌ Cookie error:', error)
   }
@@ -22,7 +21,6 @@ const deleteCookie = (name: string) => {
   if (typeof window === 'undefined') return
   
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`
-  console.log('🗑️ Cookie deleted:', name)
 }
 
 // ✅ FUNCIÓN CORREGIDA - CREAR LA MISMA ESTRUCTURA QUE LOCALSTORAGE
@@ -44,13 +42,6 @@ const syncStateToCookie = (state: any) => {
     
     setCookie('furnibles-auth-storage', JSON.stringify(cookieData))
     
-    console.log('🔄 State synced to cookie with correct structure')
-    console.log('🔍 Cookie data preview:', {
-      hasState: !!cookieData.state,
-      isAuthenticated: cookieData.state.isAuthenticated,
-      hasUser: !!cookieData.state.user,
-      userRole: cookieData.state.user?.role
-    })
   } catch (error) {
     console.error('❌ Sync error:', error)
   }

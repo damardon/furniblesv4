@@ -35,17 +35,24 @@ export class EmailService {
 
   async sendEmail(emailData: EmailData): Promise<boolean> {
     try {
-      const htmlContent = this.generateEmailHTML(emailData.template, emailData.data);
-      
+      const htmlContent = this.generateEmailHTML(
+        emailData.template,
+        emailData.data,
+      );
+
       const mailOptions = {
-        from: emailData.from || this.configService.get('SMTP_FROM', 'noreply@furnibles.com'),
+        from:
+          emailData.from ||
+          this.configService.get('SMTP_FROM', 'noreply@furnibles.com'),
         to: emailData.to,
         subject: emailData.subject,
         html: htmlContent,
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent successfully to ${emailData.to}: ${result.messageId}`);
+      this.logger.log(
+        `Email sent successfully to ${emailData.to}: ${result.messageId}`,
+      );
       return true;
     } catch (error) {
       this.logger.error(`Failed to send email to ${emailData.to}:`, error);
@@ -53,7 +60,10 @@ export class EmailService {
     }
   }
 
-  private generateEmailHTML(template: string, data: Record<string, any>): string {
+  private generateEmailHTML(
+    template: string,
+    data: Record<string, any>,
+  ): string {
     // Templates básicos para las notificaciones
     const templates = {
       'order-created': `
@@ -72,7 +82,7 @@ export class EmailService {
           <p>Saludos,<br>El equipo de Furnibles</p>
         </div>
       `,
-      
+
       'order-paid': `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>¡Pago Confirmado!</h2>
@@ -87,7 +97,7 @@ export class EmailService {
           <p>Saludos,<br>El equipo de Furnibles</p>
         </div>
       `,
-      
+
       'order-completed': `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>¡Archivos Listos para Descarga!</h2>
@@ -103,7 +113,7 @@ export class EmailService {
           <p>Saludos,<br>El equipo de Furnibles</p>
         </div>
       `,
-      
+
       'product-sold': `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>¡Nueva Venta Realizada! 🎉</h2>
@@ -115,18 +125,22 @@ export class EmailService {
             <p><strong>Productos vendidos:</strong> ${data.itemCount}</p>
             <p><strong>Tu ganancia:</strong> ${data.sellerAmount}</p>
           </div>
-          ${data.items ? `
+          ${
+            data.items
+              ? `
             <h4>Productos vendidos:</h4>
             <ul>
-              ${data.items.map(item => `<li>${item.productTitle} - ${item.price}</li>`).join('')}
+              ${data.items.map((item) => `<li>${item.productTitle} - ${item.price}</li>`).join('')}
             </ul>
-          ` : ''}
+          `
+              : ''
+          }
           <p>El pago será procesado según nuestros términos y condiciones.</p>
           <p>¡Sigue así!</p>
           <p>Saludos,<br>El equipo de Furnibles</p>
         </div>
       `,
-      
+
       'generic-notification': `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>${data.title}</h2>
@@ -136,7 +150,7 @@ export class EmailService {
           </div>
           <p>Saludos,<br>El equipo de Furnibles</p>
         </div>
-      `
+      `,
     };
 
     return templates[template] || templates['generic-notification'];

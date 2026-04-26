@@ -6,7 +6,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductWithFilesDto } from './dto/create-product-with-files.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -22,64 +22,62 @@ export class ProductsService {
   ) {}
 
   /**
-   * Convierte arrays a JSON strings para SQLite
+   * Normaliza arrays para PostgreSQL/Prisma
    */
   private prepareArrayFields(data: any) {
     return {
-      imageFileIds: data.imageFileIds ? JSON.stringify(data.imageFileIds) : "[]",
-      thumbnailFileIds: data.thumbnailFileIds ? JSON.stringify(data.thumbnailFileIds) : "[]",
-      tags: data.tags ? JSON.stringify(data.tags) : "[]",
-      toolsRequired: data.toolsRequired ? JSON.stringify(data.toolsRequired) : "[]",
-      materials: data.materials ? JSON.stringify(data.materials) : "[]",
+      imageFileIds: data.imageFileIds || [],
+      thumbnailFileIds: data.thumbnailFileIds || [],
+      tags: data.tags || [],
+      toolsRequired: data.toolsRequired || [],
+      materials: data.materials || [],
     };
   }
 
-  
-
   // Crear producto
-    async create(sellerId: string, createProductDto: CreateProductDto) {
-      // Verificar límite de productos por seller (50)
-      const sellerProductCount = await this.prisma.product.count({
-        where: { sellerId, status: { not: 'REJECTED' } },
-      });
+  async create(sellerId: string, createProductDto: CreateProductDto) {
+    // Verificar límite de productos por seller (50)
+    const sellerProductCount = await this.prisma.product.count({
+      where: { sellerId, status: { not: 'REJECTED' } },
+    });
 
-      if (sellerProductCount >= 50) {
-        throw new BadRequestException('Maximum products limit reached (50)');
-      }
+    if (sellerProductCount >= 50) {
+      throw new BadRequestException('Maximum products limit reached (50)');
+    }
 
-      // Generar slug único
-      const slug = await this.generateUniqueSlug(createProductDto.title);
+    // Generar slug único
+    const slug = await this.generateUniqueSlug(createProductDto.title);
 
-      // Crear producto con datos seguros para SQLite
-      const product = await this.prisma.product.create({
-        data: {
-          title: createProductDto.title,
-          description: createProductDto.description,
-          slug,
-          price: createProductDto.price,
-          category: createProductDto.category,
-          difficulty: createProductDto.difficulty,
-          status: ProductStatus.DRAFT,
-          sellerId,
-          // Campos opcionales del DTO
-          estimatedTime: createProductDto.estimatedTime || null,
-          dimensions: createProductDto.dimensions || null,
-          specifications: createProductDto.specifications || null,
-          ...this.prepareArrayFields(createProductDto),
-        },
-        include: {
-          seller: {
-            select: {
-              id: true,
-              avatar: true,
-              createdAt: true,
-            },
+    // Crear producto con datos seguros para SQLite
+    const product = await this.prisma.product.create({
+      data: {
+        title: createProductDto.title,
+        description: createProductDto.description,
+        slug,
+        price: createProductDto.price,
+        category: createProductDto.category,
+        difficulty: createProductDto.difficulty,
+        status: ProductStatus.DRAFT,
+        sellerId,
+        // Campos opcionales del DTO
+        estimatedTime: createProductDto.estimatedTime || null,
+        dimensions: createProductDto.dimensions || null,
+        specifications: createProductDto.specifications || null,
+        ...this.prepareArrayFields(createProductDto),
+      },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            avatar: true,
+            createdAt: true,
           },
         },
-      });
+      },
+    });
 
-      return product;
-    }
+    return product;
+  }
 
   // Listar productos públicos (solo APPROVED)
   async findAll(filters: ProductFiltersDto): Promise<PaginatedProductsDto> {
@@ -113,13 +111,13 @@ export class ProductsService {
       where.OR = [
         { title: { contains: q } },
         { description: { contains: q } },
-        { tags: { contains: q } }, // Búsqueda simple en JSON string
+        { tags: { hasSome: [q] } },
       ];
     }
 
     if (category) where.category = category;
     if (difficulty) where.difficulty = difficulty;
-    
+
     if (priceMin !== undefined || priceMax !== undefined) {
       where.price = {};
       if (priceMin !== undefined) where.price.gte = priceMin;
@@ -127,7 +125,7 @@ export class ProductsService {
     }
 
     if (tags && tags.length > 0) {
-      where.tags = { contains: tags.join('|') };
+      where.tags = { hasSome: tags };
     }
 
     // Ordenamiento
@@ -147,7 +145,8 @@ export class ProductsService {
               firstName: true,
               lastName: true,
               email: true,
-              sellerProfile: {  // <- Ahora accedemos al SellerProfile
+              sellerProfile: {
+                // <- Ahora accedemos al SellerProfile
                 select: {
                   id: true,
                   storeName: true,
@@ -179,7 +178,7 @@ export class ProductsService {
       hasPrev: page > 1,
     };
   }
-  
+
   // Obtener producto por ID
   async findOne(id: string, userId?: string) {
     const product = await this.prisma.product.findUnique({
@@ -187,24 +186,24 @@ export class ProductsService {
       include: {
         seller: {
           select: {
-          id: true,
-          avatar: true,
-          createdAt: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          sellerProfile: {
-            select: {
-              id: true,
-              storeName: true,
-              slug: true,
-              description: true,
-              avatar: true,
-              isVerified: true,
-              createdAt: true,
+            id: true,
+            avatar: true,
+            createdAt: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            sellerProfile: {
+              select: {
+                id: true,
+                storeName: true,
+                slug: true,
+                description: true,
+                avatar: true,
+                isVerified: true,
+                createdAt: true,
+              },
             },
           },
-        },
         },
       },
     });
@@ -373,7 +372,7 @@ export class ProductsService {
     let status = product.status;
     const criticalFields = ['title', 'description', 'category', 'price'];
     const hasCriticalChanges = criticalFields.some(
-      field => updateProductDto[field] !== undefined,
+      (field) => updateProductDto[field] !== undefined,
     );
 
     if (
@@ -390,13 +389,27 @@ export class ProductsService {
       data: {
         // Solo actualizar campos que están en el DTO
         ...(updateProductDto.title && { title: updateProductDto.title }),
-        ...(updateProductDto.description && { description: updateProductDto.description }),
-        ...(updateProductDto.price !== undefined && { price: updateProductDto.price }),
-        ...(updateProductDto.category && { category: updateProductDto.category }),
-        ...(updateProductDto.difficulty && { difficulty: updateProductDto.difficulty }),
-        ...(updateProductDto.estimatedTime !== undefined && { estimatedTime: updateProductDto.estimatedTime }),
-        ...(updateProductDto.dimensions !== undefined && { dimensions: updateProductDto.dimensions }),
-        ...(updateProductDto.specifications !== undefined && { specifications: updateProductDto.specifications }),
+        ...(updateProductDto.description && {
+          description: updateProductDto.description,
+        }),
+        ...(updateProductDto.price !== undefined && {
+          price: updateProductDto.price,
+        }),
+        ...(updateProductDto.category && {
+          category: updateProductDto.category,
+        }),
+        ...(updateProductDto.difficulty && {
+          difficulty: updateProductDto.difficulty,
+        }),
+        ...(updateProductDto.estimatedTime !== undefined && {
+          estimatedTime: updateProductDto.estimatedTime,
+        }),
+        ...(updateProductDto.dimensions !== undefined && {
+          dimensions: updateProductDto.dimensions,
+        }),
+        ...(updateProductDto.specifications !== undefined && {
+          specifications: updateProductDto.specifications,
+        }),
         slug,
         status,
         ...this.prepareArrayFields(updateProductDto),
@@ -434,7 +447,9 @@ export class ProductsService {
 
     // No permitir eliminación si hay órdenes asociadas
     if (product.orderItems.length > 0) {
-      throw new ConflictException('Cannot delete product with associated orders');
+      throw new ConflictException(
+        'Cannot delete product with associated orders',
+      );
     }
 
     await this.prisma.product.delete({
@@ -472,7 +487,7 @@ export class ProductsService {
         },
       },
     });
-   
+
     return updatedProduct;
   }
 
@@ -497,10 +512,10 @@ export class ProductsService {
         // Guardar razón en specifications si se proporciona
         specifications: reason
           ? {
-             ...(product.specifications as Record<string, any> || {}),
-          rejectionReason: reason
+              ...((product.specifications as Record<string, any>) || {}),
+              rejectionReason: reason,
             }
-        : product.specifications,
+          : product.specifications,
       },
       include: {
         seller: {
@@ -511,11 +526,11 @@ export class ProductsService {
         },
       },
     });
-  
+
     return updatedProduct;
   }
 
-    // Obtener estadísticas del producto
+  // Obtener estadísticas del producto
   async getProductStats(id: string) {
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -552,8 +567,8 @@ export class ProductsService {
       throw new BadRequestException('Product cannot be published');
     }
 
-    // Validar que tenga archivos necesarios (corregido para SQLite)
-    const imageFileIds = JSON.parse(product.imageFileIds || "[]");
+    // Validar que tenga archivos necesarios
+    const imageFileIds = product.imageFileIds || [];
     if (!imageFileIds || imageFileIds.length === 0) {
       throw new BadRequestException('Product must have at least one image');
     }
@@ -605,72 +620,76 @@ export class ProductsService {
   }
 
   // Construir orderBy según el tipo de ordenamiento
-  private buildOrderBy(sortBy?: string, sortOrder?: string): Prisma.ProductOrderByWithRelationInput {
-  const order = (sortOrder === 'asc') ? 'asc' as const : 'desc' as const;
-  
-  switch (sortBy) {
-    // ✅ Campos que SÍ existen en el modelo Product
-    case 'createdAt':
-      return { createdAt: order };
-    case 'updatedAt':
-      return { updatedAt: order };
-    case 'price':
-      return { price: order };
-    case 'rating':
-      return { rating: order };
-    case 'viewCount':
-      return { viewCount: order };
-    case 'downloadCount':  // ✅ CAMBIAR salesCount por downloadCount
-      return { downloadCount: order };
-    case 'favoriteCount':
-      return { favoriteCount: order };
-    case 'reviewCount':
-      return { reviewCount: order };
-    case 'title':
-      return { title: order };
-    
-    // ✅ Mantener compatibilidad con valores anteriores
-    case 'newest':
-      return { createdAt: 'desc' };
-    case 'oldest':
-      return { createdAt: 'asc' };
-    case 'popular':
-      return { viewCount: 'desc' };
-    case 'rating':
-      return { rating: 'desc' };
-    case 'price_asc':
-      return { price: 'asc' };
-    case 'price_desc':
-      return { price: 'desc' };
-    
-    // ✅ Default
-    default:
-      return { createdAt: 'desc' };
+  private buildOrderBy(
+    sortBy?: string,
+    sortOrder?: string,
+  ): Prisma.ProductOrderByWithRelationInput {
+    const order = sortOrder === 'asc' ? ('asc' as const) : ('desc' as const);
+
+    switch (sortBy) {
+      // ✅ Campos que SÍ existen en el modelo Product
+      case 'createdAt':
+        return { createdAt: order };
+      case 'updatedAt':
+        return { updatedAt: order };
+      case 'price':
+        return { price: order };
+      case 'rating':
+        return { rating: order };
+      case 'viewCount':
+        return { viewCount: order };
+      case 'downloadCount': // ✅ CAMBIAR salesCount por downloadCount
+        return { downloadCount: order };
+      case 'favoriteCount':
+        return { favoriteCount: order };
+      case 'reviewCount':
+        return { reviewCount: order };
+      case 'title':
+        return { title: order };
+
+      // ✅ Mantener compatibilidad con valores anteriores
+      case 'newest':
+        return { createdAt: 'desc' };
+      case 'oldest':
+        return { createdAt: 'asc' };
+      case 'popular':
+        return { viewCount: 'desc' };
+      case 'rating':
+        return { rating: 'desc' };
+      case 'price_asc':
+        return { price: 'asc' };
+      case 'price_desc':
+        return { price: 'desc' };
+
+      // ✅ Default
+      default:
+        return { createdAt: 'desc' };
+    }
   }
-}
-// backend/src/modules/products/products.service.ts
-// ✅ AGREGAR AL FINAL DE TU CLASE, antes del último }
+  // backend/src/modules/products/products.service.ts
+  // ✅ AGREGAR AL FINAL DE TU CLASE, antes del último }
 
   /**
    * 🆕 CRÍTICO: Obtener estadísticas generales para homepage
    */
   async getGeneralStats() {
     try {
-      const [totalProducts, totalSellers, totalDownloads, featuredProducts] = await Promise.all([
-        this.prisma.product.count({
-          where: { status: ProductStatus.APPROVED }
-        }),
-        this.prisma.user.count({
-          where: { role: 'SELLER' }
-        }),
-        this.prisma.download.count(),
-        this.prisma.product.count({
-          where: { 
-            status: ProductStatus.APPROVED,
-            featured: true 
-          }
-        }),
-      ]);
+      const [totalProducts, totalSellers, totalDownloads, featuredProducts] =
+        await Promise.all([
+          this.prisma.product.count({
+            where: { status: ProductStatus.APPROVED },
+          }),
+          this.prisma.user.count({
+            where: { role: 'SELLER' },
+          }),
+          this.prisma.download.count(),
+          this.prisma.product.count({
+            where: {
+              status: ProductStatus.APPROVED,
+              featured: true,
+            },
+          }),
+        ]);
 
       return {
         totalProducts,
@@ -681,20 +700,22 @@ export class ProductsService {
       };
     } catch (error) {
       // Si hay error con downloads (tabla puede no existir), devolver stats básicos
-      const [totalProducts, totalSellers, featuredProducts] = await Promise.all([
-        this.prisma.product.count({
-          where: { status: ProductStatus.APPROVED }
-        }),
-        this.prisma.user.count({
-          where: { role: 'SELLER' }
-        }),
-        this.prisma.product.count({
-          where: { 
-            status: ProductStatus.APPROVED,
-            featured: true 
-          }
-        }),
-      ]);
+      const [totalProducts, totalSellers, featuredProducts] = await Promise.all(
+        [
+          this.prisma.product.count({
+            where: { status: ProductStatus.APPROVED },
+          }),
+          this.prisma.user.count({
+            where: { role: 'SELLER' },
+          }),
+          this.prisma.product.count({
+            where: {
+              status: ProductStatus.APPROVED,
+              featured: true,
+            },
+          }),
+        ],
+      );
 
       return {
         totalProducts,
@@ -714,19 +735,19 @@ export class ProductsService {
       const categories = await this.prisma.product.groupBy({
         by: ['category'],
         where: {
-          status: ProductStatus.APPROVED
+          status: ProductStatus.APPROVED,
         },
         _count: {
-          category: true
+          category: true,
         },
         orderBy: {
           _count: {
-            category: 'desc'
-          }
-        }
+            category: 'desc',
+          },
+        },
       });
 
-      return categories.map(cat => ({
+      return categories.map((cat) => ({
         category: cat.category,
         count: cat._count.category,
         displayName: this.getCategoryDisplayName(cat.category),
@@ -747,16 +768,16 @@ export class ProductsService {
    */
   private getCategoryDisplayName(category: string): string {
     const categoryNames = {
-      'FURNITURE': 'Muebles',
-      'DECORATION': 'Decoración', 
-      'STORAGE': 'Almacenamiento',
-      'OUTDOOR': 'Exterior',
-      'KITCHEN': 'Cocina',
-      'BEDROOM': 'Dormitorio',
-      'LIVING_ROOM': 'Sala de estar',
-      'BATHROOM': 'Baño',
-      'OFFICE': 'Oficina',
-      'KIDS': 'Infantil',
+      FURNITURE: 'Muebles',
+      DECORATION: 'Decoración',
+      STORAGE: 'Almacenamiento',
+      OUTDOOR: 'Exterior',
+      KITCHEN: 'Cocina',
+      BEDROOM: 'Dormitorio',
+      LIVING_ROOM: 'Sala de estar',
+      BATHROOM: 'Baño',
+      OFFICE: 'Oficina',
+      KIDS: 'Infantil',
     };
 
     return categoryNames[category] || category;
@@ -888,6 +909,4 @@ export class ProductsService {
       };
     }
   }
-
-
 }

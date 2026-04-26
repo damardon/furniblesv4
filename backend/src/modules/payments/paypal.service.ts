@@ -39,21 +39,26 @@ export class PayPalService {
     try {
       const clientId = this.configService.get('PAYPAL_CLIENT_ID');
       const clientSecret = this.configService.get('PAYPAL_CLIENT_SECRET');
-      const baseUrl = this.configService.get('PAYPAL_BASE_URL', 'https://api.sandbox.paypal.com');
+      const baseUrl = this.configService.get(
+        'PAYPAL_BASE_URL',
+        'https://api.sandbox.paypal.com',
+      );
 
       if (!clientId || !clientSecret) {
         throw new Error('PayPal credentials not configured');
       }
 
-      const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      const auth = Buffer.from(`${clientId}:${clientSecret}`).toString(
+        'base64',
+      );
 
       const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${auth}`,
+          Authorization: `Basic ${auth}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'grant_type=client_credentials'
+        body: 'grant_type=client_credentials',
       });
 
       if (!response.ok) {
@@ -61,13 +66,12 @@ export class PayPalService {
       }
 
       const data: PayPalAccessTokenResponse = await response.json();
-      
+
       this.accessToken = data.access_token;
-      this.tokenExpiry = new Date(Date.now() + (data.expires_in * 1000));
-      
+      this.tokenExpiry = new Date(Date.now() + data.expires_in * 1000);
+
       this.logger.log('PayPal access token obtained successfully');
       return this.accessToken;
-
     } catch (error) {
       this.logger.error(`Failed to get PayPal access token: ${error.message}`);
       throw new BadRequestException('Failed to authenticate with PayPal');
@@ -84,56 +88,65 @@ export class PayPalService {
   }> {
     try {
       const accessToken = await this.getAccessToken();
-      const baseUrl = this.configService.get('PAYPAL_BASE_URL', 'https://api.sandbox.paypal.com');
+      const baseUrl = this.configService.get(
+        'PAYPAL_BASE_URL',
+        'https://api.sandbox.paypal.com',
+      );
 
       const orderData = {
         intent: 'CAPTURE',
-        purchase_units: [{
-          amount: {
-            currency_code: orderRequest.currency.toUpperCase(),
-            value: orderRequest.amount.toFixed(2),
-            breakdown: {
-              item_total: {
-                currency_code: orderRequest.currency.toUpperCase(),
-                value: orderRequest.amount.toFixed(2)
-              }
-            }
-          },
-          items: orderRequest.items.map(item => ({
-            name: item.name,
-            unit_amount: {
+        purchase_units: [
+          {
+            amount: {
               currency_code: orderRequest.currency.toUpperCase(),
-              value: item.price.toFixed(2)
+              value: orderRequest.amount.toFixed(2),
+              breakdown: {
+                item_total: {
+                  currency_code: orderRequest.currency.toUpperCase(),
+                  value: orderRequest.amount.toFixed(2),
+                },
+              },
             },
-            quantity: (item.quantity || 1).toString(),
-            category: 'DIGITAL_GOODS'
-          }))
-        }],
+            items: orderRequest.items.map((item) => ({
+              name: item.name,
+              unit_amount: {
+                currency_code: orderRequest.currency.toUpperCase(),
+                value: item.price.toFixed(2),
+              },
+              quantity: (item.quantity || 1).toString(),
+              category: 'DIGITAL_GOODS',
+            })),
+          },
+        ],
         application_context: {
           return_url: `${this.configService.get('FRONTEND_URL')}/checkout/success`,
           cancel_url: `${this.configService.get('FRONTEND_URL')}/checkout/error`,
           shipping_preference: 'NO_SHIPPING',
           user_action: 'PAY_NOW',
-          brand_name: 'Furnibles'
-        }
+          brand_name: 'Furnibles',
+        },
       };
 
       const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify(orderData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`PayPal order creation failed: ${JSON.stringify(errorData)}`);
+        throw new Error(
+          `PayPal order creation failed: ${JSON.stringify(errorData)}`,
+        );
       }
 
       const order = await response.json();
-      const approvalUrl = order.links.find((link: any) => link.rel === 'approve')?.href;
+      const approvalUrl = order.links.find(
+        (link: any) => link.rel === 'approve',
+      )?.href;
 
       if (!approvalUrl) {
         throw new Error('No approval URL received from PayPal');
@@ -144,12 +157,13 @@ export class PayPalService {
       return {
         orderId: order.id,
         approvalUrl,
-        status: order.status
+        status: order.status,
       };
-
     } catch (error) {
       this.logger.error(`Failed to create PayPal order: ${error.message}`);
-      throw new BadRequestException(`Failed to create PayPal order: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create PayPal order: ${error.message}`,
+      );
     }
   }
 
@@ -165,15 +179,21 @@ export class PayPalService {
   }> {
     try {
       const accessToken = await this.getAccessToken();
-      const baseUrl = this.configService.get('PAYPAL_BASE_URL', 'https://api.sandbox.paypal.com');
+      const baseUrl = this.configService.get(
+        'PAYPAL_BASE_URL',
+        'https://api.sandbox.paypal.com',
+      );
 
-      const response = await fetch(`${baseUrl}/v2/checkout/orders/${orderId}/capture`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
-      });
+      const response = await fetch(
+        `${baseUrl}/v2/checkout/orders/${orderId}/capture`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -190,12 +210,13 @@ export class PayPalService {
         status: capture.status,
         amount: parseFloat(capture.amount.value),
         currency: capture.amount.currency_code,
-        payerEmail: captureData.payer.email_address
+        payerEmail: captureData.payer.email_address,
       };
-
     } catch (error) {
       this.logger.error(`Failed to capture PayPal order: ${error.message}`);
-      throw new BadRequestException(`Failed to capture PayPal payment: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to capture PayPal payment: ${error.message}`,
+      );
     }
   }
 
@@ -205,23 +226,29 @@ export class PayPalService {
   async getOrderDetails(orderId: string): Promise<any> {
     try {
       const accessToken = await this.getAccessToken();
-      const baseUrl = this.configService.get('PAYPAL_BASE_URL', 'https://api.sandbox.paypal.com');
+      const baseUrl = this.configService.get(
+        'PAYPAL_BASE_URL',
+        'https://api.sandbox.paypal.com',
+      );
 
       const response = await fetch(`${baseUrl}/v2/checkout/orders/${orderId}`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        }
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to get PayPal order details: ${response.status}`);
+        throw new Error(
+          `Failed to get PayPal order details: ${response.status}`,
+        );
       }
 
       return await response.json();
-
     } catch (error) {
       this.logger.error(`Failed to get PayPal order details: ${error.message}`);
-      throw new BadRequestException(`Failed to get order details: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get order details: ${error.message}`,
+      );
     }
   }
 
@@ -243,12 +270,12 @@ export class PayPalService {
       await this.getAccessToken();
       return {
         success: true,
-        message: 'PayPal connection successful'
+        message: 'PayPal connection successful',
       };
     } catch (error) {
       return {
         success: false,
-        message: `PayPal connection failed: ${error.message}`
+        message: `PayPal connection failed: ${error.message}`,
       };
     }
   }

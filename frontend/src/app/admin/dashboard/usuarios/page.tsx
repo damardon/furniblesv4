@@ -935,8 +935,8 @@ export default function AdminUsersPage() {
                         
                         {userAction.action === 'activate' ? t('forms.activate_user') :
                          userAction.action === 'suspend' ? t('forms.suspend_user') :
-                         userAction.action === 'promote' ? t('forms.promote_to', { role: userAction.newRole }) :
-                         userAction.action === 'demote' ? t('forms.demote_to', { role: userAction.newRole }) :
+                         userAction.action === 'promote' ? t('forms.promote_to', { role: userAction.newRole ?? '' }) :
+                         userAction.action === 'demote' ? t('forms.demote_to', { role: userAction.newRole ?? '' }) :
                          userAction.action === 'reset_password' ? t('forms.reset_password') : 
                          tCommon('confirm')
                         }

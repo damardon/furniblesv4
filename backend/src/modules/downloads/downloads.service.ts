@@ -1,8 +1,8 @@
-import { 
-  Injectable, 
-  NotFoundException, 
+import {
+  Injectable,
+  NotFoundException,
   BadRequestException,
-  StreamableFile 
+  StreamableFile,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Response } from 'express';
@@ -21,22 +21,22 @@ export class DownloadsService {
       where: {
         id: orderId,
         buyerId: userId,
-        status: 'COMPLETED'
+        status: 'COMPLETED',
       },
       include: {
         downloadTokens: {
           include: {
-            product: true
-          }
-        }
-      }
+            product: true,
+          },
+        },
+      },
     });
 
     if (!order) {
       throw new NotFoundException('Orden no encontrada o no completada');
     }
 
-    const downloads = order.downloadTokens.map(token => ({
+    const downloads = order.downloadTokens.map((token) => ({
       id: token.id,
       token: token.token,
       productId: token.productId,
@@ -45,15 +45,18 @@ export class DownloadsService {
       downloadLimit: token.downloadLimit,
       downloadCount: token.downloadCount,
       expiresAt: token.expiresAt,
-      isActive: token.isActive && token.downloadCount < token.downloadLimit && token.expiresAt > new Date(),
-      lastDownloadAt: token.lastDownloadAt
+      isActive:
+        token.isActive &&
+        token.downloadCount < token.downloadLimit &&
+        token.expiresAt > new Date(),
+      lastDownloadAt: token.lastDownloadAt,
     }));
 
     return {
       downloads,
       orderId: order.id,
       orderNumber: order.orderNumber,
-      totalDownloads: downloads.length
+      totalDownloads: downloads.length,
     };
   }
 
@@ -61,17 +64,17 @@ export class DownloadsService {
    * Descargar archivo por token - CORREGIDO
    */
   async downloadFile(
-    token: string, 
-    req: any, 
-    res: Response
+    token: string,
+    req: any,
+    res: Response,
   ): Promise<StreamableFile> {
     // Validar token - SIN incluir pdfFile
     const downloadToken = await this.prisma.downloadToken.findUnique({
       where: { token },
       include: {
         product: true, // Solo obtener producto básico
-        order: true
-      }
+        order: true,
+      },
     });
 
     if (!downloadToken) {
@@ -95,12 +98,15 @@ export class DownloadsService {
 
     // Obtener archivo PDF desde pdfFileId - CORREGIDO
     const pdfFile = await this.getPdfFile(downloadToken.product);
-    
+
     if (!pdfFile) {
       throw new NotFoundException('Archivo no encontrado');
     }
 
-    const filePath = path.join(process.env.STORAGE_PATH || './storage', pdfFile.key);
+    const filePath = path.join(
+      process.env.STORAGE_PATH || './storage',
+      pdfFile.key,
+    );
 
     // Verificar que el archivo existe físicamente
     if (!fs.existsSync(filePath)) {
@@ -114,12 +120,14 @@ export class DownloadsService {
         downloadCount: downloadToken.downloadCount + 1,
         lastDownloadAt: new Date(),
         lastIpAddress: req.ip,
-        lastUserAgent: req.get('User-Agent')
-      }
+        lastUserAgent: req.get('User-Agent'),
+      },
     });
 
     // Log de descarga
-    console.log(`Download: ${pdfFile.filename} by token ${token} (${downloadToken.downloadCount + 1}/${downloadToken.downloadLimit})`);
+    console.log(
+      `Download: ${pdfFile.filename} by token ${token} (${downloadToken.downloadCount + 1}/${downloadToken.downloadLimit})`,
+    );
 
     // Configurar headers de respuesta
     res.set({
@@ -127,8 +135,8 @@ export class DownloadsService {
       'Content-Disposition': `attachment; filename="${pdfFile.filename}"`,
       'Content-Length': pdfFile.size.toString(),
       'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+      Pragma: 'no-cache',
+      Expires: '0',
     });
 
     // Crear stream del archivo
@@ -146,11 +154,11 @@ export class DownloadsService {
       }
 
       const pdfFile = await this.prisma.file.findUnique({
-        where: { 
+        where: {
           id: product.pdfFileId,
           type: 'PDF',
-          status: 'ACTIVE'
-        }
+          status: 'ACTIVE',
+        },
       });
 
       return pdfFile;
@@ -163,12 +171,16 @@ export class DownloadsService {
   /**
    * Obtener estadísticas de descargas para un seller
    */
-  async getSellerDownloadStats(sellerId: string, fromDate?: Date, toDate?: Date) {
+  async getSellerDownloadStats(
+    sellerId: string,
+    fromDate?: Date,
+    toDate?: Date,
+  ) {
     // Corrector: Buscar por products del seller, no por sellerIds en order
     const where: any = {
       product: {
-        sellerId: sellerId
-      }
+        sellerId: sellerId,
+      },
     };
 
     if (fromDate || toDate) {
@@ -181,8 +193,8 @@ export class DownloadsService {
     const totalDownloads = await this.prisma.downloadToken.aggregate({
       where,
       _sum: {
-        downloadCount: true
-      }
+        downloadCount: true,
+      },
     });
 
     const activeTokens = await this.prisma.downloadToken.count({
@@ -190,16 +202,16 @@ export class DownloadsService {
         ...where,
         isActive: true,
         expiresAt: {
-          gt: new Date()
-        }
-      }
+          gt: new Date(),
+        },
+      },
     });
 
     return {
       totalTokens,
       totalDownloads: totalDownloads._sum.downloadCount || 0,
       activeTokens,
-      expiredTokens: totalTokens - activeTokens
+      expiredTokens: totalTokens - activeTokens,
     };
   }
 
@@ -210,13 +222,13 @@ export class DownloadsService {
     const result = await this.prisma.downloadToken.updateMany({
       where: {
         expiresAt: {
-          lt: new Date()
+          lt: new Date(),
         },
-        isActive: true
+        isActive: true,
       },
       data: {
-        isActive: false
-      }
+        isActive: false,
+      },
     });
 
     return result.count;
@@ -225,15 +237,18 @@ export class DownloadsService {
   /**
    * Regenerar token de descarga (para casos especiales)
    */
-  async regenerateDownloadToken(tokenId: string, sellerId: string): Promise<string> {
+  async regenerateDownloadToken(
+    tokenId: string,
+    sellerId: string,
+  ): Promise<string> {
     // Verificar que el token pertenece al seller
     const existingToken = await this.prisma.downloadToken.findFirst({
       where: {
         id: tokenId,
         product: {
-          sellerId: sellerId
-        }
-      }
+          sellerId: sellerId,
+        },
+      },
     });
 
     if (!existingToken) {
@@ -250,8 +265,8 @@ export class DownloadsService {
         token: newToken,
         downloadCount: 0, // Resetear contador
         isActive: true,
-        lastDownloadAt: null
-      }
+        lastDownloadAt: null,
+      },
     });
 
     return newToken;
@@ -279,18 +294,18 @@ export class DownloadsService {
             title: true,
             slug: true,
             category: true,
-            sellerId: true
-          }
+            sellerId: true,
+          },
         },
         order: {
           select: {
             id: true,
             orderNumber: true,
             createdAt: true,
-            buyerId: true
-          }
-        }
-      }
+            buyerId: true,
+          },
+        },
+      },
     });
 
     if (!downloadToken) {
@@ -298,8 +313,9 @@ export class DownloadsService {
     }
 
     // Verificar permisos (comprador o vendedor)
-    const hasPermission = downloadToken.order.buyerId === userId || 
-                         downloadToken.product.sellerId === userId;
+    const hasPermission =
+      downloadToken.order.buyerId === userId ||
+      downloadToken.product.sellerId === userId;
 
     if (!hasPermission) {
       throw new BadRequestException('Sin permisos para acceder a este token');
@@ -313,11 +329,12 @@ export class DownloadsService {
       orderNumber: downloadToken.order.orderNumber,
       downloadLimit: downloadToken.downloadLimit,
       downloadCount: downloadToken.downloadCount,
-      remainingDownloads: downloadToken.downloadLimit - downloadToken.downloadCount,
+      remainingDownloads:
+        downloadToken.downloadLimit - downloadToken.downloadCount,
       expiresAt: downloadToken.expiresAt,
       isActive: downloadToken.isActive,
       lastDownloadAt: downloadToken.lastDownloadAt,
-      createdAt: downloadToken.createdAt
+      createdAt: downloadToken.createdAt,
     };
   }
 }

@@ -88,7 +88,6 @@ export function ReviewModal({
 
   // ✅ Manejar archivos subidos
   const handleFilesUploaded = (files: UploadedFile[]) => {
-    console.log('🔍 [REVIEW-MODAL] Files uploaded:', files.length)
     setUploadedImages(files)
   }
 
@@ -121,17 +120,6 @@ export function ReviewModal({
         throw new Error('No autorizado')
       }
 
-      console.log('🔍 [REVIEW-MODAL] Submitting review:', {
-        orderId,
-        productId: product.id,
-        rating,
-        title: title.trim() || undefined,
-        comment: comment.trim(),
-        pros: pros.trim() || undefined,
-        cons: cons.trim() || undefined,
-        imageFileIds: uploadedImages.map(img => img.id)
-      })
-
       // ✅ API call para crear review
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`, {
         method: 'POST',
@@ -158,7 +146,6 @@ export function ReviewModal({
       }
 
       const result = await response.json()
-      console.log('✅ [REVIEW-MODAL] Review submitted successfully:', result)
 
       setShowSuccess(true)
       setTimeout(() => {

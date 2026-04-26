@@ -1,6 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, ProductCategory, Difficulty } from '@prisma/client';
+
+interface FindAllSellersQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+interface GetSellerProductsQuery {
+  page?: number;
+  limit?: number;
+  category?: ProductCategory;
+  difficulty?: Difficulty;
+  priceMin?: number;
+  priceMax?: number;
+  sortBy?:
+    | 'newest'
+    | 'oldest'
+    | 'price_asc'
+    | 'price_desc'
+    | 'rating'
+    | 'popular';
+  search?: string;
+}
 
 @Injectable()
 export class SellersService {
@@ -9,7 +32,7 @@ export class SellersService {
   /**
    * ✅ Crear un nuevo vendedor
    */
-  async create(createSellerDto: any) {
+  async create(createSellerDto: Prisma.SellerProfileCreateInput) {
     const seller = await this.prisma.sellerProfile.create({
       data: createSellerDto,
       include: {
@@ -33,7 +56,7 @@ export class SellersService {
   /**
    * ✅ Obtener todos los vendedores con paginación y estadísticas
    */
-  async findAll(query: any = {}) {
+  async findAll(query: FindAllSellersQuery = {}) {
     const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
@@ -55,7 +78,7 @@ export class SellersService {
       }),
     };
 
-    // Ejecutar consultas en paralelo
+    // Ejecutar consultas en paralelo con _count inline para evitar N+1
     const [sellers, total] = await Promise.all([
       this.prisma.sellerProfile.findMany({
         where: whereConditions,
@@ -81,45 +104,26 @@ export class SellersService {
       }),
     ]);
 
-    // Calcular estadísticas para cada vendedor
-    const sellersWithStats = await Promise.all(
-      sellers.map(async (seller) => {
-        const [productCount, avgRating, totalSales, totalReviews] = await Promise.all([
-          this.prisma.product.count({
-            where: { sellerId: seller.userId, status: 'APPROVED' },
-          }),
-          this.prisma.product.aggregate({
-            where: { sellerId: seller.userId, status: 'APPROVED' },
-            _avg: { rating: true },
-          }),
-          this.prisma.order.count({
-            where: {
-              items: {
-                some: {
-                  product: { sellerId: seller.userId },
-                },
-              },
-              status: 'COMPLETED',
-            },
-          }),
-          this.prisma.review.count({
-            where: {
-              product: { sellerId: seller.userId },
-            },
-          }),
-        ]);
-
-        return {
-          ...seller,
-          stats: {
-            totalProducts: productCount,
-            avgRating: avgRating._avg.rating || 0,
-            totalSales,
-            totalReviews,
-          },
-        };
-      })
+    // Use denormalized fields + single product count query per page (not per seller)
+    const sellerUserIds = sellers.map((s) => s.userId);
+    const productCounts = await this.prisma.product.groupBy({
+      by: ['sellerId'],
+      where: { sellerId: { in: sellerUserIds }, status: 'APPROVED' },
+      _count: { id: true },
+    });
+    const productCountMap = new Map(
+      productCounts.map((p) => [p.sellerId, p._count.id]),
     );
+
+    const sellersWithStats = sellers.map((seller) => ({
+      ...seller,
+      stats: {
+        totalProducts: productCountMap.get(seller.userId) ?? 0,
+        avgRating: seller.rating,
+        totalSales: seller.totalSales,
+        totalReviews: seller.totalReviews,
+      },
+    }));
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -161,49 +165,13 @@ export class SellersService {
       throw new NotFoundException(`Seller with ID "${id}" not found`);
     }
 
-    // Obtener estadísticas del vendedor
-    const [productCount, avgRating, totalSales, totalReviews] = await Promise.all([
-      this.prisma.product.count({
-        where: { sellerId: seller.userId, status: 'APPROVED' },
-      }),
-      this.prisma.product.aggregate({
-        where: { sellerId: seller.userId, status: 'APPROVED' },
-        _avg: { rating: true },
-      }),
-      this.prisma.order.count({
-        where: {
-          items: {
-            some: {
-              product: { sellerId: seller.userId },
-            },
-          },
-          status: 'COMPLETED',
-        },
-      }),
-      this.prisma.review.count({
-        where: {
-          product: { sellerId: seller.userId },
-        },
-      }),
-    ]);
-
-    return {
-      ...seller,
-      stats: {
-        totalProducts: productCount,
-        avgRating: avgRating._avg.rating || 0,
-        totalSales,
-        totalReviews,
-      },
-    };
+    return this.attachStats(seller);
   }
 
   /**
    * ✅ Buscar vendedor por slug
    */
   async findBySlug(slug: string) {
-    console.log('🔍 [SERVICE] Finding seller by slug:', slug);
-
     const seller = await this.prisma.sellerProfile.findUnique({
       where: { slug },
       include: {
@@ -222,45 +190,31 @@ export class SellersService {
     });
 
     if (!seller) {
-      console.log('❌ [SERVICE] Seller not found with slug:', slug);
       return null;
     }
 
-    console.log('✅ [SERVICE] Found seller:', seller.storeName);
+    return this.attachStats(seller);
+  }
 
-    // Obtener estadísticas del vendedor
-    const [productCount, avgRating, totalSales, totalReviews] = await Promise.all([
-      this.prisma.product.count({
-        where: { sellerId: seller.userId, status: 'APPROVED' },
-      }),
-      this.prisma.product.aggregate({
-        where: { sellerId: seller.userId, status: 'APPROVED' },
-        _avg: { rating: true },
-      }),
-      this.prisma.order.count({
-        where: {
-          items: {
-            some: {
-              product: { sellerId: seller.userId },
-            },
-          },
-          status: 'COMPLETED',
-        },
-      }),
-      this.prisma.review.count({
-        where: {
-          product: { sellerId: seller.userId },
-        },
-      }),
-    ]);
+  private async attachStats<
+    T extends {
+      userId: string;
+      rating: number;
+      totalSales: number;
+      totalReviews: number;
+    },
+  >(seller: T) {
+    const totalProducts = await this.prisma.product.count({
+      where: { sellerId: seller.userId, status: 'APPROVED' },
+    });
 
     return {
       ...seller,
       stats: {
-        totalProducts: productCount,
-        avgRating: avgRating._avg.rating || 0,
-        totalSales,
-        totalReviews,
+        totalProducts,
+        avgRating: seller.rating,
+        totalSales: seller.totalSales,
+        totalReviews: seller.totalReviews,
       },
     };
   }
@@ -268,9 +222,7 @@ export class SellersService {
   /**
    * ✅ Obtener productos de un vendedor específico
    */
-  async getSellerProducts(sellerId: string, filters: any) {
-    console.log('🔍 [SERVICE] Getting products for seller:', sellerId, 'with filters:', filters);
-
+  async getSellerProducts(sellerId: string, filters: GetSellerProductsQuery) {
     const {
       page = 1,
       limit = 12,
@@ -290,24 +242,22 @@ export class SellersService {
       ...(category && { category }),
       ...(difficulty && { difficulty }),
       ...(priceMin && { price: { gte: priceMin } }),
-      ...(priceMax && { 
-        price: priceMin 
-          ? { gte: priceMin, lte: priceMax }
-          : { lte: priceMax }
+      ...(priceMax && {
+        price: priceMin ? { gte: priceMin, lte: priceMax } : { lte: priceMax },
       }),
       // ✅ Búsqueda compatible con SQLite
       ...(search && {
         OR: [
           { title: { contains: search } },
           { description: { contains: search } },
-          { tags: { contains: search } },
+          { tags: { hasSome: [search] } },
         ],
       }),
     };
 
     // ✅ Configurar ordenamiento
     let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
-    
+
     switch (sortBy) {
       case 'oldest':
         orderBy = { createdAt: 'asc' };
@@ -351,8 +301,6 @@ export class SellersService {
       }),
     ]);
 
-    console.log('✅ [SERVICE] Found products:', products.length, 'of', total);
-
     // ✅ Calcular metadata de paginación
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -372,7 +320,7 @@ export class SellersService {
   /**
    * ✅ Actualizar vendedor
    */
-  async update(id: string, updateSellerDto: any) {
+  async update(id: string, updateSellerDto: Prisma.SellerProfileUpdateInput) {
     const seller = await this.prisma.sellerProfile.findUnique({
       where: { id },
     });

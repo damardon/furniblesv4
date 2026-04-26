@@ -3,83 +3,83 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
   // Comprehensive mock for all services across stages
   const mockPrisma = {
     // Stage 1-2: Users and Auth
-    user: { 
-      create: jest.fn(), 
+    user: {
+      create: jest.fn(),
       findFirst: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     },
-    buyerProfile: { 
+    buyerProfile: {
       create: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     },
-    sellerProfile: { 
+    sellerProfile: {
       create: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     },
 
     // Stage 5: Products
-    product: { 
-      create: jest.fn(), 
+    product: {
+      create: jest.fn(),
       findFirst: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     },
 
     // Stage 6: Files
     file: {
       create: jest.fn(),
       findMany: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     },
 
     // Stage 7: Orders and Cart
-    cartItem: { 
-      create: jest.fn(), 
-      findMany: jest.fn(), 
+    cartItem: {
+      create: jest.fn(),
+      findMany: jest.fn(),
       deleteMany: jest.fn(),
-      delete: jest.fn()
+      delete: jest.fn(),
     },
-    order: { 
-      create: jest.fn(), 
+    order: {
+      create: jest.fn(),
       findFirst: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
-      findMany: jest.fn()
+      findMany: jest.fn(),
     },
-    orderItem: { 
+    orderItem: {
       create: jest.fn(),
       createMany: jest.fn(),
-      findMany: jest.fn()
+      findMany: jest.fn(),
     },
-    downloadToken: { 
-      create: jest.fn(), 
+    downloadToken: {
+      create: jest.fn(),
       createMany: jest.fn(),
       findMany: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     notification: {
       create: jest.fn(),
       findMany: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     },
 
     // Stage 8: Payments
     transaction: {
       create: jest.fn(),
-      findMany: jest.fn()
+      findMany: jest.fn(),
     },
     payout: {
       create: jest.fn(),
       findMany: jest.fn(),
-      update: jest.fn()
+      update: jest.fn(),
     },
     invoice: {
       create: jest.fn(),
-      findMany: jest.fn()
+      findMany: jest.fn(),
     },
 
     // Stage 9: Reviews
@@ -89,34 +89,34 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
-      count: jest.fn()
+      count: jest.fn(),
     },
     reviewResponse: {
       create: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     reviewVote: {
       upsert: jest.fn(),
-      findMany: jest.fn()
+      findMany: jest.fn(),
     },
     reviewReport: {
       create: jest.fn(),
-      count: jest.fn()
+      count: jest.fn(),
     },
     productRating: {
       upsert: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     sellerRating: {
       upsert: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
     },
     reviewImage: {
-      createMany: jest.fn()
+      createMany: jest.fn(),
     },
 
     // System
-    $transaction: jest.fn()
+    $transaction: jest.fn(),
   };
 
   beforeEach(() => {
@@ -137,7 +137,7 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
         lastName: 'González',
         role: 'BUYER',
         emailVerified: true,
-        createdAt: new Date()
+        createdAt: new Date(),
       },
       seller: {
         id: 'seller-master-456',
@@ -147,7 +147,7 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
         lastName: 'Martínez',
         role: 'SELLER',
         emailVerified: true,
-        createdAt: new Date()
+        createdAt: new Date(),
       },
       sellerProfile: {
         userId: 'seller-master-456',
@@ -155,20 +155,21 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
         description: 'Especialistas en muebles de madera artesanales',
         rating: 0,
         totalReviews: 0,
-        totalSales: 0
+        totalSales: 0,
       },
       product: {
         id: 'product-master-789',
         title: 'Mesa de Comedor Roble Premium',
-        description: 'Mesa de comedor fabricada en roble macizo con acabado natural. Ideal para 6 personas.',
-        price: 450.00,
+        description:
+          'Mesa de comedor fabricada en roble macizo con acabado natural. Ideal para 6 personas.',
+        price: 450.0,
         category: 'TABLES',
         difficulty: 'INTERMEDIATE',
         sellerId: 'seller-master-456',
         status: 'PUBLISHED',
         rating: 0,
         reviewCount: 0,
-        slug: 'mesa-comedor-roble-premium'
+        slug: 'mesa-comedor-roble-premium',
       },
       files: {
         productImages: [
@@ -176,14 +177,14 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             id: 'file-img-1',
             filename: 'mesa-frontal.jpg',
             type: 'PRODUCT_IMAGE',
-            uploadedById: 'seller-master-456'
+            uploadedById: 'seller-master-456',
           },
           {
-            id: 'file-img-2', 
+            id: 'file-img-2',
             filename: 'mesa-lateral.jpg',
             type: 'PRODUCT_IMAGE',
-            uploadedById: 'seller-master-456'
-          }
+            uploadedById: 'seller-master-456',
+          },
         ],
         productFiles: [
           {
@@ -191,10 +192,10 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             filename: 'planos-mesa-roble.pdf',
             type: 'PRODUCT_FILE',
             uploadedById: 'seller-master-456',
-            size: 2048576 // 2MB
-          }
-        ]
-      }
+            size: 2048576, // 2MB
+          },
+        ],
+      },
     };
 
     describe('Stage 1-3: User Registration and Authentication', () => {
@@ -205,7 +206,9 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           .mockResolvedValueOnce(masterTestData.seller);
 
         // Mock profile creation
-        mockPrisma.sellerProfile.create.mockResolvedValue(masterTestData.sellerProfile);
+        mockPrisma.sellerProfile.create.mockResolvedValue(
+          masterTestData.sellerProfile,
+        );
 
         // Simulate buyer registration
         const buyer = await mockPrisma.user.create({
@@ -214,8 +217,8 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             firstName: masterTestData.buyer.firstName,
             lastName: masterTestData.buyer.lastName,
             role: 'BUYER',
-            emailVerified: true
-          }
+            emailVerified: true,
+          },
         });
 
         // Simulate seller registration with profile
@@ -225,16 +228,16 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             firstName: masterTestData.seller.firstName,
             lastName: masterTestData.seller.lastName,
             role: 'SELLER',
-            emailVerified: true
-          }
+            emailVerified: true,
+          },
         });
 
         const sellerProfile = await mockPrisma.sellerProfile.create({
           data: {
             userId: seller.id,
             storeName: masterTestData.sellerProfile.storeName,
-            description: masterTestData.sellerProfile.description
-          }
+            description: masterTestData.sellerProfile.description,
+          },
         });
 
         expect(buyer.role).toBe('BUYER');
@@ -258,9 +261,9 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           ...masterTestData.product,
           thumbnailFileIds: [
             masterTestData.files.productImages[0].id,
-            masterTestData.files.productImages[1].id
+            masterTestData.files.productImages[1].id,
           ],
-          fileIds: [masterTestData.files.productFiles[0].id]
+          fileIds: [masterTestData.files.productFiles[0].id],
         });
 
         // Simulate file uploads
@@ -269,24 +272,24 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             data: {
               filename: 'mesa-frontal.jpg',
               type: 'PRODUCT_IMAGE',
-              uploadedById: masterTestData.seller.id
-            }
+              uploadedById: masterTestData.seller.id,
+            },
           }),
           mockPrisma.file.create({
             data: {
               filename: 'mesa-lateral.jpg',
               type: 'PRODUCT_IMAGE',
-              uploadedById: masterTestData.seller.id
-            }
-          })
+              uploadedById: masterTestData.seller.id,
+            },
+          }),
         ]);
 
         const productFile = await mockPrisma.file.create({
           data: {
             filename: 'planos-mesa-roble.pdf',
             type: 'PRODUCT_FILE',
-            uploadedById: masterTestData.seller.id
-          }
+            uploadedById: masterTestData.seller.id,
+          },
         });
 
         // Simulate product creation
@@ -298,15 +301,15 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             category: masterTestData.product.category,
             sellerId: masterTestData.seller.id,
             status: 'PUBLISHED',
-            thumbnailFileIds: imageFiles.map(f => f.id),
-            fileIds: [productFile.id]
-          }
+            thumbnailFileIds: imageFiles.map((f) => f.id),
+            fileIds: [productFile.id],
+          },
         });
 
         expect(imageFiles).toHaveLength(2);
         expect(productFile.type).toBe('PRODUCT_FILE');
         expect(product.title).toBe('Mesa de Comedor Roble Premium');
-        expect(product.price).toBe(450.00);
+        expect(product.price).toBe(450.0);
         expect(product.thumbnailFileIds).toHaveLength(2);
         expect(product.fileIds).toHaveLength(1);
       });
@@ -320,18 +323,18 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             userId: masterTestData.buyer.id,
             productId: masterTestData.product.id,
             priceSnapshot: masterTestData.product.price,
-            addedAt: new Date()
+            addedAt: new Date(),
           },
           order: {
             id: 'order-master-123',
             orderNumber: 'ORD-20241224-001',
             buyerId: masterTestData.buyer.id,
             status: 'PENDING',
-            subtotalAmount: 450.00,
-            platformFeeAmount: 45.00, // 10%
-            totalAmount: 495.00,
-            currency: 'USD'
-          }
+            subtotalAmount: 450.0,
+            platformFeeAmount: 45.0, // 10%
+            totalAmount: 495.0,
+            currency: 'USD',
+          },
         };
 
         // Mock cart operations
@@ -348,7 +351,7 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           ...cartData.order,
           status: 'COMPLETED',
           paidAt: new Date(),
-          completedAt: new Date()
+          completedAt: new Date(),
         });
 
         // Mock download token generation
@@ -360,18 +363,21 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           data: {
             userId: masterTestData.buyer.id,
             productId: masterTestData.product.id,
-            priceSnapshot: masterTestData.product.price
-          }
+            priceSnapshot: masterTestData.product.price,
+          },
         });
 
         // 2. Get cart items
         const cartItems = await mockPrisma.cartItem.findMany({
-          where: { userId: masterTestData.buyer.id }
+          where: { userId: masterTestData.buyer.id },
         });
 
         // 3. Calculate totals
-        const subtotal = cartItems.reduce((sum, item) => sum + item.priceSnapshot, 0);
-        const platformFee = Math.round(subtotal * 0.10 * 100) / 100;
+        const subtotal = cartItems.reduce(
+          (sum, item) => sum + item.priceSnapshot,
+          0,
+        );
+        const platformFee = Math.round(subtotal * 0.1 * 100) / 100;
         const total = subtotal + platformFee;
 
         // 4. Create order
@@ -383,13 +389,13 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             subtotalAmount: subtotal,
             platformFeeAmount: platformFee,
             totalAmount: total,
-            currency: 'USD'
-          }
+            currency: 'USD',
+          },
         });
 
         // 5. Clear cart
         await mockPrisma.cartItem.deleteMany({
-          where: { userId: masterTestData.buyer.id }
+          where: { userId: masterTestData.buyer.id },
         });
 
         // 6. Simulate payment success (webhook)
@@ -398,24 +404,26 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           data: {
             status: 'COMPLETED',
             paidAt: new Date(),
-            paymentStatus: 'succeeded'
-          }
+            paymentStatus: 'succeeded',
+          },
         });
 
         // 7. Generate download tokens
         await mockPrisma.downloadToken.createMany({
-          data: [{
-            token: 'download_token_123',
-            orderId: order.id,
-            productId: masterTestData.product.id,
-            buyerId: masterTestData.buyer.id,
-            downloadLimit: 5,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          }]
+          data: [
+            {
+              token: 'download_token_123',
+              orderId: order.id,
+              productId: masterTestData.product.id,
+              buyerId: masterTestData.buyer.id,
+              downloadLimit: 5,
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            },
+          ],
         });
 
-        expect(cartItem.priceSnapshot).toBe(450.00);
-        expect(order.totalAmount).toBe(495.00); // 450 + 45 (10% fee)
+        expect(cartItem.priceSnapshot).toBe(450.0);
+        expect(order.totalAmount).toBe(495.0); // 450 + 45 (10% fee)
         expect(completedOrder.status).toBe('COMPLETED');
         expect(mockPrisma.downloadToken.createMany).toHaveBeenCalledTimes(1);
       });
@@ -427,31 +435,31 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           stripeAccountId: 'acct_seller_123',
           onboardingComplete: true,
           payoutsEnabled: true,
-          chargesEnabled: true
+          chargesEnabled: true,
         };
 
         const transactionData = {
           sale: {
             id: 'txn_sale_123',
             type: 'SALE',
-            amount: 405.00, // 90% of 450
+            amount: 405.0, // 90% of 450
             sellerId: masterTestData.seller.id,
             orderId: 'order-master-123',
-            status: 'COMPLETED'
+            status: 'COMPLETED',
           },
           platformFee: {
-            id: 'txn_fee_123', 
+            id: 'txn_fee_123',
             type: 'PLATFORM_FEE',
-            amount: 45.00, // 10% of 450
+            amount: 45.0, // 10% of 450
             orderId: 'order-master-123',
-            status: 'COMPLETED'
-          }
+            status: 'COMPLETED',
+          },
         };
 
         // Mock seller stripe connect setup
         mockPrisma.user.update.mockResolvedValue({
           ...masterTestData.seller,
-          ...stripeConnectData
+          ...stripeConnectData,
         });
 
         // Mock transaction creation
@@ -462,34 +470,34 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
         // Simulate seller onboarding
         const sellerWithStripe = await mockPrisma.user.update({
           where: { id: masterTestData.seller.id },
-          data: stripeConnectData
+          data: stripeConnectData,
         });
 
         // Simulate split payment transactions
         const saleTransaction = await mockPrisma.transaction.create({
           data: {
             type: 'SALE',
-            amount: 405.00,
+            amount: 405.0,
             sellerId: masterTestData.seller.id,
             orderId: 'order-master-123',
-            status: 'COMPLETED'
-          }
+            status: 'COMPLETED',
+          },
         });
 
         const feeTransaction = await mockPrisma.transaction.create({
           data: {
             type: 'PLATFORM_FEE',
-            amount: 45.00,
-            orderId: 'order-master-123', 
-            status: 'COMPLETED'
-          }
+            amount: 45.0,
+            orderId: 'order-master-123',
+            status: 'COMPLETED',
+          },
         });
 
         expect(sellerWithStripe.onboardingComplete).toBe(true);
         expect(sellerWithStripe.payoutsEnabled).toBe(true);
-        expect(saleTransaction.amount).toBe(405.00);
-        expect(feeTransaction.amount).toBe(45.00);
-        expect(saleTransaction.amount + feeTransaction.amount).toBe(450.00);
+        expect(saleTransaction.amount).toBe(405.0);
+        expect(feeTransaction.amount).toBe(45.0);
+        expect(saleTransaction.amount + feeTransaction.amount).toBe(450.0);
       });
     });
 
@@ -504,25 +512,27 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             sellerId: masterTestData.seller.id,
             rating: 5,
             title: 'Producto excepcional, superó mis expectativas',
-            comment: 'La mesa llegó perfectamente empacada. La calidad de la madera es excelente y las instrucciones de armado muy claras. El diseño es elegante y se ve hermosa en mi comedor.',
+            comment:
+              'La mesa llegó perfectamente empacada. La calidad de la madera es excelente y las instrucciones de armado muy claras. El diseño es elegante y se ve hermosa en mi comedor.',
             pros: 'Calidad premium, fácil armado, diseño elegante, empaque perfecto',
             cons: 'Podría incluir tornillos de repuesto',
             status: 'PUBLISHED',
             isVerified: true,
             helpfulCount: 0,
-            notHelpfulCount: 0
+            notHelpfulCount: 0,
           },
           response: {
             id: 'response-master-123',
             reviewId: 'review-master-123',
             sellerId: masterTestData.seller.id,
-            comment: '¡Muchas gracias Ana por tu reseña tan detallada! Nos alegra enormemente saber que la mesa cumplió tus expectativas. En próximos pedidos incluiremos tornillos adicionales como sugieres.',
-            createdAt: new Date()
+            comment:
+              '¡Muchas gracias Ana por tu reseña tan detallada! Nos alegra enormemente saber que la mesa cumplió tus expectativas. En próximos pedidos incluiremos tornillos adicionales como sugieres.',
+            createdAt: new Date(),
           },
           vote: {
             reviewId: 'review-master-123',
             userId: 'voter-456',
-            vote: 'HELPFUL'
+            vote: 'HELPFUL',
           },
           productRating: {
             productId: masterTestData.product.id,
@@ -533,8 +543,8 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             threeStar: 0,
             twoStar: 0,
             oneStar: 0,
-            recommendationRate: 100.0
-          }
+            recommendationRate: 100.0,
+          },
         };
 
         // Mock review creation flow
@@ -542,7 +552,7 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           id: 'order-master-123',
           buyerId: masterTestData.buyer.id,
           status: 'COMPLETED',
-          items: [{ productId: masterTestData.product.id }]
+          items: [{ productId: masterTestData.product.id }],
         });
 
         mockPrisma.review.findUnique.mockResolvedValueOnce(null); // No existing review
@@ -550,28 +560,32 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
         mockPrisma.review.create.mockResolvedValue(reviewFlowData.review);
         mockPrisma.review.update.mockResolvedValue({
           ...reviewFlowData.review,
-          status: 'PUBLISHED'
+          status: 'PUBLISHED',
         });
 
         // Mock seller response
         mockPrisma.reviewResponse.findUnique.mockResolvedValue(null); // No existing response
-        mockPrisma.reviewResponse.create.mockResolvedValue(reviewFlowData.response);
+        mockPrisma.reviewResponse.create.mockResolvedValue(
+          reviewFlowData.response,
+        );
 
         // Mock voting
         mockPrisma.reviewVote.upsert.mockResolvedValue(reviewFlowData.vote);
         mockPrisma.reviewVote.findMany.mockResolvedValue([reviewFlowData.vote]);
         mockPrisma.review.update.mockResolvedValue({
           ...reviewFlowData.review,
-          helpfulCount: 1
+          helpfulCount: 1,
         });
 
         // Mock statistics update
         mockPrisma.review.findMany.mockResolvedValue([reviewFlowData.review]);
-        mockPrisma.productRating.upsert.mockResolvedValue(reviewFlowData.productRating);
+        mockPrisma.productRating.upsert.mockResolvedValue(
+          reviewFlowData.productRating,
+        );
         mockPrisma.product.update.mockResolvedValue({
           ...masterTestData.product,
           rating: 5.0,
-          reviewCount: 1
+          reviewCount: 1,
         });
 
         // Simulate complete review flow
@@ -580,11 +594,11 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           where: {
             id: 'order-master-123',
             buyerId: masterTestData.buyer.id,
-            status: 'COMPLETED'
+            status: 'COMPLETED',
           },
           include: {
-            items: { where: { productId: masterTestData.product.id } }
-          }
+            items: { where: { productId: masterTestData.product.id } },
+          },
         });
 
         expect(completedOrder).toBeTruthy();
@@ -602,14 +616,14 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             comment: reviewFlowData.review.comment,
             pros: reviewFlowData.review.pros,
             cons: reviewFlowData.review.cons,
-            status: 'PENDING_MODERATION'
-          }
+            status: 'PENDING_MODERATION',
+          },
         });
 
         // 3. Auto-moderate and publish
         const publishedReview = await mockPrisma.review.update({
           where: { id: review.id },
-          data: { status: 'PUBLISHED' }
+          data: { status: 'PUBLISHED' },
         });
 
         // 4. Seller responds
@@ -617,8 +631,8 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           data: {
             reviewId: review.id,
             sellerId: masterTestData.seller.id,
-            comment: reviewFlowData.response.comment
-          }
+            comment: reviewFlowData.response.comment,
+          },
         });
 
         // 5. User votes helpful
@@ -626,33 +640,34 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           where: {
             reviewId_userId: {
               reviewId: review.id,
-              userId: 'voter-456'
-            }
+              userId: 'voter-456',
+            },
           },
           update: { vote: 'HELPFUL' },
           create: {
             reviewId: review.id,
             userId: 'voter-456',
-            vote: 'HELPFUL'
-          }
+            vote: 'HELPFUL',
+          },
         });
 
         // 6. Update statistics
         const reviews = await mockPrisma.review.findMany({
           where: { productId: masterTestData.product.id, status: 'PUBLISHED' },
-          select: { rating: true }
+          select: { rating: true },
         });
 
         const totalReviews = reviews.length;
-        const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
+        const averageRating =
+          reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
 
         await mockPrisma.productRating.upsert({
           where: { productId: masterTestData.product.id },
           update: {
             totalReviews,
             averageRating,
-            fiveStar: reviews.filter(r => r.rating === 5).length,
-            recommendationRate: 100.0
+            fiveStar: reviews.filter((r) => r.rating === 5).length,
+            recommendationRate: 100.0,
           },
           create: {
             productId: masterTestData.product.id,
@@ -663,8 +678,8 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
             threeStar: 0,
             twoStar: 0,
             oneStar: 0,
-            recommendationRate: 100.0
-          }
+            recommendationRate: 100.0,
+          },
         });
 
         expect(review.rating).toBe(5);
@@ -680,14 +695,14 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
         // Validate complete flow steps
         const completeFlow = {
           stage1: 'user_registration',
-          stage2: 'profile_creation', 
+          stage2: 'profile_creation',
           stage3: 'authentication',
           stage4: 'i18n_support',
           stage5: 'product_creation',
           stage6: 'file_management',
           stage7: 'purchase_flow',
           stage8: 'split_payments',
-          stage9: 'review_system'
+          stage9: 'review_system',
         };
 
         expect(Object.keys(completeFlow)).toHaveLength(9);
@@ -699,17 +714,19 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           buyer: masterTestData.buyer,
           seller: masterTestData.seller,
           product: masterTestData.product,
-          order: { totalAmount: 495.00, status: 'COMPLETED' },
-          payment: { sellerAmount: 405.00, platformFee: 45.00 },
+          order: { totalAmount: 495.0, status: 'COMPLETED' },
+          payment: { sellerAmount: 405.0, platformFee: 45.0 },
           review: { rating: 5, isVerified: true },
-          statistics: { averageRating: 5.0, totalReviews: 1 }
+          statistics: { averageRating: 5.0, totalReviews: 1 },
         };
 
         expect(dataFlow.buyer.role).toBe('BUYER');
         expect(dataFlow.seller.role).toBe('SELLER');
-        expect(dataFlow.product.price).toBe(450.00);
-        expect(dataFlow.order.totalAmount).toBe(495.00);
-        expect(dataFlow.payment.sellerAmount + dataFlow.payment.platformFee).toBe(450.00);
+        expect(dataFlow.product.price).toBe(450.0);
+        expect(dataFlow.order.totalAmount).toBe(495.0);
+        expect(
+          dataFlow.payment.sellerAmount + dataFlow.payment.platformFee,
+        ).toBe(450.0);
         expect(dataFlow.review.rating).toBe(5);
         expect(dataFlow.statistics.averageRating).toBe(5.0);
 
@@ -721,10 +738,10 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           sellerCanRespond: true,
           communityVoting: true,
           downloadSecurityTokens: true,
-          notificationSystem: true
+          notificationSystem: true,
         };
 
-        Object.values(businessRules).forEach(rule => {
+        Object.values(businessRules).forEach((rule) => {
           expect(rule).toBe(true);
         });
       });
@@ -739,12 +756,12 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           fileDelivery: true,
           reviewSystem: true,
 
-          // Business Features  
+          // Business Features
           revenueStream: true,
           sellerOnboarding: true,
           buyerExperience: true,
           trustAndSafety: true,
-          
+
           // Technical Features
           authentication: true,
           authorization: true,
@@ -757,10 +774,11 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           moderation: true,
           notifications: true,
           analytics: true,
-          reporting: true
+          reporting: true,
         };
 
-        const readinessScore = Object.values(platformReadiness).filter(Boolean).length;
+        const readinessScore =
+          Object.values(platformReadiness).filter(Boolean).length;
         const totalFeatures = Object.keys(platformReadiness).length;
         const readinessPercentage = (readinessScore / totalFeatures) * 100;
 
@@ -777,15 +795,15 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
           orderProcessing: 450,
           paymentProcessing: 350,
           reviewCreation: 380,
-          
+
           // Scalability targets
           concurrentUsers: 1000,
           ordersPerDay: 10000,
           reviewsPerDay: 5000,
-          
+
           // System reliability
           uptime: 99.9,
-          errorRate: 0.1
+          errorRate: 0.1,
         };
 
         // Validate response time targets (<500ms)
@@ -796,9 +814,15 @@ describe('Furnibles Complete Flow E2E - Stages 1-9', () => {
         expect(performanceBenchmarks.reviewCreation).toBeLessThan(500);
 
         // Validate scalability targets
-        expect(performanceBenchmarks.concurrentUsers).toBeGreaterThanOrEqual(1000);
-        expect(performanceBenchmarks.ordersPerDay).toBeGreaterThanOrEqual(10000);
-        expect(performanceBenchmarks.reviewsPerDay).toBeGreaterThanOrEqual(5000);
+        expect(performanceBenchmarks.concurrentUsers).toBeGreaterThanOrEqual(
+          1000,
+        );
+        expect(performanceBenchmarks.ordersPerDay).toBeGreaterThanOrEqual(
+          10000,
+        );
+        expect(performanceBenchmarks.reviewsPerDay).toBeGreaterThanOrEqual(
+          5000,
+        );
 
         // Validate reliability targets
         expect(performanceBenchmarks.uptime).toBeGreaterThanOrEqual(99.9);

@@ -88,7 +88,6 @@ interface SellerPageProps {
 // ✅ Función corregida para obtener vendedor
 async function getSellerBySlug(slug: string): Promise<Seller | null> {
   try {
-    console.log('🔍 [FRONTEND] Fetching seller by slug:', slug)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sellers?slug=${slug}&limit=1`, {
       cache: 'no-store',
@@ -98,14 +97,12 @@ async function getSellerBySlug(slug: string): Promise<Seller | null> {
       },
     })
 
-    console.log('🔍 [FRONTEND] Seller response status:', response.status)
 
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`)
     }
 
     const data = await response.json()
-    console.log('✅ [FRONTEND] Seller response:', data)
     
     // Si viene paginado, tomar el primer resultado
     if (data.data && data.data.length > 0) {
@@ -127,7 +124,6 @@ async function getSellerBySlug(slug: string): Promise<Seller | null> {
 // ✅ Función corregida para obtener productos del vendedor
 async function getSellerProducts(sellerId: string, page = 1, limit = 12): Promise<ProductsResponse | null> {
   try {
-    console.log('🔍 [FRONTEND] Fetching seller products:', sellerId)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products?sellerId=${sellerId}&page=${page}&limit=${limit}&status=APPROVED`, {
       cache: 'no-store',
@@ -137,14 +133,12 @@ async function getSellerProducts(sellerId: string, page = 1, limit = 12): Promis
       },
     })
 
-    console.log('🔍 [FRONTEND] Products response status:', response.status)
 
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`)
     }
 
     const data = await response.json()
-    console.log('✅ [FRONTEND] Products data received:', data)
     return data
   } catch (error) {
     console.error('❌ [FRONTEND] Error fetching seller products:', error)

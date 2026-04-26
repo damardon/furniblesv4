@@ -2,7 +2,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FileType, FileStatus } from '@prisma/client'; // 🆕 Usar de Prisma
 
-
 export class FileResponseDto {
   @ApiProperty()
   id: string;

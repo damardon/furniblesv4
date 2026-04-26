@@ -4,8 +4,9 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import sharp from 'sharp';
 import * as fs from 'fs/promises';
@@ -13,7 +14,10 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { FileType, FileStatus } from '@prisma/client';
-import { FileResponseDto, FileMetadataDto } from '../products/dto/file-response.dto';
+import {
+  FileResponseDto,
+  FileMetadataDto,
+} from '../products/dto/file-response.dto';
 
 interface UploadedFile {
   fieldname: string;
@@ -37,6 +41,7 @@ export interface ProcessedFile {
 
 @Injectable()
 export class FilesService {
+  private readonly logger = new Logger(FilesService.name);
   private readonly uploadPath: string;
   private readonly maxFileSize: number;
   private readonly allowedMimeTypes: string[];
@@ -48,9 +53,11 @@ export class FilesService {
   ) {
     this.uploadPath = this.config.get('UPLOAD_PATH', './uploads');
     this.maxFileSize = parseInt(this.config.get('MAX_FILE_SIZE', '10485760')); // 10MB
-    this.allowedMimeTypes = this.config.get('ALLOWED_FILE_TYPES', 'pdf,jpg,jpeg,png,webp').split(',');
-    this.baseUrl = this.config.get('BASE_URL', 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev');
-    
+    this.allowedMimeTypes = this.config
+      .get('ALLOWED_FILE_TYPES', 'pdf,jpg,jpeg,png,webp')
+      .split(',');
+    this.baseUrl = this.config.get('BASE_URL', 'http://localhost:3001');
+
     // Crear directorio de uploads si no existe
     this.ensureUploadDirectory();
   }
@@ -60,7 +67,7 @@ export class FilesService {
     // Validar tamaño
     if (file.size > this.maxFileSize) {
       throw new BadRequestException(
-        `File too large. Maximum size allowed: ${this.formatFileSize(this.maxFileSize)}`
+        `File too large. Maximum size allowed: ${this.formatFileSize(this.maxFileSize)}`,
       );
     }
 
@@ -68,7 +75,7 @@ export class FilesService {
     const fileExtension = this.getFileExtension(file.originalname);
     if (!this.allowedMimeTypes.includes(fileExtension)) {
       throw new BadRequestException(
-        `Invalid file type. Allowed types: ${this.allowedMimeTypes.join(', ')}`
+        `Invalid file type. Allowed types: ${this.allowedMimeTypes.join(', ')}`,
       );
     }
 
@@ -77,7 +84,10 @@ export class FilesService {
       throw new BadRequestException('File must be a PDF');
     }
 
-    if (expectedType === FileType.IMAGE && !file.mimetype.startsWith('image/')) {
+    if (
+      expectedType === FileType.IMAGE &&
+      !file.mimetype.startsWith('image/')
+    ) {
       throw new BadRequestException('File must be an image');
     }
 
@@ -85,68 +95,64 @@ export class FilesService {
     this.validateFileSignature(file.buffer, file.mimetype);
   }
   /**
- * Obtener estadísticas de almacenamiento (para admin)
- */
-async getStorageStats() {
-  const [
-    totalFiles,
-    totalSize,
-    filesByType,
-    recentUploads
-  ] = await Promise.all([
-    // Total de archivos activos
-    this.prisma.file.count({
-      where: { status: FileStatus.ACTIVE }
-    }),
-    
-    // Tamaño total
-    this.prisma.file.aggregate({
-      where: { status: FileStatus.ACTIVE },
-      _sum: { size: true }
-    }),
-    
-    // Archivos por tipo
-    this.prisma.file.groupBy({
-      by: ['type'],
-      where: { status: FileStatus.ACTIVE },
-      _count: { type: true },
-      _sum: { size: true }
-    }),
-    
-    // Uploads recientes (últimos 30 días)
-    this.prisma.file.count({
-      where: {
-        status: FileStatus.ACTIVE,
-        createdAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        }
-      }
-    })
-  ]);
+   * Obtener estadísticas de almacenamiento (para admin)
+   */
+  async getStorageStats() {
+    const [totalFiles, totalSize, filesByType, recentUploads] =
+      await Promise.all([
+        // Total de archivos activos
+        this.prisma.file.count({
+          where: { status: FileStatus.ACTIVE },
+        }),
 
-  return {
-    total: {
-      files: totalFiles,
-      size: totalSize._sum.size || 0,
-      sizeFormatted: this.formatFileSize(totalSize._sum.size || 0)
-    },
-    byType: filesByType.map(type => ({
-      type: type.type,
-      count: type._count.type,
-      size: type._sum.size || 0,
-      sizeFormatted: this.formatFileSize(type._sum.size || 0)
-    })),
-    recent: {
-      uploadsLast30Days: recentUploads
-    },
-    storage: {
-      maxFileSize: this.maxFileSize,
-      maxFileSizeFormatted: this.formatFileSize(this.maxFileSize),
-      allowedTypes: this.allowedMimeTypes,
-      uploadPath: this.uploadPath
-    }
-  };
-}
+        // Tamaño total
+        this.prisma.file.aggregate({
+          where: { status: FileStatus.ACTIVE },
+          _sum: { size: true },
+        }),
+
+        // Archivos por tipo
+        this.prisma.file.groupBy({
+          by: ['type'],
+          where: { status: FileStatus.ACTIVE },
+          _count: { type: true },
+          _sum: { size: true },
+        }),
+
+        // Uploads recientes (últimos 30 días)
+        this.prisma.file.count({
+          where: {
+            status: FileStatus.ACTIVE,
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+      ]);
+
+    return {
+      total: {
+        files: totalFiles,
+        size: totalSize._sum.size || 0,
+        sizeFormatted: this.formatFileSize(totalSize._sum.size || 0),
+      },
+      byType: filesByType.map((type) => ({
+        type: type.type,
+        count: type._count.type,
+        size: type._sum.size || 0,
+        sizeFormatted: this.formatFileSize(type._sum.size || 0),
+      })),
+      recent: {
+        uploadsLast30Days: recentUploads,
+      },
+      storage: {
+        maxFileSize: this.maxFileSize,
+        maxFileSizeFormatted: this.formatFileSize(this.maxFileSize),
+        allowedTypes: this.allowedMimeTypes,
+        uploadPath: this.uploadPath,
+      },
+    };
+  }
 
   // Subir PDF
   async uploadPdf(file: UploadedFile, userId: string): Promise<ProcessedFile> {
@@ -194,16 +200,21 @@ async getStorageStats() {
   }
 
   // Subir múltiples imágenes
-  async uploadImages(files: UploadedFile[], userId: string): Promise<ProcessedFile[]> {
+  async uploadImages(
+    files: UploadedFile[],
+    userId: string,
+  ): Promise<ProcessedFile[]> {
     if (files.length > 5) {
-      throw new BadRequestException('Too many images. Maximum 5 images allowed');
+      throw new BadRequestException(
+        'Too many images. Maximum 5 images allowed',
+      );
     }
 
     const processedFiles: ProcessedFile[] = [];
 
     for (const file of files) {
       this.validateFile(file, FileType.IMAGE);
-      
+
       const processed = await this.processImage(file, userId);
       processedFiles.push(processed);
     }
@@ -212,11 +223,18 @@ async getStorageStats() {
   }
 
   // Procesar imagen individual
-  private async processImage(file: UploadedFile, userId: string): Promise<ProcessedFile> {
+  private async processImage(
+    file: UploadedFile,
+    userId: string,
+  ): Promise<ProcessedFile> {
     const fileKey = this.generateFileKey(file.originalname, 'image');
     const filePath = path.join(this.uploadPath, 'images', fileKey);
     const thumbnailKey = `thumb_${fileKey}`;
-    const thumbnailPath = path.join(this.uploadPath, 'thumbnails', thumbnailKey);
+    const thumbnailPath = path.join(
+      this.uploadPath,
+      'thumbnails',
+      thumbnailKey,
+    );
 
     // Crear directorios
     await this.ensureDirectoryExists(path.dirname(filePath));
@@ -224,18 +242,18 @@ async getStorageStats() {
 
     // Procesar imagen original
     const processedImage = await sharp(file.buffer)
-      .resize(1200, 1200, { 
+      .resize(1200, 1200, {
         fit: 'inside',
-        withoutEnlargement: true 
+        withoutEnlargement: true,
       })
       .jpeg({ quality: 85 })
       .toBuffer();
 
     // Crear thumbnail
     const thumbnail = await sharp(file.buffer)
-      .resize(300, 300, { 
+      .resize(300, 300, {
         fit: 'cover',
-        position: 'center'
+        position: 'center',
       })
       .jpeg({ quality: 80 })
       .toBuffer();
@@ -333,7 +351,11 @@ async getStorageStats() {
   }
 
   // Eliminar archivo
-  async deleteFile(fileId: string, userId: string, userRole: string): Promise<void> {
+  async deleteFile(
+    fileId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<void> {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
     });
@@ -367,11 +389,11 @@ async getStorageStats() {
           filePath = path.join(this.uploadPath, 'thumbnails', file.key);
           break;
       }
-      
+
       await fs.unlink(filePath);
     } catch (error) {
       // Log error but don't fail the operation
-      console.error('Error deleting physical file:', error);
+      this.logger.error('Error deleting physical file', error.stack);
     }
   }
 
@@ -405,14 +427,17 @@ async getStorageStats() {
   }
 
   // Obtener metadata completa de archivo
-  async getFileMetadata(fileId: string, userId: string): Promise<FileMetadataDto> {
+  async getFileMetadata(
+    fileId: string,
+    userId: string,
+  ): Promise<FileMetadataDto> {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
       include: {
         uploadedBy: {
-          select: { id: true }
-        }
-      }
+          select: { id: true },
+        },
+      },
     });
 
     if (!file) {
@@ -443,52 +468,39 @@ async getStorageStats() {
   }
 
   // Limpiar archivos huérfanos - CORREGIDO
-  async cleanupOrphanedFiles(): Promise<{ deletedFiles: number; freedSpace: string }> {
+  async cleanupOrphanedFiles(): Promise<{
+    deletedFiles: number;
+    freedSpace: string;
+  }> {
     // Obtener todos los IDs de archivos que están siendo usados por productos
     const usedFileIds = new Set<string>();
 
     // Archivos PDF usados
     const productsWithPdf = await this.prisma.product.findMany({
       where: { pdfFileId: { not: null } },
-      select: { pdfFileId: true }
+      select: { pdfFileId: true },
     });
-    productsWithPdf.forEach(p => {
+    productsWithPdf.forEach((p) => {
       if (p.pdfFileId) usedFileIds.add(p.pdfFileId);
     });
 
     // Archivos de imágenes usados
     const productsWithImages = await this.prisma.product.findMany({
-      where: { imageFileIds: { not: null } },
-      select: { imageFileIds: true }
+      select: { imageFileIds: true },
     });
-    productsWithImages.forEach(p => {
-      try {
-        if (p.imageFileIds) {
-          const imageIds = JSON.parse(p.imageFileIds);
-          if (Array.isArray(imageIds)) {
-            imageIds.forEach(id => usedFileIds.add(id));
-          }
-        }
-      } catch (error) {
-        console.warn('Error parsing imageFileIds:', error);
+    productsWithImages.forEach((p) => {
+      if (Array.isArray(p.imageFileIds) && p.imageFileIds.length > 0) {
+        p.imageFileIds.forEach((id) => usedFileIds.add(id));
       }
     });
 
     // Archivos de thumbnails usados
     const productsWithThumbnails = await this.prisma.product.findMany({
-      where: { thumbnailFileIds: { not: null } },
-      select: { thumbnailFileIds: true }
+      select: { thumbnailFileIds: true },
     });
-    productsWithThumbnails.forEach(p => {
-      try {
-        if (p.thumbnailFileIds) {
-          const thumbnailIds = JSON.parse(p.thumbnailFileIds);
-          if (Array.isArray(thumbnailIds)) {
-            thumbnailIds.forEach(id => usedFileIds.add(id));
-          }
-        }
-      } catch (error) {
-        console.warn('Error parsing thumbnailFileIds:', error);
+    productsWithThumbnails.forEach((p) => {
+      if (Array.isArray(p.thumbnailFileIds) && p.thumbnailFileIds.length > 0) {
+        p.thumbnailFileIds.forEach((id) => usedFileIds.add(id));
       }
     });
 
@@ -499,58 +511,58 @@ async getStorageStats() {
         id: { notIn: Array.from(usedFileIds) },
         // Solo archivos más antiguos de 7 días
         createdAt: {
-          lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-        }
-      }
+          lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        },
+      },
+    });
+
+    const eligibleFiles = orphanedFiles.filter(
+      (f) =>
+        f.type === FileType.PDF ||
+        f.type === FileType.IMAGE ||
+        f.type === FileType.THUMBNAIL,
+    );
+
+    // Batch mark as deleted in a single query
+    await this.prisma.file.updateMany({
+      where: { id: { in: eligibleFiles.map((f) => f.id) } },
+      data: { status: FileStatus.DELETED },
     });
 
     let totalSize = 0;
     let deletedCount = 0;
+    const failedIds: string[] = [];
 
-    for (const file of orphanedFiles) {
+    // Only loop for filesystem operations (cannot be batched)
+    for (const file of eligibleFiles) {
+      const typeDir =
+        file.type === FileType.PDF
+          ? 'pdfs'
+          : file.type === FileType.IMAGE
+            ? 'images'
+            : 'thumbnails';
+      const filePath = path.join(this.uploadPath, typeDir, file.key);
       try {
-        // Marcar como eliminado
-        await this.prisma.file.update({
-          where: { id: file.id },
-          data: { status: FileStatus.DELETED }
-        });
-
-        // Eliminar archivo físico
-        let filePath: string;
-        switch (file.type) {
-          case FileType.PDF:
-            filePath = path.join(this.uploadPath, 'pdfs', file.key);
-            break;
-          case FileType.IMAGE:
-            filePath = path.join(this.uploadPath, 'images', file.key);
-            break;
-          case FileType.THUMBNAIL:
-            filePath = path.join(this.uploadPath, 'thumbnails', file.key);
-            break;
-          default:
-            continue;
-        }
-
-        try {
-          await fs.unlink(filePath);
-          totalSize += file.size;
-          deletedCount++;
-        } catch (error) {
-          console.error(`Error deleting file ${filePath}:`, error);
-          // Revertir el estado si no se pudo eliminar físicamente
-          await this.prisma.file.update({
-            where: { id: file.id },
-            data: { status: FileStatus.ACTIVE }
-          });
-        }
+        await fs.unlink(filePath);
+        totalSize += file.size;
+        deletedCount++;
       } catch (error) {
-        console.error(`Error processing orphaned file ${file.id}:`, error);
+        this.logger.error(`Error deleting file ${filePath}`, error.stack);
+        failedIds.push(file.id);
       }
+    }
+
+    // Restore DB status for files that couldn't be physically deleted
+    if (failedIds.length > 0) {
+      await this.prisma.file.updateMany({
+        where: { id: { in: failedIds } },
+        data: { status: FileStatus.ACTIVE },
+      });
     }
 
     return {
       deletedFiles: deletedCount,
-      freedSpace: this.formatFileSize(totalSize)
+      freedSpace: this.formatFileSize(totalSize),
     };
   }
 
@@ -561,8 +573,8 @@ async getStorageStats() {
       select: {
         pdfFileId: true,
         imageFileIds: true,
-        thumbnailFileIds: true
-      }
+        thumbnailFileIds: true,
+      },
     });
 
     if (!product) {
@@ -572,16 +584,16 @@ async getStorageStats() {
     const fileInfo = {
       pdf: null as any,
       images: [] as any[],
-      thumbnails: [] as any[]
+      thumbnails: [] as any[],
     };
 
     // Obtener archivo PDF
     if (product.pdfFileId) {
       const pdfFile = await this.prisma.file.findUnique({
-        where: { 
+        where: {
           id: product.pdfFileId,
-          status: FileStatus.ACTIVE 
-        }
+          status: FileStatus.ACTIVE,
+        },
       });
       if (pdfFile) {
         fileInfo.pdf = this.mapFileToResponse(pdfFile);
@@ -589,41 +601,33 @@ async getStorageStats() {
     }
 
     // Obtener archivos de imágenes
-    if (product.imageFileIds) {
-      try {
-        const imageIds = JSON.parse(product.imageFileIds);
-        if (Array.isArray(imageIds) && imageIds.length > 0) {
-          const imageFiles = await this.prisma.file.findMany({
-            where: { 
-              id: { in: imageIds },
-              status: FileStatus.ACTIVE,
-              type: FileType.IMAGE
-            }
-          });
-          fileInfo.images = imageFiles.map(this.mapFileToResponse);
-        }
-      } catch (error) {
-        console.warn('Error parsing imageFileIds:', error);
-      }
+    if (
+      Array.isArray(product.imageFileIds) &&
+      product.imageFileIds.length > 0
+    ) {
+      const imageFiles = await this.prisma.file.findMany({
+        where: {
+          id: { in: product.imageFileIds },
+          status: FileStatus.ACTIVE,
+          type: FileType.IMAGE,
+        },
+      });
+      fileInfo.images = imageFiles.map(this.mapFileToResponse);
     }
 
     // Obtener archivos de thumbnails
-    if (product.thumbnailFileIds) {
-      try {
-        const thumbnailIds = JSON.parse(product.thumbnailFileIds);
-        if (Array.isArray(thumbnailIds) && thumbnailIds.length > 0) {
-          const thumbnailFiles = await this.prisma.file.findMany({
-            where: { 
-              id: { in: thumbnailIds },
-              status: FileStatus.ACTIVE,
-              type: FileType.THUMBNAIL
-            }
-          });
-          fileInfo.thumbnails = thumbnailFiles.map(this.mapFileToResponse);
-        }
-      } catch (error) {
-        console.warn('Error parsing thumbnailFileIds:', error);
-      }
+    if (
+      Array.isArray(product.thumbnailFileIds) &&
+      product.thumbnailFileIds.length > 0
+    ) {
+      const thumbnailFiles = await this.prisma.file.findMany({
+        where: {
+          id: { in: product.thumbnailFileIds },
+          status: FileStatus.ACTIVE,
+          type: FileType.THUMBNAIL,
+        },
+      });
+      fileInfo.thumbnails = thumbnailFiles.map(this.mapFileToResponse);
     }
 
     return fileInfo;
@@ -646,15 +650,17 @@ async getStorageStats() {
   };
 
   // HELPER METHODS (implementaciones faltantes)
-  
+
   private async ensureUploadDirectory(): Promise<void> {
     try {
       await fs.mkdir(this.uploadPath, { recursive: true });
       await fs.mkdir(path.join(this.uploadPath, 'pdfs'), { recursive: true });
       await fs.mkdir(path.join(this.uploadPath, 'images'), { recursive: true });
-      await fs.mkdir(path.join(this.uploadPath, 'thumbnails'), { recursive: true });
+      await fs.mkdir(path.join(this.uploadPath, 'thumbnails'), {
+        recursive: true,
+      });
     } catch (error) {
-      console.error('Error creating upload directories:', error);
+      this.logger.error('Error creating upload directories', error.stack);
     }
   }
 
@@ -662,7 +668,7 @@ async getStorageStats() {
     try {
       await fs.mkdir(dirPath, { recursive: true });
     } catch (error) {
-      console.error('Error creating directory:', error);
+      this.logger.error('Error creating directory', error.stack);
     }
   }
 
@@ -692,16 +698,18 @@ async getStorageStats() {
     // Implementación básica de validación de firma de archivo
     const signatures: Record<string, number[]> = {
       'application/pdf': [0x25, 0x50, 0x44, 0x46], // %PDF
-      'image/jpeg': [0xFF, 0xD8, 0xFF],
-      'image/png': [0x89, 0x50, 0x4E, 0x47],
-      'image/webp': [0x52, 0x49, 0x46, 0x46]
+      'image/jpeg': [0xff, 0xd8, 0xff],
+      'image/png': [0x89, 0x50, 0x4e, 0x47],
+      'image/webp': [0x52, 0x49, 0x46, 0x46],
     };
 
     const signature = signatures[mimeType];
     if (signature) {
       for (let i = 0; i < signature.length; i++) {
         if (buffer[i] !== signature[i]) {
-          throw new BadRequestException('File signature does not match MIME type');
+          throw new BadRequestException(
+            'File signature does not match MIME type',
+          );
         }
       }
     }
@@ -711,7 +719,7 @@ async getStorageStats() {
     // Implementación básica - en producción usarías una librería como pdf-parse
     return {
       extractedAt: new Date().toISOString(),
-      size: buffer.length
+      size: buffer.length,
     };
   }
 

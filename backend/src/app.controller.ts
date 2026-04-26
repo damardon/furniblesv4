@@ -10,9 +10,9 @@ export class AppController {
 
   @Get()
   @ApiOperation({ summary: 'Health check endpoint' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'API is running'
+  @ApiResponse({
+    status: 200,
+    description: 'API is running',
   })
   getHealth(@I18n() i18n: I18nContext) {
     return {
@@ -26,9 +26,9 @@ export class AppController {
 
   @Get('version')
   @ApiOperation({ summary: 'Get API version' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'API version information'
+  @ApiResponse({
+    status: 200,
+    description: 'API version information',
   })
   getVersion() {
     return {

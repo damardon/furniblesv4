@@ -1,4 +1,9 @@
-import { ApiProperty, ApiPropertyOptional, PartialType, OmitType } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  PartialType,
+  OmitType,
+} from '@nestjs/swagger';
 import {
   IsEmail,
   IsString,
@@ -12,14 +17,21 @@ import {
 import { UserRole } from '@prisma/client';
 
 export class EmailDto {
-  @ApiProperty({ description: 'User email address', example: 'user@example.com' })
+  @ApiProperty({
+    description: 'User email address',
+    example: 'user@example.com',
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 }
 
 export class PasswordDto {
-  @ApiProperty({ description: 'User password', example: 'StrongPassword123!', minLength: 8 })
+  @ApiProperty({
+    description: 'User password',
+    example: 'StrongPassword123!',
+    minLength: 8,
+  })
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
@@ -34,7 +46,11 @@ export class LoginDto extends EmailDto {
 }
 
 export class RegisterDto extends EmailDto {
-  @ApiProperty({ description: 'User password', example: 'StrongPassword123!', minLength: 8 })
+  @ApiProperty({
+    description: 'User password',
+    example: 'StrongPassword123!',
+    minLength: 8,
+  })
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
@@ -52,22 +68,28 @@ export class RegisterDto extends EmailDto {
   @MaxLength(50)
   lastName: string;
 
-  @ApiProperty({ 
-    description: 'User role', 
-    enum: UserRole, 
-    default: UserRole.BUYER, 
-    required: false 
+  @ApiProperty({
+    description: 'User role',
+    enum: UserRole,
+    default: UserRole.BUYER,
+    required: false,
   })
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
 
-  @ApiPropertyOptional({ description: 'User phone number', example: '+1234567890' })
+  @ApiPropertyOptional({
+    description: 'User phone number',
+    example: '+1234567890',
+  })
   @IsOptional()
   @IsPhoneNumber()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'User address', example: '123 Main St, City, Country' })
+  @ApiPropertyOptional({
+    description: 'User address',
+    example: '123 Main St, City, Country',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -75,12 +97,19 @@ export class RegisterDto extends EmailDto {
 }
 
 export class ChangePasswordDto {
-  @ApiProperty({ description: 'Current password', example: 'currentPassword123' })
+  @ApiProperty({
+    description: 'Current password',
+    example: 'currentPassword123',
+  })
   @IsString()
   @IsNotEmpty()
   currentPassword: string;
 
-  @ApiProperty({ description: 'New password', example: 'newPassword123!', minLength: 8 })
+  @ApiProperty({
+    description: 'New password',
+    example: 'newPassword123!',
+    minLength: 8,
+  })
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
@@ -92,7 +121,10 @@ export class CreateUserDto extends RegisterDto {}
 export class UpdateUserDto extends PartialType(
   OmitType(RegisterDto, ['email', 'password'] as const),
 ) {
-  @ApiPropertyOptional({ description: 'User avatar URL', example: 'https://example.com/avatar.jpg' })
+  @ApiPropertyOptional({
+    description: 'User avatar URL',
+    example: 'https://example.com/avatar.jpg',
+  })
   @IsOptional()
   @IsString()
   avatar?: string;

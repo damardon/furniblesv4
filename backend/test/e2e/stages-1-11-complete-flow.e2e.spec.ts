@@ -5,7 +5,14 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/modules/prisma/prisma.service';
-import { UserRole, OrderStatus, ProductStatus, ReviewStatus, ProductCategory, Difficulty } from '@prisma/client';
+import {
+  UserRole,
+  OrderStatus,
+  ProductStatus,
+  ReviewStatus,
+  ProductCategory,
+  Difficulty,
+} from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { hash } from 'bcrypt';
 
@@ -33,8 +40,10 @@ describe('Stages 1-11 Complete E2E Flow', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
-    
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true }),
+    );
+
     prisma = app.get<PrismaService>(PrismaService);
     jwtService = app.get<JwtService>(JwtService);
 
@@ -49,39 +58,55 @@ describe('Stages 1-11 Complete E2E Flow', () => {
   async function cleanupAllTestData() {
     try {
       if (sellerUser?.id) {
-        await prisma.notificationAnalytics.deleteMany({ where: { userId: sellerUser.id } });
-        await prisma.notification.deleteMany({ where: { userId: sellerUser.id } });
-        await prisma.transaction.deleteMany({ where: { sellerId: sellerUser.id } });
-        await prisma.sellerRating.deleteMany({ where: { sellerId: sellerUser.id } });
+        await prisma.notificationAnalytics.deleteMany({
+          where: { userId: sellerUser.id },
+        });
+        await prisma.notification.deleteMany({
+          where: { userId: sellerUser.id },
+        });
+        await prisma.transaction.deleteMany({
+          where: { sellerId: sellerUser.id },
+        });
+        await prisma.sellerRating.deleteMany({
+          where: { sellerId: sellerUser.id },
+        });
       }
-      
+
       if (product?.id) {
-        await prisma.productRating.deleteMany({ where: { productId: product.id } });
-        await prisma.reviewResponse.deleteMany({ where: { reviewId: review?.id } });
+        await prisma.productRating.deleteMany({
+          where: { productId: product.id },
+        });
+        await prisma.reviewResponse.deleteMany({
+          where: { reviewId: review?.id },
+        });
         await prisma.review.deleteMany({ where: { productId: product.id } });
       }
-      
+
       if (order?.id) {
         await prisma.orderItem.deleteMany({ where: { orderId: order.id } });
         await prisma.order.deleteMany({ where: { id: order.id } });
       }
-      
+
       if (product?.id) {
         await prisma.product.deleteMany({ where: { id: product.id } });
       }
-      
+
       if (sellerUser?.id) {
-        await prisma.sellerProfile.deleteMany({ where: { userId: sellerUser.id } });
+        await prisma.sellerProfile.deleteMany({
+          where: { userId: sellerUser.id },
+        });
       }
-      
+
       await prisma.user.deleteMany({
         where: {
-          email: { in: [
-            'admin@stages-test.com', 
-            'seller@stages-test.com', 
-            'buyer@stages-test.com'
-          ] }
-        }
+          email: {
+            in: [
+              'admin@stages-test.com',
+              'seller@stages-test.com',
+              'buyer@stages-test.com',
+            ],
+          },
+        },
       });
     } catch (error) {
       console.error('Cleanup error:', error);
@@ -91,7 +116,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
   describe('Stage 1-4: Foundation Setup', () => {
     it('Step 1: Should create admin user (Stage 2)', async () => {
       const hashedPassword = await hash('admin123', 10);
-      
+
       adminUser = await prisma.user.create({
         data: {
           email: 'admin@stages-test.com',
@@ -99,8 +124,8 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           lastName: 'Test',
           role: UserRole.ADMIN,
           emailVerified: true,
-          password: hashedPassword
-        }
+          password: hashedPassword,
+        },
       });
 
       expect(adminUser).toBeDefined();
@@ -109,10 +134,10 @@ describe('Stages 1-11 Complete E2E Flow', () => {
     });
 
     it('Step 2: Should authenticate admin (Stage 3)', async () => {
-      adminToken = jwtService.sign({ 
-        sub: adminUser.id, 
-        email: adminUser.email, 
-        role: UserRole.ADMIN 
+      adminToken = jwtService.sign({
+        sub: adminUser.id,
+        email: adminUser.email,
+        role: UserRole.ADMIN,
       });
 
       const response = await request(app.getHttpServer())
@@ -126,7 +151,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
 
     it('Step 3: Should create seller user with profile (Stage 2)', async () => {
       const hashedPassword = await hash('seller123', 10);
-      
+
       sellerUser = await prisma.user.create({
         data: {
           email: 'seller@stages-test.com',
@@ -134,8 +159,8 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           lastName: 'Test',
           role: UserRole.SELLER,
           emailVerified: true,
-          password: hashedPassword
-        }
+          password: hashedPassword,
+        },
       });
 
       // Create seller profile with correct field names from schema
@@ -145,14 +170,14 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           storeName: 'Test Furniture Store',
           slug: 'test-furniture-store',
           description: 'Premium furniture designs',
-          isVerified: true
-        }
+          isVerified: true,
+        },
       });
 
-      sellerToken = jwtService.sign({ 
-        sub: sellerUser.id, 
-        email: sellerUser.email, 
-        role: UserRole.SELLER 
+      sellerToken = jwtService.sign({
+        sub: sellerUser.id,
+        email: sellerUser.email,
+        role: UserRole.SELLER,
       });
 
       expect(sellerUser).toBeDefined();
@@ -162,7 +187,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
 
     it('Step 4: Should create buyer user (Stage 2)', async () => {
       const hashedPassword = await hash('buyer123', 10);
-      
+
       buyerUser = await prisma.user.create({
         data: {
           email: 'buyer@stages-test.com',
@@ -170,14 +195,14 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           lastName: 'Test',
           role: UserRole.BUYER,
           emailVerified: true,
-          password: hashedPassword
-        }
+          password: hashedPassword,
+        },
       });
 
-      buyerToken = jwtService.sign({ 
-        sub: buyerUser.id, 
-        email: buyerUser.email, 
-        role: UserRole.BUYER 
+      buyerToken = jwtService.sign({
+        sub: buyerUser.id,
+        email: buyerUser.email,
+        role: UserRole.BUYER,
       });
 
       expect(buyerUser).toBeDefined();
@@ -201,14 +226,15 @@ describe('Stages 1-11 Complete E2E Flow', () => {
       product = await prisma.product.create({
         data: {
           title: 'Modern Minimalist Chair',
-          description: 'A beautiful minimalist chair design perfect for modern homes.',
+          description:
+            'A beautiful minimalist chair design perfect for modern homes.',
           price: 199.99,
           sellerId: sellerUser.id,
           status: ProductStatus.APPROVED,
           slug: 'modern-minimalist-chair',
           difficulty: Difficulty.BEGINNER,
-          category: ProductCategory.CHAIRS // Using enum instead of categoryId
-        }
+          category: ProductCategory.CHAIRS, // Using enum instead of categoryId
+        },
       });
 
       expect(product).toBeDefined();
@@ -247,7 +273,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         .set('Authorization', `Bearer ${buyerToken}`)
         .send({
           productId: product.id,
-          quantity: 1
+          quantity: 1,
         })
         .expect(201);
 
@@ -284,7 +310,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
     it('Step 12: Should complete order payment simulation (Stage 7-8)', async () => {
       const updatedOrder = await prisma.order.update({
         where: { id: order.id },
-        data: { status: OrderStatus.COMPLETED }
+        data: { status: OrderStatus.COMPLETED },
       });
 
       expect(updatedOrder).toBeDefined();
@@ -299,42 +325,42 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         data: {
           type: 'PLATFORM_FEE',
           status: 'COMPLETED',
-          amount: 20.00,
+          amount: 20.0,
           currency: 'USD',
           sellerId: sellerUser.id,
           orderId: order.id,
-          description: 'Platform fee for order'
-        }
+          description: 'Platform fee for order',
+        },
       });
 
       const stripeFeeTransaction = await prisma.transaction.create({
         data: {
           type: 'STRIPE_FEE',
           status: 'COMPLETED',
-          amount: 6.00,
+          amount: 6.0,
           currency: 'USD',
           sellerId: sellerUser.id,
           orderId: order.id,
-          description: 'Stripe processing fee'
-        }
+          description: 'Stripe processing fee',
+        },
       });
 
       expect(platformFeeTransaction).toBeDefined();
       expect(stripeFeeTransaction).toBeDefined();
-      expect(platformFeeTransaction.amount).toBe(20.00);
-      expect(stripeFeeTransaction.amount).toBe(6.00);
+      expect(platformFeeTransaction.amount).toBe(20.0);
+      expect(stripeFeeTransaction.amount).toBe(6.0);
     });
 
     it('Step 14: Should verify seller revenue calculation (Stage 8)', async () => {
       const sellerTransactions = await prisma.transaction.findMany({
-        where: { sellerId: sellerUser.id }
+        where: { sellerId: sellerUser.id },
       });
 
       const totalFees = sellerTransactions
-        .filter(t => t.type === 'PLATFORM_FEE' || t.type === 'STRIPE_FEE')
+        .filter((t) => t.type === 'PLATFORM_FEE' || t.type === 'STRIPE_FEE')
         .reduce((sum, t) => sum + Number(t.amount), 0);
 
-      expect(totalFees).toBe(26.00);
+      expect(totalFees).toBe(26.0);
       expect(199.99 - totalFees).toBe(173.99);
     });
   });
@@ -349,12 +375,13 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           sellerId: sellerUser.id,
           rating: 5,
           title: 'Amazing Chair Design!',
-          comment: 'This chair design is exactly what I was looking for. High quality and beautiful!',
+          comment:
+            'This chair design is exactly what I was looking for. High quality and beautiful!',
           pros: 'Great design, easy to assemble, high quality materials',
           cons: 'Delivery took a bit longer than expected',
           status: ReviewStatus.PUBLISHED,
-          isVerified: true
-        }
+          isVerified: true,
+        },
       });
 
       expect(review).toBeDefined();
@@ -368,8 +395,9 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         data: {
           reviewId: review.id,
           sellerId: sellerUser.id,
-          comment: 'Thank you so much for your wonderful review! We are thrilled that you love the chair design.'
-        }
+          comment:
+            'Thank you so much for your wonderful review! We are thrilled that you love the chair design.',
+        },
       });
 
       expect(response).toBeDefined();
@@ -388,8 +416,8 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           threeStar: 0,
           fourStar: 0,
           fiveStar: 1,
-          recommendationRate: 100.0
-        }
+          recommendationRate: 100.0,
+        },
       });
 
       const sellerRating = await prisma.sellerRating.create({
@@ -401,8 +429,8 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           twoStar: 0,
           threeStar: 0,
           fourStar: 0,
-          fiveStar: 1
-        }
+          fiveStar: 1,
+        },
       });
 
       expect(productRating.averageRating).toBe(5.0);
@@ -435,9 +463,9 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           data: {
             reviewId: review.id,
             productId: product.id,
-            rating: 5
-          }
-        }
+            rating: 5,
+          },
+        },
       });
 
       expect(notification).toBeDefined();
@@ -459,8 +487,8 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           deliveredAt: new Date(),
           readAt: new Date(),
           deviceType: 'desktop',
-          platform: 'web'
-        }
+          platform: 'web',
+        },
       });
 
       expect(notificationAnalytics).toBeDefined();
@@ -489,7 +517,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           startDate: '2024-01-01T00:00:00.000Z',
           endDate: '2024-12-31T23:59:59.999Z',
           includeComparison: 'true',
-          includeActivity: 'true'
+          includeActivity: 'true',
         })
         .expect(200);
 
@@ -509,7 +537,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           includeProductBreakdown: 'true',
-          includeFees: 'true'
+          includeFees: 'true',
         })
         .expect(200);
 
@@ -523,7 +551,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           sortBy: 'revenue',
-          sortOrder: 'desc'
+          sortOrder: 'desc',
         })
         .expect(200);
 
@@ -538,7 +566,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           includeDistribution: 'true',
-          includeRecentReviews: 'true'
+          includeRecentReviews: 'true',
         })
         .expect(200);
 
@@ -551,7 +579,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         .get('/analytics/admin/platform')
         .set('Authorization', `Bearer ${adminToken}`)
         .query({
-          includeComparison: 'true'
+          includeComparison: 'true',
         })
         .expect(200);
 
@@ -569,12 +597,14 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         .send({
           type: 'SELLER_REVENUE',
           format: 'CSV',
-          filename: 'test_export_stages_1_11'
+          filename: 'test_export_stages_1_11',
         })
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.filename).toContain('test_export_stages_1_11.CSV');
+      expect(response.body.data.filename).toContain(
+        'test_export_stages_1_11.CSV',
+      );
       expect(response.body.data.downloadUrl).toBeDefined();
     });
 
@@ -586,7 +616,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
           title: 'Complete Flow Report',
           description: 'Report covering all stages 1-11',
           metrics: ['revenue', 'orders', 'products', 'reviews'],
-          chartTypes: ['line', 'bar']
+          chartTypes: ['line', 'bar'],
         })
         .expect(200);
 
@@ -600,7 +630,7 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         .set('Authorization', `Bearer ${sellerToken}`)
         .query({
           startDate: '2024-01-01',
-          endDate: '2024-12-31'
+          endDate: '2024-12-31',
         })
         .expect(200);
 
@@ -632,10 +662,10 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         include: {
           items: {
             include: {
-              product: true
-            }
-          }
-        }
+              product: true,
+            },
+          },
+        },
       });
 
       expect(orderWithItems).toBeDefined();
@@ -651,10 +681,10 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         include: {
           product: {
             include: {
-              productRating: true
-            }
-          }
-        }
+              productRating: true,
+            },
+          },
+        },
       });
 
       expect(reviewData).toBeDefined();
@@ -668,20 +698,23 @@ describe('Stages 1-11 Complete E2E Flow', () => {
     it('Should validate business metrics calculations', async () => {
       const totalOrderValue = 199.99;
       const transactions = await prisma.transaction.findMany({
-        where: { orderId: order.id }
+        where: { orderId: order.id },
       });
 
       const actualPlatformFee = transactions
-        .filter(t => t.type === 'PLATFORM_FEE')
+        .filter((t) => t.type === 'PLATFORM_FEE')
         .reduce((sum, t) => sum + Number(t.amount), 0);
 
       const actualStripeFee = transactions
-        .filter(t => t.type === 'STRIPE_FEE')
+        .filter((t) => t.type === 'STRIPE_FEE')
         .reduce((sum, t) => sum + Number(t.amount), 0);
 
-      expect(actualPlatformFee).toBeCloseTo(20.00, 2);
-      expect(actualStripeFee).toBe(6.00);
-      expect(totalOrderValue - actualPlatformFee - actualStripeFee).toBeCloseTo(173.99, 2);
+      expect(actualPlatformFee).toBeCloseTo(20.0, 2);
+      expect(actualStripeFee).toBe(6.0);
+      expect(totalOrderValue - actualPlatformFee - actualStripeFee).toBeCloseTo(
+        173.99,
+        2,
+      );
     });
 
     it('Should validate all modules are accessible via API', async () => {
@@ -690,18 +723,35 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         { method: 'GET', path: '/products', status: 200 },
         { method: 'GET', path: '/orders', token: buyerToken, status: 200 },
         { method: 'GET', path: '/reviews', status: 200 },
-        { method: 'GET', path: '/notifications', token: sellerToken, status: 200 },
-        { method: 'GET', path: '/analytics/seller/dashboard', token: sellerToken, status: 200 },
-        { method: 'GET', path: '/analytics/admin/platform', token: adminToken, status: 200 }
+        {
+          method: 'GET',
+          path: '/notifications',
+          token: sellerToken,
+          status: 200,
+        },
+        {
+          method: 'GET',
+          path: '/analytics/seller/dashboard',
+          token: sellerToken,
+          status: 200,
+        },
+        {
+          method: 'GET',
+          path: '/analytics/admin/platform',
+          token: adminToken,
+          status: 200,
+        },
       ];
 
       for (const endpoint of endpoints) {
-        let req = request(app.getHttpServer())[endpoint.method.toLowerCase()](endpoint.path);
-        
+        let req = request(app.getHttpServer())[endpoint.method.toLowerCase()](
+          endpoint.path,
+        );
+
         if (endpoint.token) {
           req = req.set('Authorization', `Bearer ${endpoint.token}`);
         }
-        
+
         await req.expect(endpoint.status);
       }
     });
@@ -713,21 +763,19 @@ describe('Stages 1-11 Complete E2E Flow', () => {
         request(app.getHttpServer())
           .get('/analytics/seller/dashboard')
           .set('Authorization', `Bearer ${sellerToken}`),
-        request(app.getHttpServer())
-          .get('/products')
-          .query({ limit: 10 }),
+        request(app.getHttpServer()).get('/products').query({ limit: 10 }),
         request(app.getHttpServer())
           .get('/reviews')
           .query({ productId: product.id }),
         request(app.getHttpServer())
           .get('/notifications')
-          .set('Authorization', `Bearer ${sellerToken}`)
+          .set('Authorization', `Bearer ${sellerToken}`),
       ];
 
       const responses = await Promise.all(operations);
       const endTime = Date.now();
 
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.status).toBe(200);
       });
 

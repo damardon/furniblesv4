@@ -1,28 +1,31 @@
 // src/modules/invoices/invoices.controller.ts
-import { 
-  Controller, 
-  Post, 
-  Get, 
+import {
+  Controller,
+  Post,
+  Get,
   Put,
-  Body, 
-  Param, 
+  Body,
+  Param,
   Query,
-  Logger, 
+  Logger,
   UseGuards,
   BadRequestException,
-  Res
+  Res,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
   ApiQuery,
-  ApiBearerAuth 
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { InvoicesService } from './invoices.service';
-import { GenerateInvoiceDto, InvoiceFilterDto } from './dto/generate-invoice.dto';
+import {
+  GenerateInvoiceDto,
+  InvoiceFilterDto,
+} from './dto/generate-invoice.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -43,20 +46,28 @@ export class InvoicesController {
   @Post('generate')
   @UseGuards(RolesGuard)
   @Roles('SELLER', 'ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Generate invoice from order',
-    description: 'Generate an invoice for a completed order'
+    description: 'Generate an invoice for a completed order',
   })
   @ApiResponse({ status: 201, description: 'Invoice generated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid order or invoice already exists' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid order or invoice already exists',
+  })
   async generateInvoice(
     @Body() generateDto: GenerateInvoiceDto,
     @CurrentUser() user: any,
   ) {
     try {
-      this.logger.log(`Generating invoice for order ${generateDto.orderId} by user ${user.id}`);
+      this.logger.log(
+        `Generating invoice for order ${generateDto.orderId} by user ${user.id}`,
+      );
 
-      const invoices = await this.invoicesService.generateInvoiceFromOrder(generateDto.orderId, generateDto);
+      const invoices = await this.invoicesService.generateInvoiceFromOrder(
+        generateDto.orderId,
+        generateDto,
+      );
 
       return {
         success: true,
@@ -65,7 +76,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to generate invoice: ${error.message}`);
-      throw new BadRequestException(`Failed to generate invoice: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to generate invoice: ${error.message}`,
+      );
     }
   }
 
@@ -75,14 +88,30 @@ export class InvoicesController {
   @Get('my-invoices')
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get seller invoices',
-    description: 'Get paginated list of invoices for authenticated seller'
+    description: 'Get paginated list of invoices for authenticated seller',
   })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'ISSUED', 'PAID', 'OVERDUE', 'CANCELLED'] })
-  @ApiQuery({ name: 'currency', required: false, enum: ['USD', 'EUR', 'MXN', 'COP', 'CLP', 'ARS'] })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (ISO format)' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date (ISO format)' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'ISSUED', 'PAID', 'OVERDUE', 'CANCELLED'],
+  })
+  @ApiQuery({
+    name: 'currency',
+    required: false,
+    enum: ['USD', 'EUR', 'MXN', 'COP', 'CLP', 'ARS'],
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date (ISO format)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date (ISO format)',
+  })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiResponse({ status: 200, description: 'Invoices retrieved successfully' })
@@ -93,7 +122,10 @@ export class InvoicesController {
     try {
       this.logger.log(`Getting invoices for seller ${user.id}`);
 
-      const result = await this.invoicesService.getSellerInvoices(user.id, filters);
+      const result = await this.invoicesService.getSellerInvoices(
+        user.id,
+        filters,
+      );
 
       return {
         success: true,
@@ -110,21 +142,30 @@ export class InvoicesController {
    * 🆕 Obtener detalles de invoice específica
    */
   @Get(':invoiceId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get invoice details',
-    description: 'Get detailed information about a specific invoice'
+    description: 'Get detailed information about a specific invoice',
   })
   @ApiParam({ name: 'invoiceId', description: 'Invoice ID' })
-  @ApiResponse({ status: 200, description: 'Invoice details retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice details retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async getInvoiceDetails(
     @Param('invoiceId') invoiceId: string,
     @CurrentUser() user: any,
   ) {
     try {
-      this.logger.log(`Getting invoice details ${invoiceId} for user ${user.id}`);
+      this.logger.log(
+        `Getting invoice details ${invoiceId} for user ${user.id}`,
+      );
 
-      const invoice = await this.invoicesService.getInvoiceById(invoiceId, user.id, user.role);
+      const invoice = await this.invoicesService.getInvoiceById(
+        invoiceId,
+        user.id,
+        user.role,
+      );
 
       return {
         success: true,
@@ -132,7 +173,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to get invoice details: ${error.message}`);
-      throw new BadRequestException(`Failed to get invoice details: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get invoice details: ${error.message}`,
+      );
     }
   }
 
@@ -140,9 +183,9 @@ export class InvoicesController {
    * 🆕 Descargar PDF de invoice
    */
   @Get(':invoiceId/pdf')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Download invoice PDF',
-    description: 'Download PDF version of the invoice'
+    description: 'Download PDF version of the invoice',
   })
   @ApiParam({ name: 'invoiceId', description: 'Invoice ID' })
   @ApiResponse({ status: 200, description: 'PDF downloaded successfully' })
@@ -152,7 +195,9 @@ export class InvoicesController {
     @Res() res: Response,
   ) {
     try {
-      this.logger.log(`Downloading PDF for invoice ${invoiceId} by user ${user.id}`);
+      this.logger.log(
+        `Downloading PDF for invoice ${invoiceId} by user ${user.id}`,
+      );
 
       // Verificar permisos
       await this.invoicesService.getInvoiceById(invoiceId, user.id, user.role);
@@ -171,7 +216,9 @@ export class InvoicesController {
       });
     } catch (error) {
       this.logger.error(`Failed to download invoice PDF: ${error.message}`);
-      throw new BadRequestException(`Failed to download invoice PDF: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to download invoice PDF: ${error.message}`,
+      );
     }
   }
 
@@ -181,13 +228,24 @@ export class InvoicesController {
   @Get('my-invoices/statistics')
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get seller invoice statistics',
-    description: 'Get invoice statistics for authenticated seller'
+    description: 'Get invoice statistics for authenticated seller',
   })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date for stats' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date for stats' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date for stats',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date for stats',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+  })
   async getMyInvoiceStatistics(
     @CurrentUser() user: any,
     @Query('startDate') startDate?: string,
@@ -196,10 +254,10 @@ export class InvoicesController {
     try {
       this.logger.log(`Getting invoice statistics for seller ${user.id}`);
 
-      const stats = await this.invoicesService.getInvoiceStatistics({ 
-        startDate, 
-        endDate, 
-        sellerId: user.id 
+      const stats = await this.invoicesService.getInvoiceStatistics({
+        startDate,
+        endDate,
+        sellerId: user.id,
       });
 
       return {
@@ -208,7 +266,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to get invoice statistics: ${error.message}`);
-      throw new BadRequestException(`Failed to get invoice statistics: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get invoice statistics: ${error.message}`,
+      );
     }
   }
 
@@ -222,15 +282,26 @@ export class InvoicesController {
   @Get('admin/all')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all invoices (Admin)',
-    description: 'Get paginated list of all invoices across all sellers'
+    description: 'Get paginated list of all invoices across all sellers',
   })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'currency', required: false })
-  @ApiQuery({ name: 'sellerId', required: false, description: 'Filter by seller ID' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search in invoice numbers and order numbers' })
-  @ApiResponse({ status: 200, description: 'All invoices retrieved successfully' })
+  @ApiQuery({
+    name: 'sellerId',
+    required: false,
+    description: 'Filter by seller ID',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search in invoice numbers and order numbers',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'All invoices retrieved successfully',
+  })
   async getAllInvoices(
     @CurrentUser() user: any,
     @Query() filters: InvoiceFilterDto,
@@ -248,7 +319,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to get all invoices: ${error.message}`);
-      throw new BadRequestException(`Failed to get all invoices: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get all invoices: ${error.message}`,
+      );
     }
   }
 
@@ -258,21 +331,30 @@ export class InvoicesController {
   @Put('admin/:invoiceId/status')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update invoice status (Admin)',
-    description: 'Update the status of an invoice'
+    description: 'Update the status of an invoice',
   })
   @ApiParam({ name: 'invoiceId', description: 'Invoice ID' })
-  @ApiResponse({ status: 200, description: 'Invoice status updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice status updated successfully',
+  })
   async updateInvoiceStatus(
     @Param('invoiceId') invoiceId: string,
-    @Body() body: { status: 'PENDING' | 'ISSUED' | 'PAID' | 'OVERDUE' | 'CANCELLED' },
+    @Body()
+    body: { status: 'PENDING' | 'ISSUED' | 'PAID' | 'OVERDUE' | 'CANCELLED' },
     @CurrentUser() user: any,
   ) {
     try {
-      this.logger.log(`Admin ${user.id} updating invoice ${invoiceId} status to ${body.status}`);
+      this.logger.log(
+        `Admin ${user.id} updating invoice ${invoiceId} status to ${body.status}`,
+      );
 
-      const result = await this.invoicesService.updateInvoiceStatus(invoiceId, body.status);
+      const result = await this.invoicesService.updateInvoiceStatus(
+        invoiceId,
+        body.status,
+      );
 
       return {
         success: true,
@@ -281,7 +363,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to update invoice status: ${error.message}`);
-      throw new BadRequestException(`Failed to update invoice status: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to update invoice status: ${error.message}`,
+      );
     }
   }
 
@@ -291,11 +375,14 @@ export class InvoicesController {
   @Post('admin/process-overdue')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Process overdue invoices (Admin)',
-    description: 'Mark overdue invoices and send notifications'
+    description: 'Mark overdue invoices and send notifications',
   })
-  @ApiResponse({ status: 200, description: 'Overdue invoices processed successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Overdue invoices processed successfully',
+  })
   async processOverdueInvoices(@CurrentUser() user: any) {
     try {
       this.logger.log(`Admin ${user.id} processing overdue invoices`);
@@ -309,7 +396,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to process overdue invoices: ${error.message}`);
-      throw new BadRequestException(`Failed to process overdue invoices: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to process overdue invoices: ${error.message}`,
+      );
     }
   }
 
@@ -319,14 +408,30 @@ export class InvoicesController {
   @Get('admin/statistics')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get invoice statistics (Admin)',
-    description: 'Get comprehensive statistics about invoices across the platform'
+    description:
+      'Get comprehensive statistics about invoices across the platform',
   })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date for stats' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date for stats' })
-  @ApiQuery({ name: 'sellerId', required: false, description: 'Filter by specific seller' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date for stats',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date for stats',
+  })
+  @ApiQuery({
+    name: 'sellerId',
+    required: false,
+    description: 'Filter by specific seller',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+  })
   async getInvoiceStatistics(
     @CurrentUser() user: any,
     @Query('startDate') startDate?: string,
@@ -336,10 +441,10 @@ export class InvoicesController {
     try {
       this.logger.log(`Admin ${user.id} getting invoice statistics`);
 
-      const stats = await this.invoicesService.getInvoiceStatistics({ 
-        startDate, 
-        endDate, 
-        sellerId 
+      const stats = await this.invoicesService.getInvoiceStatistics({
+        startDate,
+        endDate,
+        sellerId,
       });
 
       return {
@@ -348,7 +453,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to get invoice statistics: ${error.message}`);
-      throw new BadRequestException(`Failed to get invoice statistics: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get invoice statistics: ${error.message}`,
+      );
     }
   }
 
@@ -358,21 +465,29 @@ export class InvoicesController {
   @Get('admin/seller/:sellerId')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get invoices by seller (Admin)',
-    description: 'Get all invoices for a specific seller'
+    description: 'Get all invoices for a specific seller',
   })
   @ApiParam({ name: 'sellerId', description: 'Seller user ID' })
-  @ApiResponse({ status: 200, description: 'Seller invoices retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Seller invoices retrieved successfully',
+  })
   async getSellerInvoicesAdmin(
     @Param('sellerId') sellerId: string,
     @CurrentUser() user: any,
     @Query() filters: InvoiceFilterDto,
   ) {
     try {
-      this.logger.log(`Admin ${user.id} getting invoices for seller ${sellerId}`);
+      this.logger.log(
+        `Admin ${user.id} getting invoices for seller ${sellerId}`,
+      );
 
-      const result = await this.invoicesService.getSellerInvoices(sellerId, filters);
+      const result = await this.invoicesService.getSellerInvoices(
+        sellerId,
+        filters,
+      );
 
       return {
         success: true,
@@ -382,7 +497,9 @@ export class InvoicesController {
       };
     } catch (error) {
       this.logger.error(`Failed to get seller invoices: ${error.message}`);
-      throw new BadRequestException(`Failed to get seller invoices: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get seller invoices: ${error.message}`,
+      );
     }
   }
 }

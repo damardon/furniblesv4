@@ -94,7 +94,6 @@ export function PayPalPaymentForm({ amount, currency, cartItems, customerInfo }:
             const result = await response.json()
             
             if (result.status === 'COMPLETED') {
-              console.log('✅ [PAYPAL] Payment successful')
               
               // Limpiar carrito y redirigir
               await clearCart()
@@ -118,7 +117,6 @@ export function PayPalPaymentForm({ amount, currency, cartItems, customerInfo }:
         },
 
         onCancel: () => {
-          console.log('ℹ️ [PAYPAL] Payment cancelled by user')
           setIsProcessing(false)
         }
 

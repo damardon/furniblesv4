@@ -9,24 +9,36 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 @WSGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   },
-  namespace: '/notifications'
+  namespace: '/notifications',
 })
-export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class WebSocketGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
   private readonly logger = new Logger(WebSocketGateway.name);
   private userSockets = new Map<string, string>(); // userId -> socketId
+  private readonly frontendUrl: string;
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {
+    this.frontendUrl = this.configService.get(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
+  }
 
   async handleConnection(client: Socket) {
     try {

@@ -20,7 +20,7 @@ export class CronService {
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async cleanupAbandonedCarts() {
     this.logger.log('Starting cleanup of abandoned carts...');
-    
+
     try {
       const deletedCount = await this.cartService.cleanupAbandonedCarts();
       this.logger.log(`Cleaned up ${deletedCount} abandoned cart items`);
@@ -35,7 +35,7 @@ export class CronService {
   @Cron(CronExpression.EVERY_HOUR)
   async cancelPendingOrders() {
     this.logger.log('Starting cleanup of pending orders...');
-    
+
     try {
       const cancelledCount = await this.ordersService.cleanupPendingOrders();
       this.logger.log(`Cancelled ${cancelledCount} pending orders`);
@@ -50,10 +50,13 @@ export class CronService {
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async deactivateExpiredTokens() {
     this.logger.log('Starting cleanup of expired download tokens...');
-    
+
     try {
-      const deactivatedCount = await this.downloadsService.cleanupExpiredTokens();
-      this.logger.log(`Deactivated ${deactivatedCount} expired download tokens`);
+      const deactivatedCount =
+        await this.downloadsService.cleanupExpiredTokens();
+      this.logger.log(
+        `Deactivated ${deactivatedCount} expired download tokens`,
+      );
     } catch (error) {
       this.logger.error('Failed to cleanup expired tokens:', error);
     }
@@ -65,7 +68,7 @@ export class CronService {
   @Cron(CronExpression.EVERY_DAY_AT_6AM)
   async generateDailyReport() {
     this.logger.log('Generating daily activity report...');
-    
+
     try {
       // TODO: Implementar generación de reportes
       // - Órdenes del día anterior

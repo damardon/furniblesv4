@@ -9,7 +9,7 @@ import {
   Body,
   UseGuards,
   HttpCode,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,7 +17,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery
+  ApiQuery,
 } from '@nestjs/swagger';
 import { OrdersService } from '../orders/orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -36,87 +36,93 @@ export class AdminOrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener todas las órdenes (Admin)',
-    description: 'Retorna todas las órdenes del sistema con filtros avanzados. Solo administradores.'
+    description:
+      'Retorna todas las órdenes del sistema con filtros avanzados. Solo administradores.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Órdenes obtenidas exitosamente',
-    type: PaginatedOrdersDto 
+    type: PaginatedOrdersDto,
   })
   async getAllOrders(
-    @Query() filters: OrderFiltersDto
+    @Query() filters: OrderFiltersDto,
   ): Promise<PaginatedOrdersDto> {
     // Implementación real usando método existente pero sin filtro de usuario
     return this.ordersService.getAllOrdersAdmin(filters);
   }
 
   @Get('analytics')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener analytics de órdenes',
-    description: 'Retorna estadísticas y métricas de las órdenes del sistema.'
+    description: 'Retorna estadísticas y métricas de las órdenes del sistema.',
   })
   @ApiQuery({ name: 'fromDate', required: false })
   @ApiQuery({ name: 'toDate', required: false })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Analytics obtenidos exitosamente'
+  @ApiResponse({
+    status: 200,
+    description: 'Analytics obtenidos exitosamente',
   })
   async getOrderAnalytics(
     @Query('fromDate') fromDate?: string,
-    @Query('toDate') toDate?: string
+    @Query('toDate') toDate?: string,
   ) {
     return this.ordersService.getOrderAnalytics({
       fromDate,
-      toDate
+      toDate,
     });
   }
 
   @Post(':id/refund')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Procesar reembolso',
-    description: 'Procesa un reembolso para una orden específica.'
+    description: 'Procesa un reembolso para una orden específica.',
   })
   @ApiParam({ name: 'id', description: 'ID de la orden' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Reembolso procesado exitosamente' 
+  @ApiResponse({
+    status: 200,
+    description: 'Reembolso procesado exitosamente',
   })
   async processRefund(
     @Param('id') orderId: string,
-    @Body() body: { amount?: number; reason?: string }
+    @Body() body: { amount?: number; reason?: string },
   ) {
     return this.ordersService.processRefund(orderId, body.amount, body.reason);
   }
 
   @Put(':id/status')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Actualizar estado de orden',
-    description: 'Actualiza manualmente el estado de una orden.'
+    description: 'Actualiza manualmente el estado de una orden.',
   })
   @ApiParam({ name: 'id', description: 'ID de la orden' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Estado actualizado exitosamente' 
+  @ApiResponse({
+    status: 200,
+    description: 'Estado actualizado exitosamente',
   })
   async updateOrderStatus(
     @Param('id') orderId: string,
-    @Body() body: { status: OrderStatus; reason?: string }
+    @Body() body: { status: OrderStatus; reason?: string },
   ) {
-    return this.ordersService.updateOrderStatus(orderId, body.status, body.reason);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      body.status,
+      body.reason,
+    );
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener orden específica (Admin)',
-    description: 'Obtiene detalles completos de cualquier orden. Solo administradores.'
+    description:
+      'Obtiene detalles completos de cualquier orden. Solo administradores.',
   })
   @ApiParam({ name: 'id', description: 'ID de la orden' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Orden obtenida exitosamente' 
+  @ApiResponse({
+    status: 200,
+    description: 'Orden obtenida exitosamente',
   })
   async getOrderById(@Param('id') orderId: string) {
     return this.ordersService.getOrderById(orderId); // Sin filtro de usuario para admin
@@ -124,32 +130,33 @@ export class AdminOrdersController {
 
   @Post(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Cancelar orden (Admin)',
-    description: 'Cancela una orden específica. Solo administradores.'
+    description: 'Cancela una orden específica. Solo administradores.',
   })
   @ApiParam({ name: 'id', description: 'ID de la orden' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Orden cancelada exitosamente' 
+  @ApiResponse({
+    status: 200,
+    description: 'Orden cancelada exitosamente',
   })
   async cancelOrder(
     @Param('id') orderId: string,
-    @Body() body: { reason?: string }
+    @Body() body: { reason?: string },
   ) {
     return this.ordersService.cancelOrder(orderId, body.reason);
   }
 
   @Post(':id/complete')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Completar orden manualmente (Admin)',
-    description: 'Marca una orden como completada manualmente. Solo administradores.'
+    description:
+      'Marca una orden como completada manualmente. Solo administradores.',
   })
   @ApiParam({ name: 'id', description: 'ID de la orden' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Orden completada exitosamente' 
+  @ApiResponse({
+    status: 200,
+    description: 'Orden completada exitosamente',
   })
   async completeOrder(@Param('id') orderId: string) {
     return this.ordersService.completeOrder(orderId);

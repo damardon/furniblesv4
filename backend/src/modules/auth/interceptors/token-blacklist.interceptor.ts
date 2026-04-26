@@ -1,4 +1,10 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express'; // ← AGREGAR ESTA LÍNEA
@@ -12,14 +18,17 @@ export class TokenBlacklistInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest<Request>(); // ← MOVER Y TIPAR
-    
+
     // ✅ AGREGAR - Permitir peticiones OPTIONS (preflight CORS)
     if (request.method === 'OPTIONS') {
       return next.handle();
     }
-    
+
     // Verificar si la ruta es pública
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
@@ -34,10 +43,11 @@ export class TokenBlacklistInterceptor implements NestInterceptor {
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.replace('Bearer ', '');
-      
+
       // Verificar si el token está en blacklist
-      const isBlacklisted = await this.tokenBlacklistService.isTokenBlacklisted(token);
-      
+      const isBlacklisted =
+        await this.tokenBlacklistService.isTokenBlacklisted(token);
+
       if (isBlacklisted) {
         throw new UnauthorizedException('Token ha sido revocado');
       }

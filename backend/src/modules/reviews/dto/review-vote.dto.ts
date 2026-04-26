@@ -7,7 +7,7 @@ export class ReviewVoteDto {
   @ApiProperty({
     description: 'Vote type',
     enum: ReviewHelpfulness,
-    example: 'HELPFUL'
+    example: 'HELPFUL',
   })
   @IsNotEmpty({ message: 'vote.required' })
   @IsIn(['HELPFUL', 'NOT_HELPFUL'], { message: 'vote.invalid' })

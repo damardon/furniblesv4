@@ -62,7 +62,9 @@ export class StripeService {
   /**
    * Crear sesión de Stripe Checkout
    */
-  async createCheckoutSession(params: CreateCheckoutSessionDto): Promise<Stripe.Checkout.Session> {
+  async createCheckoutSession(
+    params: CreateCheckoutSessionDto,
+  ): Promise<Stripe.Checkout.Session> {
     return this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -97,14 +99,19 @@ export class StripeService {
   /**
    * Recuperar Payment Intent
    */
-  async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+  async retrievePaymentIntent(
+    paymentIntentId: string,
+  ): Promise<Stripe.PaymentIntent> {
     return this.stripe.paymentIntents.retrieve(paymentIntentId);
   }
 
   /**
    * Crear reembolso
    */
-  async createRefund(paymentIntentId: string, amount?: number): Promise<Stripe.Refund> {
+  async createRefund(
+    paymentIntentId: string,
+    amount?: number,
+  ): Promise<Stripe.Refund> {
     return this.stripe.refunds.create({
       payment_intent: paymentIntentId,
       amount: amount ? Math.round(amount * 100) : undefined,
@@ -116,7 +123,11 @@ export class StripeService {
    */
   verifyWebhookSignature(payload: Buffer, signature: string): Stripe.Event {
     const endpointSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
-    return this.stripe.webhooks.constructEvent(payload, signature, endpointSecret);
+    return this.stripe.webhooks.constructEvent(
+      payload,
+      signature,
+      endpointSecret,
+    );
   }
 
   // ============================================
@@ -126,10 +137,12 @@ export class StripeService {
   /**
    * 🆕 Crear Stripe Connect Account para seller
    */
-  async createConnectAccount(params: CreateConnectAccountDto): Promise<Stripe.Account> {
+  async createConnectAccount(
+    params: CreateConnectAccountDto,
+  ): Promise<Stripe.Account> {
     try {
       this.logger.log(`Creating Connect account for ${params.email}`);
-      
+
       return await this.stripe.accounts.create({
         type: 'express',
         country: params.country,
@@ -185,7 +198,9 @@ export class StripeService {
     try {
       return await this.stripe.accounts.retrieve(accountId);
     } catch (error) {
-      this.logger.error(`Failed to retrieve account ${accountId}: ${error.message}`);
+      this.logger.error(
+        `Failed to retrieve account ${accountId}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -193,10 +208,14 @@ export class StripeService {
   /**
    * 🆕 Crear checkout session con split payment
    */
-  async createCheckoutSessionWithSplit(params: CreateCheckoutSessionWithSplitDto): Promise<Stripe.Checkout.Session> {
+  async createCheckoutSessionWithSplit(
+    params: CreateCheckoutSessionWithSplitDto,
+  ): Promise<Stripe.Checkout.Session> {
     try {
-      this.logger.log(`Creating split payment session for order ${params.orderNumber}`);
-      
+      this.logger.log(
+        `Creating split payment session for order ${params.orderNumber}`,
+      );
+
       return await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -235,7 +254,9 @@ export class StripeService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to create split payment session: ${error.message}`);
+      this.logger.error(
+        `Failed to create split payment session: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -245,8 +266,10 @@ export class StripeService {
    */
   async createTransfer(params: CreateTransferDto): Promise<Stripe.Transfer> {
     try {
-      this.logger.log(`Creating transfer of ${params.amount} to ${params.destination}`);
-      
+      this.logger.log(
+        `Creating transfer of ${params.amount} to ${params.destination}`,
+      );
+
       return await this.stripe.transfers.create({
         amount: Math.round(params.amount * 100),
         currency: params.currency,
@@ -265,8 +288,10 @@ export class StripeService {
    */
   async createPayout(params: CreatePayoutDto): Promise<Stripe.Payout> {
     try {
-      this.logger.log(`Creating payout of ${params.amount} for account ${params.stripeAccountId}`);
-      
+      this.logger.log(
+        `Creating payout of ${params.amount} for account ${params.stripeAccountId}`,
+      );
+
       return await this.stripe.payouts.create(
         {
           amount: Math.round(params.amount * 100),
@@ -275,7 +300,7 @@ export class StripeService {
         },
         {
           stripeAccount: params.stripeAccountId,
-        }
+        },
       );
     } catch (error) {
       this.logger.error(`Failed to create payout: ${error.message}`);
@@ -292,7 +317,9 @@ export class StripeService {
         stripeAccount: accountId,
       });
     } catch (error) {
-      this.logger.error(`Failed to get balance for account ${accountId}: ${error.message}`);
+      this.logger.error(
+        `Failed to get balance for account ${accountId}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -300,7 +327,10 @@ export class StripeService {
   /**
    * 🆕 Listar transfers de una cuenta
    */
-  async listTransfers(accountId?: string, limit: number = 20): Promise<Stripe.ApiList<Stripe.Transfer>> {
+  async listTransfers(
+    accountId?: string,
+    limit: number = 20,
+  ): Promise<Stripe.ApiList<Stripe.Transfer>> {
     try {
       const params: Stripe.TransferListParams = {
         limit,
@@ -320,14 +350,19 @@ export class StripeService {
   /**
    * 🆕 Listar payouts de una cuenta
    */
-  async listPayouts(accountId: string, limit: number = 20): Promise<Stripe.ApiList<Stripe.Payout>> {
+  async listPayouts(
+    accountId: string,
+    limit: number = 20,
+  ): Promise<Stripe.ApiList<Stripe.Payout>> {
     try {
       return await this.stripe.payouts.list(
         { limit },
-        { stripeAccount: accountId }
+        { stripeAccount: accountId },
       );
     } catch (error) {
-      this.logger.error(`Failed to list payouts for account ${accountId}: ${error.message}`);
+      this.logger.error(
+        `Failed to list payouts for account ${accountId}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -335,10 +370,14 @@ export class StripeService {
   /**
    * 🆕 Crear reembolso con split payment
    */
-  async createRefundWithSplit(paymentIntentId: string, amount?: number, reverseTransfer: boolean = true): Promise<Stripe.Refund> {
+  async createRefundWithSplit(
+    paymentIntentId: string,
+    amount?: number,
+    reverseTransfer: boolean = true,
+  ): Promise<Stripe.Refund> {
     try {
       this.logger.log(`Creating refund for payment intent ${paymentIntentId}`);
-      
+
       return await this.stripe.refunds.create({
         payment_intent: paymentIntentId,
         amount: amount ? Math.round(amount * 100) : undefined,
@@ -353,9 +392,18 @@ export class StripeService {
   /**
    * 🆕 Verificar webhook signature para Connect
    */
-  verifyConnectWebhookSignature(payload: Buffer, signature: string): Stripe.Event {
-    const endpointSecret = this.configService.get('STRIPE_CONNECT_WEBHOOK_SECRET');
-    return this.stripe.webhooks.constructEvent(payload, signature, endpointSecret);
+  verifyConnectWebhookSignature(
+    payload: Buffer,
+    signature: string,
+  ): Stripe.Event {
+    const endpointSecret = this.configService.get(
+      'STRIPE_CONNECT_WEBHOOK_SECRET',
+    );
+    return this.stripe.webhooks.constructEvent(
+      payload,
+      signature,
+      endpointSecret,
+    );
   }
 
   /**
@@ -365,7 +413,9 @@ export class StripeService {
     try {
       return await this.stripe.accounts.retrieve(accountId);
     } catch (error) {
-      this.logger.error(`Failed to get capabilities for account ${accountId}: ${error.message}`);
+      this.logger.error(
+        `Failed to get capabilities for account ${accountId}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -394,7 +444,9 @@ export class StripeService {
     try {
       return await this.stripe.accounts.createLoginLink(accountId);
     } catch (error) {
-      this.logger.error(`Failed to create login link for account ${accountId}: ${error.message}`);
+      this.logger.error(
+        `Failed to create login link for account ${accountId}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -403,12 +455,12 @@ export class StripeService {
    * 🆕 Listar transacciones de una cuenta
    */
   async listAccountTransactions(
-    accountId: string, 
+    accountId: string,
     options: {
       limit?: number;
       starting_after?: string;
       created?: { gte?: number; lte?: number };
-    } = {}
+    } = {},
   ): Promise<Stripe.ApiList<Stripe.BalanceTransaction>> {
     try {
       return await this.stripe.balanceTransactions.list(
@@ -417,10 +469,12 @@ export class StripeService {
           starting_after: options.starting_after,
           created: options.created,
         },
-        { stripeAccount: accountId }
+        { stripeAccount: accountId },
       );
     } catch (error) {
-      this.logger.error(`Failed to list transactions for account ${accountId}: ${error.message}`);
+      this.logger.error(
+        `Failed to list transactions for account ${accountId}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -428,14 +482,21 @@ export class StripeService {
   /**
    * 🆕 Calcular fees de Stripe para una transacción
    */
-  calculateStripeFees(amount: number, currency: string = 'USD'): {
+  calculateStripeFees(
+    amount: number,
+    currency: string = 'USD',
+  ): {
     stripeFeePercentage: number;
     stripeFeeFixed: number;
     totalStripeFee: number;
     netAmount: number;
   } {
-    const feeRate = parseFloat(this.configService.get('STRIPE_FEE_RATE', '0.029')); // 2.9%
-    const feeFixed = parseFloat(this.configService.get('STRIPE_FEE_FIXED', '0.30')); // $0.30
+    const feeRate = parseFloat(
+      this.configService.get('STRIPE_FEE_RATE', '0.029'),
+    ); // 2.9%
+    const feeFixed = parseFloat(
+      this.configService.get('STRIPE_FEE_FIXED', '0.30'),
+    ); // $0.30
 
     const stripeFeePercentage = amount * feeRate;
     const stripeFeeFixed = feeFixed;
@@ -449,7 +510,7 @@ export class StripeService {
       netAmount,
     };
   }
-    // ============================================
+  // ============================================
   // 🆕 MÉTODOS PARA FRONTEND CHECKOUT
   // ============================================
 
@@ -458,13 +519,13 @@ export class StripeService {
    * Este método es el que llama el frontend desde el checkout
    */
   async createPaymentIntent(
-    amount: number, 
-    currency: string, 
-    metadata: Record<string, string>
+    amount: number,
+    currency: string,
+    metadata: Record<string, string>,
   ): Promise<Stripe.PaymentIntent> {
     try {
       this.logger.log(`Creating Payment Intent: ${amount} ${currency}`);
-      
+
       return await this.stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convertir a centavos
         currency: currency.toLowerCase(),
@@ -484,7 +545,9 @@ export class StripeService {
   /**
    * 🆕 MÉTODO CRÍTICO: Confirmar Payment Intent
    */
-  async confirmPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+  async confirmPaymentIntent(
+    paymentIntentId: string,
+  ): Promise<Stripe.PaymentIntent> {
     try {
       this.logger.log(`Confirming Payment Intent: ${paymentIntentId}`);
       return await this.stripe.paymentIntents.confirm(paymentIntentId);
@@ -500,11 +563,11 @@ export class StripeService {
    */
   constructWebhookEvent(body: Buffer, signature: string): Stripe.Event {
     const endpointSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
-    
+
     if (!endpointSecret) {
       throw new Error('STRIPE_WEBHOOK_SECRET not configured');
     }
-    
+
     return this.stripe.webhooks.constructEvent(body, signature, endpointSecret);
   }
 
@@ -522,7 +585,7 @@ export class StripeService {
   }> {
     try {
       const paymentIntent = await this.retrievePaymentIntent(paymentIntentId);
-      
+
       return {
         paymentId: paymentIntent.id,
         amount: paymentIntent.amount / 100, // Convertir de centavos
@@ -541,16 +604,23 @@ export class StripeService {
   /**
    * 🆕 Buscar Payment Intent por metadata (útil para buscar por orderId)
    */
-  async findPaymentIntentByMetadata(metadataKey: string, metadataValue: string): Promise<Stripe.PaymentIntent | null> {
+  async findPaymentIntentByMetadata(
+    metadataKey: string,
+    metadataValue: string,
+  ): Promise<Stripe.PaymentIntent | null> {
     try {
       const paymentIntents = await this.stripe.paymentIntents.list({
         limit: 100,
       });
 
-      const found = paymentIntents.data.find(pi => pi.metadata[metadataKey] === metadataValue);
+      const found = paymentIntents.data.find(
+        (pi) => pi.metadata[metadataKey] === metadataValue,
+      );
       return found || null;
     } catch (error) {
-      this.logger.error(`Failed to find payment intent by metadata: ${error.message}`);
+      this.logger.error(
+        `Failed to find payment intent by metadata: ${error.message}`,
+      );
       return null;
     }
   }
@@ -563,11 +633,13 @@ export class StripeService {
     currency: string,
     sellerId: string,
     platformFeeAmount: number,
-    metadata: Record<string, string>
+    metadata: Record<string, string>,
   ): Promise<Stripe.PaymentIntent> {
     try {
-      this.logger.log(`Creating split Payment Intent: ${amount} ${currency} for seller ${sellerId}`);
-      
+      this.logger.log(
+        `Creating split Payment Intent: ${amount} ${currency} for seller ${sellerId}`,
+      );
+
       return await this.stripe.paymentIntents.create({
         amount: Math.round(amount * 100),
         currency: currency.toLowerCase(),
@@ -587,7 +659,9 @@ export class StripeService {
         confirm: false,
       });
     } catch (error) {
-      this.logger.error(`Failed to create split Payment Intent: ${error.message}`);
+      this.logger.error(
+        `Failed to create split Payment Intent: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -602,10 +676,14 @@ export class StripeService {
   /**
    * 🆕 Test de conectividad con Stripe
    */
-  async testConnection(): Promise<{ success: boolean; message: string; balance?: number }> {
+  async testConnection(): Promise<{
+    success: boolean;
+    message: string;
+    balance?: number;
+  }> {
     try {
       const balance = await this.stripe.balance.retrieve();
-      
+
       return {
         success: true,
         message: 'Stripe connection successful',
@@ -644,7 +722,9 @@ export class StripeService {
       }
 
       if (account.requirements?.currently_due?.length > 0) {
-        reasons.push(`Missing requirements: ${account.requirements.currently_due.join(', ')}`);
+        reasons.push(
+          `Missing requirements: ${account.requirements.currently_due.join(', ')}`,
+        );
       }
 
       return {
@@ -663,11 +743,13 @@ export class StripeService {
   /**
    * 🆕 Obtener estadísticas de pagos
    */
-  async getPaymentStats(options: {
-    startDate?: Date;
-    endDate?: Date;
-    currency?: string;
-  } = {}): Promise<{
+  async getPaymentStats(
+    options: {
+      startDate?: Date;
+      endDate?: Date;
+      currency?: string;
+    } = {},
+  ): Promise<{
     totalAmount: number;
     totalTransactions: number;
     averageAmount: number;
@@ -679,7 +761,9 @@ export class StripeService {
       };
 
       if (options.startDate) {
-        params.created = { gte: Math.floor(options.startDate.getTime() / 1000) };
+        params.created = {
+          gte: Math.floor(options.startDate.getTime() / 1000),
+        };
       }
 
       if (options.endDate) {
@@ -688,11 +772,15 @@ export class StripeService {
       }
 
       const paymentIntents = await this.stripe.paymentIntents.list(params);
-      
-      const successful = paymentIntents.data.filter(pi => pi.status === 'succeeded');
-      const totalAmount = successful.reduce((sum, pi) => sum + pi.amount, 0) / 100;
+
+      const successful = paymentIntents.data.filter(
+        (pi) => pi.status === 'succeeded',
+      );
+      const totalAmount =
+        successful.reduce((sum, pi) => sum + pi.amount, 0) / 100;
       const totalTransactions = successful.length;
-      const averageAmount = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
+      const averageAmount =
+        totalTransactions > 0 ? totalAmount / totalTransactions : 0;
 
       return {
         totalAmount,
@@ -705,7 +793,4 @@ export class StripeService {
       throw error;
     }
   }
-      
 }
-
-

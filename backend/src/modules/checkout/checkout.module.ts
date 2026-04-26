@@ -7,15 +7,9 @@ import { OrdersModule } from '../orders/orders.module';
 import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
-  imports: [
-    PrismaModule, 
-    CartModule, 
-    OrdersModule, 
-    StripeModule
-  ],
+  imports: [PrismaModule, CartModule, OrdersModule, StripeModule],
   controllers: [CheckoutController],
   providers: [CheckoutService],
   exports: [CheckoutService],
 })
 export class CheckoutModule {}
-

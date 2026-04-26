@@ -6,10 +6,10 @@ describe('Cart Functional Tests', () => {
       const canAddMore = currentProducts < maxProducts;
       expect(canAddMore).toBe(true);
     });
-    
+
     it('should calculate fees correctly', () => {
       const productPrice = 100;
-      const platformFeeRate = 0.10;
+      const platformFeeRate = 0.1;
       const expectedFee = productPrice * platformFeeRate;
       expect(expectedFee).toBe(10);
     });

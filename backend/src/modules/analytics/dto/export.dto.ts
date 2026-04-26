@@ -1,6 +1,13 @@
 // src/modules/analytics/dto/export.dto.ts
 
-import { IsEnum, IsOptional, IsString, IsArray, IsBoolean, IsUUID } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsArray,
+  IsBoolean,
+  IsUUID,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BaseAnalyticsFiltersDto } from './filters.dto';
@@ -9,7 +16,7 @@ export enum ExportFormat {
   CSV = 'csv',
   XLSX = 'xlsx',
   PDF = 'pdf',
-  JSON = 'json'
+  JSON = 'json',
 }
 
 export enum ExportType {
@@ -24,20 +31,20 @@ export enum ExportType {
   CONVERSION_FUNNEL = 'conversion_funnel',
   COHORT_ANALYSIS = 'cohort_analysis',
   NOTIFICATION_ANALYTICS = 'notification_analytics',
-  CUSTOM_REPORT = 'custom_report'
+  CUSTOM_REPORT = 'custom_report',
 }
 
 export enum Frequency {
   DAILY = 'daily',
   WEEKLY = 'weekly',
   MONTHLY = 'monthly',
-  QUARTERLY = 'quarterly'
-}  
+  QUARTERLY = 'quarterly',
+}
 
 export class ExportDataDto extends BaseAnalyticsFiltersDto {
   @ApiProperty({
     description: 'Type of data to export',
-    enum: ExportType
+    enum: ExportType,
   })
   @IsEnum(ExportType, { message: 'type must be a valid export type' })
   type: ExportType;
@@ -45,14 +52,16 @@ export class ExportDataDto extends BaseAnalyticsFiltersDto {
   @ApiProperty({
     description: 'Export format',
     enum: ExportFormat,
-    default: ExportFormat.CSV
+    default: ExportFormat.CSV,
   })
-  @IsEnum(ExportFormat, { message: 'format must be one of: csv, xlsx, pdf, json' })
+  @IsEnum(ExportFormat, {
+    message: 'format must be one of: csv, xlsx, pdf, json',
+  })
   format: ExportFormat = ExportFormat.CSV;
 
   @ApiPropertyOptional({
     description: 'Custom filename (without extension)',
-    example: 'my_analytics_report'
+    example: 'my_analytics_report',
   })
   @IsOptional()
   @IsString({ message: 'filename must be a string' })
@@ -60,7 +69,7 @@ export class ExportDataDto extends BaseAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Specific seller ID for seller-specific exports',
-    example: 'clp1234567890abcdef'
+    example: 'clp1234567890abcdef',
   })
   @IsOptional()
   @IsUUID(4, { message: 'sellerId must be a valid UUID' })
@@ -68,7 +77,7 @@ export class ExportDataDto extends BaseAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Specific product ID for product-specific exports',
-    example: 'clp1234567890abcdef'
+    example: 'clp1234567890abcdef',
   })
   @IsOptional()
   @IsUUID(4, { message: 'productId must be a valid UUID' })
@@ -76,7 +85,7 @@ export class ExportDataDto extends BaseAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include metadata in export',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -85,7 +94,7 @@ export class ExportDataDto extends BaseAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include charts in export (PDF only)',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -96,14 +105,14 @@ export class ExportDataDto extends BaseAnalyticsFiltersDto {
 export class CustomReportDto extends BaseAnalyticsFiltersDto {
   @ApiProperty({
     description: 'Report title',
-    example: 'Q4 2024 Sales Performance Report'
+    example: 'Q4 2024 Sales Performance Report',
   })
   @IsString({ message: 'title must be a string' })
   title: string;
 
   @ApiPropertyOptional({
     description: 'Report description',
-    example: 'Comprehensive analysis of sales performance for Q4 2024'
+    example: 'Comprehensive analysis of sales performance for Q4 2024',
   })
   @IsOptional()
   @IsString({ message: 'description must be a string' })
@@ -112,7 +121,7 @@ export class CustomReportDto extends BaseAnalyticsFiltersDto {
   @ApiProperty({
     description: 'Metrics to include in the report',
     type: [String],
-    example: ['revenue', 'orders', 'customers', 'reviews']
+    example: ['revenue', 'orders', 'customers', 'reviews'],
   })
   @IsArray({ message: 'metrics must be an array' })
   @IsString({ each: true, message: 'Each metric must be a string' })
@@ -121,7 +130,7 @@ export class CustomReportDto extends BaseAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Chart types to include',
     type: [String],
-    example: ['line', 'bar', 'pie']
+    example: ['line', 'bar', 'pie'],
   })
   @IsOptional()
   @IsArray({ message: 'chartTypes must be an array' })
@@ -130,7 +139,7 @@ export class CustomReportDto extends BaseAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include raw data tables',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -139,7 +148,7 @@ export class CustomReportDto extends BaseAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include executive summary',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -150,14 +159,14 @@ export class CustomReportDto extends BaseAnalyticsFiltersDto {
 export class ScheduleReportDto {
   @ApiProperty({
     description: 'Report name',
-    example: 'Weekly Sales Report'
+    example: 'Weekly Sales Report',
   })
   @IsString({ message: 'name must be a string' })
   name: string;
 
   @ApiProperty({
     description: 'Report type',
-    enum: ExportType
+    enum: ExportType,
   })
   @IsEnum(ExportType, { message: 'type must be a valid export type' })
   type: ExportType;
@@ -165,17 +174,17 @@ export class ScheduleReportDto {
   @ApiProperty({
     description: 'Schedule frequency',
     enum: Frequency,
-    example: 'weekly'
+    example: 'weekly',
   })
   @IsEnum(Frequency, {
-    message: 'frequency must be one of: daily, weekly, monthly, quarterly'
+    message: 'frequency must be one of: daily, weekly, monthly, quarterly',
   })
   frequency: Frequency;
 
   @ApiPropertyOptional({
     description: 'Email recipients',
     type: [String],
-    example: ['admin@furnibles.com', 'analytics@furnibles.com']
+    example: ['admin@furnibles.com', 'analytics@furnibles.com'],
   })
   @IsOptional()
   @IsArray({ message: 'recipients must be an array' })
@@ -185,14 +194,16 @@ export class ScheduleReportDto {
   @ApiPropertyOptional({
     description: 'Export format for scheduled reports',
     enum: ExportFormat,
-    default: ExportFormat.PDF
+    default: ExportFormat.PDF,
   })
   @IsOptional()
-  @IsEnum(ExportFormat, { message: 'format must be one of: csv, xlsx, pdf, json' })
+  @IsEnum(ExportFormat, {
+    message: 'format must be one of: csv, xlsx, pdf, json',
+  })
   format?: ExportFormat = ExportFormat.PDF;
 
   @ApiPropertyOptional({
-    description: 'Additional filters for the scheduled report'
+    description: 'Additional filters for the scheduled report',
   })
   @IsOptional()
   filters?: Record<string, any>;

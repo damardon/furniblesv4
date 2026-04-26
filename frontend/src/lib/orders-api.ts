@@ -18,9 +18,9 @@ interface Order {
   paymentIntentId?: string
   paymentStatus?: string
   buyerEmail: string
-  billingData?: any
-  metadata?: any
-  feeBreakdown?: any
+  billingData?: Record<string, unknown>
+  metadata?: Record<string, unknown>
+  feeBreakdown?: Record<string, unknown>
   createdAt: string
   paidAt?: string
   completedAt?: string
@@ -101,7 +101,6 @@ export async function getBuyerOrders(filters: OrderFilters = {}): Promise<Orders
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [ORDERS-API] Fetching buyer orders with filters:', filters)
     
     const queryParams = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
@@ -123,7 +122,6 @@ export async function getBuyerOrders(filters: OrderFilters = {}): Promise<Orders
     }
 
     const data = await response.json()
-    console.log('✅ [ORDERS-API] Buyer orders loaded:', data.data?.length || 0)
     
     return data
   } catch (error) {
@@ -140,7 +138,6 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [ORDERS-API] Fetching order by number:', orderNumber)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderNumber}`, {
       headers: {
@@ -158,7 +155,6 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
     }
 
     const data = await response.json()
-    console.log('✅ [ORDERS-API] Order data received:', data)
     
     return data
   } catch (error) {
@@ -175,8 +171,8 @@ export async function createOrder(orderData: {
     price: number
   }>
   totalAmount: number
-  billingData?: any
-  metadata?: any
+  billingData?: Record<string, unknown>
+  metadata?: Record<string, unknown>
 }): Promise<ApiResponse<Order>> {
   try {
     const token = getAuthToken()
@@ -184,7 +180,6 @@ export async function createOrder(orderData: {
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [ORDERS-API] Creating order:', orderData)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
       method: 'POST',
@@ -203,7 +198,6 @@ export async function createOrder(orderData: {
       return { success: false, error: result.message || 'Error creating order' }
     }
 
-    console.log('✅ [ORDERS-API] Order created:', result)
     return { success: true, data: result }
   } catch (error) {
     console.error('❌ [ORDERS-API] Error creating order:', error)
@@ -219,7 +213,6 @@ export async function cancelOrder(orderNumber: string, reason?: string): Promise
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [ORDERS-API] Cancelling order:', orderNumber)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderNumber}/cancel`, {
       method: 'POST',
@@ -238,7 +231,6 @@ export async function cancelOrder(orderNumber: string, reason?: string): Promise
       return { success: false, error: result.message || 'Error cancelling order' }
     }
 
-    console.log('✅ [ORDERS-API] Order cancelled:', result)
     return { success: true }
   } catch (error) {
     console.error('❌ [ORDERS-API] Error cancelling order:', error)
@@ -254,7 +246,6 @@ export async function getSellerSales(filters: OrderFilters = {}): Promise<Orders
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [ORDERS-API] Fetching seller sales with filters:', filters)
     
     const queryParams = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
@@ -276,7 +267,6 @@ export async function getSellerSales(filters: OrderFilters = {}): Promise<Orders
     }
 
     const data = await response.json()
-    console.log('✅ [ORDERS-API] Seller sales loaded:', data.data?.length || 0)
     
     return data
   } catch (error) {
@@ -300,7 +290,6 @@ export async function getOrderStats(period = '30d'): Promise<{
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [ORDERS-API] Fetching order stats for period:', period)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/stats?period=${period}`, {
       headers: {
@@ -315,7 +304,6 @@ export async function getOrderStats(period = '30d'): Promise<{
     }
 
     const data = await response.json()
-    console.log('✅ [ORDERS-API] Order stats loaded:', data)
     
     return data
   } catch (error) {

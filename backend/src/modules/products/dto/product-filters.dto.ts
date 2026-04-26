@@ -1,7 +1,16 @@
 // backend/src/modules/products/dto/product-filters.dto.ts
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsEnum, IsNumber, IsArray, Min, Max, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsArray,
+  Min,
+  Max,
+  IsBoolean,
+} from 'class-validator';
 import { ProductCategory, Difficulty, ProductStatus } from '@prisma/client';
 
 export class ProductFiltersDto {
@@ -55,17 +64,34 @@ export class ProductFiltersDto {
   })
   @IsOptional()
   @IsArray()
-  @Transform(({ value }) => Array.isArray(value) ? value : [value])
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   tags?: string[];
 
   @ApiPropertyOptional({
     description: 'Ordenar por',
-    enum: ['newest', 'oldest', 'popular', 'rating', 'price_asc', 'price_desc', 'createdAt', 'publishedAt'],
+    enum: [
+      'newest',
+      'oldest',
+      'popular',
+      'rating',
+      'price_asc',
+      'price_desc',
+      'createdAt',
+      'publishedAt',
+    ],
     default: 'newest',
   })
   @IsOptional()
   @IsString()
-  sortBy?: 'newest' | 'oldest' | 'popular' | 'rating' | 'price_asc' | 'price_desc' | 'createdAt' | 'publishedAt' = 'newest';
+  sortBy?:
+    | 'newest'
+    | 'oldest'
+    | 'popular'
+    | 'rating'
+    | 'price_asc'
+    | 'price_desc'
+    | 'createdAt'
+    | 'publishedAt' = 'newest';
 
   // ✅ AGREGAR estas propiedades nuevas:
 

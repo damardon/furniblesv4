@@ -1,5 +1,13 @@
 // src/modules/invoices/dto/generate-invoice.dto.ts
-import { IsString, IsOptional, IsIn, IsDateString, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsIn,
+  IsDateString,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -89,7 +97,7 @@ export class InvoiceFilterDto {
 
   @ApiPropertyOptional({
     description: 'Minimum invoice amount',
-    example: 10.00,
+    example: 10.0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'minAmount.invalid' })
@@ -98,7 +106,7 @@ export class InvoiceFilterDto {
 
   @ApiPropertyOptional({
     description: 'Maximum invoice amount',
-    example: 10000.00,
+    example: 10000.0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'maxAmount.invalid' })

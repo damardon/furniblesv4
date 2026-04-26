@@ -1,5 +1,12 @@
 // src/modules/payouts/payouts.service.ts - CORREGIDO
-import { Injectable, Logger, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { StripeService } from '../stripe/stripe.service';
@@ -42,18 +49,27 @@ export class PayoutsService {
       }
 
       if (!user.stripeConnectId) {
-        throw new BadRequestException('Seller does not have Stripe Connect account');
+        throw new BadRequestException(
+          'Seller does not have Stripe Connect account',
+        );
       }
 
       if (!user.payoutsEnabled) {
-        throw new BadRequestException('Payouts are not enabled for this seller');
+        throw new BadRequestException(
+          'Payouts are not enabled for this seller',
+        );
       }
 
       // Verificar balance disponible
-      const balance = await this.stripeService.getAccountBalance(user.stripeConnectId);
-      const availableBalance = balance.available.find(b => b.currency === (dto.currency || 'usd').toLowerCase());
+      const balance = await this.stripeService.getAccountBalance(
+        user.stripeConnectId,
+      );
+      const availableBalance = balance.available.find(
+        (b) => b.currency === (dto.currency || 'usd').toLowerCase(),
+      );
 
-      if (!availableBalance || availableBalance.amount < 100) { // Mínimo $1.00
+      if (!availableBalance || availableBalance.amount < 100) {
+        // Mínimo $1.00
         throw new BadRequestException('Insufficient balance for payout');
       }
 
@@ -64,9 +80,13 @@ export class PayoutsService {
       }
 
       // Verificar mínimo
-      const minimumPayout = parseFloat(this.configService.get('MINIMUM_PAYOUT_AMOUNT', '10'));
+      const minimumPayout = parseFloat(
+        this.configService.get('MINIMUM_PAYOUT_AMOUNT', '10'),
+      );
       if (payoutAmount < minimumPayout && !dto.forceMinimum) {
-        throw new BadRequestException(`Minimum payout amount is $${minimumPayout}`);
+        throw new BadRequestException(
+          `Minimum payout amount is $${minimumPayout}`,
+        );
       }
 
       // Crear payout en Stripe
@@ -90,7 +110,9 @@ export class PayoutsService {
         },
       });
 
-      this.logger.log(`Payout ${payout.id} created successfully for user ${userId}`);
+      this.logger.log(
+        `Payout ${payout.id} created successfully for user ${userId}`,
+      );
 
       return {
         id: payout.id,
@@ -261,7 +283,11 @@ export class PayoutsService {
   /**
    * 🆕 Actualizar payout (Admin)
    */
-  async updatePayout(payoutId: string, dto: UpdatePayoutDto, adminUserId: string) {
+  async updatePayout(
+    payoutId: string,
+    dto: UpdatePayoutDto,
+    adminUserId: string,
+  ) {
     try {
       this.logger.log(`Updating payout ${payoutId} by admin ${adminUserId}`);
 
@@ -300,7 +326,11 @@ export class PayoutsService {
   /**
    * 🆕 Ejecutar acción en payout (Admin)
    */
-  async executePayoutAction(payoutId: string, dto: PayoutActionDto, adminUserId: string) {
+  async executePayoutAction(
+    payoutId: string,
+    dto: PayoutActionDto,
+    adminUserId: string,
+  ) {
     try {
       this.logger.log(`Executing action ${dto.action} on payout ${payoutId}`);
 
@@ -362,7 +392,9 @@ export class PayoutsService {
           throw new BadRequestException(`Unknown action: ${dto.action}`);
       }
 
-      this.logger.log(`Action ${dto.action} executed successfully on payout ${payoutId}`);
+      this.logger.log(
+        `Action ${dto.action} executed successfully on payout ${payoutId}`,
+      );
 
       return { success: true, action: dto.action };
     } catch (error) {
@@ -419,11 +451,17 @@ export class PayoutsService {
       let availableBalance = 0;
       if (reasons.length === 0 && user.stripeConnectId) {
         try {
-          const balance = await this.stripeService.getAccountBalance(user.stripeConnectId);
-          const usdBalance = balance.available.find(b => b.currency === 'usd');
+          const balance = await this.stripeService.getAccountBalance(
+            user.stripeConnectId,
+          );
+          const usdBalance = balance.available.find(
+            (b) => b.currency === 'usd',
+          );
           availableBalance = usdBalance ? usdBalance.amount / 100 : 0;
 
-          const minimumPayout = parseFloat(this.configService.get('MINIMUM_PAYOUT_AMOUNT', '10'));
+          const minimumPayout = parseFloat(
+            this.configService.get('MINIMUM_PAYOUT_AMOUNT', '10'),
+          );
           if (availableBalance < minimumPayout) {
             reasons.push(`Insufficient balance (minimum $${minimumPayout})`);
           }
@@ -436,7 +474,9 @@ export class PayoutsService {
         eligible: reasons.length === 0,
         reasons,
         availableBalance,
-        minimumPayout: parseFloat(this.configService.get('MINIMUM_PAYOUT_AMOUNT', '10')),
+        minimumPayout: parseFloat(
+          this.configService.get('MINIMUM_PAYOUT_AMOUNT', '10'),
+        ),
       };
     } catch (error) {
       this.logger.error(`Failed to check payout eligibility: ${error.message}`);
@@ -447,7 +487,10 @@ export class PayoutsService {
   /**
    * 🆕 Obtener estadísticas básicas de payouts (Admin)
    */
-  async getPayoutStatistics(filters?: { startDate?: string; endDate?: string }) {
+  async getPayoutStatistics(filters?: {
+    startDate?: string;
+    endDate?: string;
+  }) {
     try {
       this.logger.log('Getting payout statistics');
 
@@ -465,7 +508,7 @@ export class PayoutsService {
 
       // Estadísticas básicas
       const totalPayouts = await this.prisma.payout.count({ where });
-      
+
       const payoutsByStatus = await this.prisma.payout.groupBy({
         by: ['status'],
         where,
@@ -488,9 +531,12 @@ export class PayoutsService {
         summary: {
           totalPayouts,
           totalAmount: Number(totalAmount._sum.amount || 0),
-          averageAmount: totalPayouts > 0 ? Number(totalAmount._sum.amount || 0) / totalPayouts : 0,
+          averageAmount:
+            totalPayouts > 0
+              ? Number(totalAmount._sum.amount || 0) / totalPayouts
+              : 0,
         },
-        byStatus: payoutsByStatus.map(stat => ({
+        byStatus: payoutsByStatus.map((stat) => ({
           status: stat.status,
           count: stat._count.id,
           totalAmount: Number(stat._sum.amount || 0),

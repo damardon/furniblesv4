@@ -72,7 +72,6 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
 
       const stripe = await loadStripe(stripePublicKey)
       dispatch({ type: 'SET_STRIPE', payload: stripe })
-      console.log('✅ [PAYMENT] Stripe initialized')
     } catch (error) {
       console.error('❌ [PAYMENT] Stripe initialization error:', error)
       dispatch({ type: 'SET_ERROR', payload: 'Error inicializando Stripe' })
@@ -95,7 +94,6 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
         
         script.onload = () => {
           dispatch({ type: 'SET_PAYPAL_LOADED', payload: true })
-          console.log('✅ [PAYMENT] PayPal initialized')
         }
         
         script.onerror = () => {

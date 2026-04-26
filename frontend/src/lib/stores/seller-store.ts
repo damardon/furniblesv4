@@ -332,12 +332,6 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     console.error('Error parsing auth token:', error)
   }
   
-  console.log('🔍 API Request Debug:', {
-    endpoint,
-    hasToken: !!token,
-    tokenLength: token?.length,
-    apiUrl: process.env.NEXT_PUBLIC_API_URL
-  })
   
   const fullUrl = `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`
   
@@ -350,12 +344,6 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     ...options,
   })
   
-  console.log('🔍 API Response Debug:', {
-    status: response.status,
-    statusText: response.statusText,
-    ok: response.ok,
-    url: fullUrl
-  })
   
   // ✅ CORRECCIÓN: Leer la respuesta UNA SOLA VEZ
   const result = await response.json()

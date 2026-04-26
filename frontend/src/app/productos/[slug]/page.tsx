@@ -83,7 +83,6 @@ interface ProductDetailPageProps {
 // ✅ Función para obtener producto desde API real
 async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
-    console.log('🔍 [FRONTEND] Fetching product:', slug)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/slug/${slug}`, {
       cache: 'no-store',
@@ -93,7 +92,6 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
       },
     })
 
-    console.log('🔍 [FRONTEND] Product response status:', response.status)
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -103,7 +101,6 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
     }
 
     const product = await response.json()
-    console.log('✅ [FRONTEND] Product data received:', product)
     
     // ✅ Obtener información completa del seller
     if (product.sellerId && !product.seller?.storeName) {
@@ -119,7 +116,6 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
         if (sellerResponse.ok) {
           const sellerData = await sellerResponse.json()
           product.seller = { ...product.seller, ...sellerData }
-          console.log('✅ [FRONTEND] Seller data added:', sellerData)
         }
       } catch (sellerError) {
         console.warn('⚠️ [FRONTEND] Could not fetch seller data:', sellerError)
@@ -155,7 +151,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       setError(null)
       
       try {
-        console.log('🔍 [FRONTEND] Fetching product:', resolvedParams.slug)
         
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/slug/${resolvedParams.slug}`, {
           cache: 'no-store',
@@ -174,7 +169,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         }
 
         const product = await response.json()
-        console.log('✅ [FRONTEND] Product data received:', product)
         setProduct(product)
       } catch (err) {
         console.error('Error loading product:', err)
@@ -288,7 +282,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     setIsAddingToCart(true)
     try {
       // TODO: Implementar lógica de carrito real
-      console.log('Adding to cart:', product.id)
       await new Promise(resolve => setTimeout(resolve, 1000)) // Simular API call
     } catch (error) {
       console.error('Error adding to cart:', error)

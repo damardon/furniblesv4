@@ -42,7 +42,7 @@ export interface FeeBreakdownItem {
 @Injectable()
 export class FeesService {
   private readonly logger = new Logger(FeesService.name);
-  
+
   // Cache para configuraciones de fees
   private feeConfigCache = new Map<string, any>();
   private cacheExpiry = 5 * 60 * 1000; // 5 minutos
@@ -53,7 +53,12 @@ export class FeesService {
   /**
    * Calcular fees (método original de Etapa 7)
    */
-  async calculateFees(subtotal: number, items: any[], country?: string, paymentMethod?: string): Promise<FeeCalculation[]> {
+  async calculateFees(
+    subtotal: number,
+    items: any[],
+    country?: string,
+    paymentMethod?: string,
+  ): Promise<FeeCalculation[]> {
     const fees: FeeCalculation[] = [];
 
     // Obtener configuraciones de fees aplicables
@@ -62,15 +67,15 @@ export class FeesService {
         isActive: true,
         OR: [
           { country: null }, // Fees globales
-          { country },       // Fees específicos del país
-        ]
+          { country }, // Fees específicos del país
+        ],
       },
-      orderBy: { priority: 'desc' }
+      orderBy: { priority: 'desc' },
     });
 
     // Aplicar fee de plataforma (principal)
     const platformFeeConfig = feeConfigs.find(
-      config => config.type === FeeType.PLATFORM_FEE && !config.category
+      (config) => config.type === FeeType.PLATFORM_FEE && !config.category,
     );
 
     if (platformFeeConfig) {
@@ -79,33 +84,41 @@ export class FeesService {
         type: 'PLATFORM_FEE',
         description: platformFeeConfig.description || 'Fee de plataforma',
         amount: feeAmount,
-        rate: platformFeeConfig.isPercentage ? platformFeeConfig.value : undefined
+        rate: platformFeeConfig.isPercentage
+          ? platformFeeConfig.value
+          : undefined,
       });
     } else {
       // Fee por defecto si no hay configuración
-      const defaultFee = subtotal * 0.10;
+      const defaultFee = subtotal * 0.1;
       fees.push({
         type: 'PLATFORM_FEE',
         description: 'Fee de plataforma (10%)',
         amount: defaultFee,
-        rate: 0.10
+        rate: 0.1,
       });
     }
 
     // Aplicar fees por categoría
     for (const item of items) {
       const categoryFeeConfig = feeConfigs.find(
-        config => config.type === FeeType.PLATFORM_FEE && 
-                 config.category === item.product.category
+        (config) =>
+          config.type === FeeType.PLATFORM_FEE &&
+          config.category === item.product.category,
       );
 
       if (categoryFeeConfig) {
-        const feeAmount = this.calculateFeeAmount(item.currentPrice, categoryFeeConfig);
+        const feeAmount = this.calculateFeeAmount(
+          item.currentPrice,
+          categoryFeeConfig,
+        );
         fees.push({
           type: 'CATEGORY_FEE',
           description: `Fee categoría ${item.product.category}`,
           amount: feeAmount,
-          rate: categoryFeeConfig.isPercentage ? categoryFeeConfig.value : undefined
+          rate: categoryFeeConfig.isPercentage
+            ? categoryFeeConfig.value
+            : undefined,
         });
       }
     }
@@ -113,8 +126,9 @@ export class FeesService {
     // Aplicar fees por método de pago
     if (paymentMethod) {
       const paymentFeeConfig = feeConfigs.find(
-        config => config.type === FeeType.PAYMENT_PROCESSING && 
-                 config.paymentMethod === paymentMethod
+        (config) =>
+          config.type === FeeType.PAYMENT_PROCESSING &&
+          config.paymentMethod === paymentMethod,
       );
 
       if (paymentFeeConfig) {
@@ -123,7 +137,9 @@ export class FeesService {
           type: 'PAYMENT_FEE',
           description: `Fee procesamiento ${paymentMethod}`,
           amount: feeAmount,
-          rate: paymentFeeConfig.isPercentage ? paymentFeeConfig.value : undefined
+          rate: paymentFeeConfig.isPercentage
+            ? paymentFeeConfig.value
+            : undefined,
         });
       }
     }
@@ -134,7 +150,9 @@ export class FeesService {
   /**
    * Calcular fees específicos para un seller (Etapa 8)
    */
-  async calculateFeesForSeller(input: SellerFeeCalculationInput): Promise<FeeCalculationResult> {
+  async calculateFeesForSeller(
+    input: SellerFeeCalculationInput,
+  ): Promise<FeeCalculationResult> {
     const { sellerId, amount, country, category, paymentMethod } = input;
 
     // Obtener información del seller
@@ -144,9 +162,9 @@ export class FeesService {
         sellerProfile: true,
         transactions: {
           where: { type: 'SALE', status: 'COMPLETED' },
-          select: { amount: true }
-        }
-      }
+          select: { amount: true },
+        },
+      },
     });
 
     if (!seller) {
@@ -162,14 +180,16 @@ export class FeesService {
       country,
       category,
       paymentMethod,
-      sellerTier
+      sellerTier,
     });
   }
 
   /**
    * Calcular fees avanzados (método principal Etapa 8)
    */
-  async calculateAdvancedFees(input: FeeCalculationInput): Promise<FeeCalculationResult> {
+  async calculateAdvancedFees(
+    input: FeeCalculationInput,
+  ): Promise<FeeCalculationResult> {
     const { amount, country, category, paymentMethod, sellerTier } = input;
 
     // Obtener configuraciones de fees aplicables
@@ -177,7 +197,7 @@ export class FeesService {
       country,
       category,
       paymentMethod,
-      sellerTier
+      sellerTier,
     });
 
     let platformFee = 0;
@@ -187,7 +207,7 @@ export class FeesService {
     // Aplicar cada configuración de fee
     for (const config of feeConfigs) {
       const feeAmount = this.calculateIndividualFee(amount, config);
-      
+
       if (config.type === 'PLATFORM_FEE') {
         platformFee += feeAmount;
       } else if (config.type === 'PAYMENT_PROCESSING') {
@@ -201,20 +221,20 @@ export class FeesService {
           type: config.type,
           amount: feeAmount,
           percentage: config.isPercentage ? config.value * 100 : undefined,
-          description: config.description
+          description: config.description,
         });
       }
     }
 
     // Aplicar fee base si no hay configuración específica
     if (platformFee === 0) {
-      platformFee = amount * 0.10; // 10% default
+      platformFee = amount * 0.1; // 10% default
       feeBreakdown.push({
         name: 'Platform Fee (Default)',
         type: 'PLATFORM_FEE',
         amount: platformFee,
         percentage: 10,
-        description: 'Default platform fee'
+        description: 'Default platform fee',
       });
     }
 
@@ -225,7 +245,7 @@ export class FeesService {
         name: 'Stripe Processing Fee',
         type: 'PAYMENT_PROCESSING',
         amount: stripeFee,
-        description: 'Stripe payment processing fee'
+        description: 'Stripe payment processing fee',
       });
     }
 
@@ -238,14 +258,14 @@ export class FeesService {
       sellerEarning,
       country,
       category,
-      sellerTier
+      sellerTier,
     });
 
     return {
       platformFee: Number(platformFee.toFixed(2)),
       stripeFee: Number(stripeFee.toFixed(2)),
       sellerEarning: Number(sellerEarning.toFixed(2)),
-      feeBreakdown
+      feeBreakdown,
     };
   }
 
@@ -253,9 +273,7 @@ export class FeesService {
    * Calcular monto del fee basado en configuración
    */
   private calculateFeeAmount(amount: number, config: any): number {
-    let feeAmount = config.isPercentage 
-      ? amount * config.value 
-      : config.value;
+    let feeAmount = config.isPercentage ? amount * config.value : config.value;
 
     // Aplicar límites mínimos y máximos
     if (config.minAmount && feeAmount < config.minAmount) {
@@ -296,7 +314,8 @@ export class FeesService {
    * Determinar tier del seller basado en métricas
    */
   private determineSellerTier(seller: any): string {
-    const totalSales = seller.transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+    const totalSales =
+      seller.transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
     const salesCount = seller.transactions?.length || 0;
 
     if (totalSales >= 10000 && salesCount >= 100) {
@@ -322,15 +341,18 @@ export class FeesService {
     // Verificar cache
     const cacheKey = JSON.stringify(criteria);
     const now = Date.now();
-    
-    if (this.feeConfigCache.has(cacheKey) && (now - this.lastCacheUpdate) < this.cacheExpiry) {
+
+    if (
+      this.feeConfigCache.has(cacheKey) &&
+      now - this.lastCacheUpdate < this.cacheExpiry
+    ) {
       return this.feeConfigCache.get(cacheKey);
     }
 
     // Construir query con filtros dinámicos
     const where: any = {
       isActive: true,
-      OR: []
+      OR: [],
     };
 
     // Configuraciones globales (sin criterios específicos)
@@ -338,7 +360,7 @@ export class FeesService {
       country: null,
       category: null,
       paymentMethod: null,
-      sellerTier: null
+      sellerTier: null,
     });
 
     // Configuraciones específicas por país
@@ -363,7 +385,7 @@ export class FeesService {
 
     const configs = await this.prisma.feeConfig.findMany({
       where,
-      orderBy: { priority: 'desc' } // Mayor prioridad primero
+      orderBy: { priority: 'desc' }, // Mayor prioridad primero
     });
 
     // Resolver conflictos por prioridad
@@ -383,7 +405,7 @@ export class FeesService {
     const configsByType = new Map<string, any[]>();
 
     // Agrupar por tipo
-    configs.forEach(config => {
+    configs.forEach((config) => {
       if (!configsByType.has(config.type)) {
         configsByType.set(config.type, []);
       }
@@ -410,7 +432,7 @@ export class FeesService {
     let mostSpecific = null;
     let maxSpecificity = -1;
 
-    configs.forEach(config => {
+    configs.forEach((config) => {
       const specificity = this.calculateSpecificity(config, criteria);
       if (specificity > maxSpecificity) {
         maxSpecificity = specificity;
@@ -443,12 +465,20 @@ export class FeesService {
     }
 
     // +1 por match exacto de método de pago
-    if (config.paymentMethod && config.paymentMethod === criteria.paymentMethod) {
+    if (
+      config.paymentMethod &&
+      config.paymentMethod === criteria.paymentMethod
+    ) {
       specificity += 1;
     }
 
     // Penalizar configuraciones globales (sin criterios específicos)
-    if (!config.country && !config.category && !config.paymentMethod && !config.sellerTier) {
+    if (
+      !config.country &&
+      !config.category &&
+      !config.paymentMethod &&
+      !config.sellerTier
+    ) {
       specificity = 0;
     }
 
@@ -461,21 +491,21 @@ export class FeesService {
   private calculateStripeFee(amount: number, paymentMethod?: string): number {
     // Fees de Stripe (aproximados)
     const stripeFees = {
-      'card': 0.029 + 0.30, // 2.9% + $0.30
-      'card_international': 0.039 + 0.30, // 3.9% + $0.30
-      'bancontact': 0.014, // 1.4%
-      'ideal': 0.008, // 0.8%
-      'sepa_debit': 0.008, // 0.8%
-      'default': 0.029 + 0.30 // Default to card
+      card: 0.029 + 0.3, // 2.9% + $0.30
+      card_international: 0.039 + 0.3, // 3.9% + $0.30
+      bancontact: 0.014, // 1.4%
+      ideal: 0.008, // 0.8%
+      sepa_debit: 0.008, // 0.8%
+      default: 0.029 + 0.3, // Default to card
     };
 
     const feeStructure = stripeFees[paymentMethod] || stripeFees.default;
-    
+
     if (typeof feeStructure === 'number') {
       return amount * feeStructure;
     } else {
       // Para estructura con fee fijo + porcentaje
-      return (amount * 0.029) + 0.30;
+      return amount * 0.029 + 0.3;
     }
   }
 
@@ -514,8 +544,8 @@ export class FeesService {
         description: config.description || null,
         validFrom: config.validFrom || null,
         validUntil: config.validUntil || null,
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     // Limpiar cache
@@ -524,7 +554,7 @@ export class FeesService {
     this.logger.log(`Fee config created: ${feeConfig.name}`, {
       id: feeConfig.id,
       type: feeConfig.type,
-      value: feeConfig.value
+      value: feeConfig.value,
     });
 
     return feeConfig;
@@ -548,10 +578,7 @@ export class FeesService {
 
     return this.prisma.feeConfig.findMany({
       where,
-      orderBy: [
-        { priority: 'desc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -561,33 +588,44 @@ export class FeesService {
   async updateFeeConfig(id: string, updates: any): Promise<any> {
     // Filtrar solo campos válidos y convertir tipos si es necesario
     const validUpdates: any = {};
-    
+
     if (updates.name !== undefined) validUpdates.name = updates.name;
     if (updates.type !== undefined) validUpdates.type = updates.type;
     if (updates.country !== undefined) validUpdates.country = updates.country;
-    if (updates.category !== undefined) validUpdates.category = updates.category;
-    if (updates.paymentMethod !== undefined) validUpdates.paymentMethod = updates.paymentMethod;
-    if (updates.sellerTier !== undefined) validUpdates.sellerTier = updates.sellerTier;
-    if (updates.isPercentage !== undefined) validUpdates.isPercentage = updates.isPercentage;
+    if (updates.category !== undefined)
+      validUpdates.category = updates.category;
+    if (updates.paymentMethod !== undefined)
+      validUpdates.paymentMethod = updates.paymentMethod;
+    if (updates.sellerTier !== undefined)
+      validUpdates.sellerTier = updates.sellerTier;
+    if (updates.isPercentage !== undefined)
+      validUpdates.isPercentage = updates.isPercentage;
     if (updates.value !== undefined) validUpdates.value = updates.value;
-    if (updates.minAmount !== undefined) validUpdates.minAmount = updates.minAmount;
-    if (updates.maxAmount !== undefined) validUpdates.maxAmount = updates.maxAmount;
-    if (updates.priority !== undefined) validUpdates.priority = updates.priority;
-    if (updates.description !== undefined) validUpdates.description = updates.description;
-    if (updates.validFrom !== undefined) validUpdates.validFrom = updates.validFrom;
-    if (updates.validUntil !== undefined) validUpdates.validUntil = updates.validUntil;
-    if (updates.isActive !== undefined) validUpdates.isActive = updates.isActive;
+    if (updates.minAmount !== undefined)
+      validUpdates.minAmount = updates.minAmount;
+    if (updates.maxAmount !== undefined)
+      validUpdates.maxAmount = updates.maxAmount;
+    if (updates.priority !== undefined)
+      validUpdates.priority = updates.priority;
+    if (updates.description !== undefined)
+      validUpdates.description = updates.description;
+    if (updates.validFrom !== undefined)
+      validUpdates.validFrom = updates.validFrom;
+    if (updates.validUntil !== undefined)
+      validUpdates.validUntil = updates.validUntil;
+    if (updates.isActive !== undefined)
+      validUpdates.isActive = updates.isActive;
 
     const feeConfig = await this.prisma.feeConfig.update({
       where: { id },
-      data: validUpdates
+      data: validUpdates,
     });
 
     this.clearFeeCache();
 
     this.logger.log(`Fee config updated: ${feeConfig.name}`, {
       id: feeConfig.id,
-      updates: Object.keys(validUpdates)
+      updates: Object.keys(validUpdates),
     });
 
     return feeConfig;
@@ -599,7 +637,7 @@ export class FeesService {
   async deactivateFeeConfig(id: string): Promise<void> {
     await this.prisma.feeConfig.update({
       where: { id },
-      data: { isActive: false }
+      data: { isActive: false },
     });
 
     this.clearFeeCache();
@@ -626,7 +664,12 @@ export class FeesService {
       errors.push('Name is required');
     }
 
-    if (!config.type || !['PLATFORM_FEE', 'PAYMENT_PROCESSING', 'TAX', 'REGIONAL_FEE'].includes(config.type)) {
+    if (
+      !config.type ||
+      !['PLATFORM_FEE', 'PAYMENT_PROCESSING', 'TAX', 'REGIONAL_FEE'].includes(
+        config.type,
+      )
+    ) {
       errors.push('Valid type is required');
     }
 
@@ -635,20 +678,30 @@ export class FeesService {
     }
 
     if (config.isPercentage && config.value > 1) {
-      errors.push('Percentage value should be between 0 and 1 (e.g., 0.10 for 10%)');
+      errors.push(
+        'Percentage value should be between 0 and 1 (e.g., 0.10 for 10%)',
+      );
     }
 
-    if (config.minAmount && config.maxAmount && config.minAmount > config.maxAmount) {
+    if (
+      config.minAmount &&
+      config.maxAmount &&
+      config.minAmount > config.maxAmount
+    ) {
       errors.push('Minimum amount cannot be greater than maximum amount');
     }
 
-    if (config.validFrom && config.validUntil && config.validFrom > config.validUntil) {
+    if (
+      config.validFrom &&
+      config.validUntil &&
+      config.validFrom > config.validUntil
+    ) {
       errors.push('Valid from date cannot be after valid until date');
     }
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

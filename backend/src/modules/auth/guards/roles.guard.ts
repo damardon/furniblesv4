@@ -10,23 +10,23 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
-    
+
     // Permitir peticiones OPTIONS (preflight CORS)
     if (request.method === 'OPTIONS') {
       return true;
     }
-    
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredRoles) {
       return true;
     }
 
     const user = request.user as any; // ← CAMBIAR: usar 'as any' temporalmente
-    
+
     if (!user) {
       return false;
     }

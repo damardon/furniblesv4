@@ -1,5 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { User, UserRole, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
@@ -14,16 +19,20 @@ export interface FindAllUsersOptions {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private excludeFields<T extends Record<string, any>>(
+  private excludeFields<T extends Record<string, unknown>>(
     user: T,
-    keys: (keyof T)[]
+    keys: (keyof T)[],
   ): Omit<T, keyof T> {
     const result = { ...user };
-    keys.forEach(key => delete result[key]);
+    keys.forEach((key) => delete result[key]);
     return result;
   }
 
-  async create(createUserData: any) {
+  async create(
+    createUserData: Prisma.UserCreateInput & {
+      emailVerificationToken?: string;
+    },
+  ) {
     // Verificar si el email ya existe
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserData.email },
@@ -43,35 +52,45 @@ export class UsersService {
         role: createUserData.role || UserRole.BUYER,
         emailVerificationToken: createUserData.emailVerificationToken,
         // Crear perfiles automáticamente según el rol
-        ...(createUserData.role === UserRole.SELLER || createUserData.role === UserRole.ADMIN ? {
-          sellerProfile: {
-            create: {
-              storeName: `${createUserData.firstName} ${createUserData.lastName} Store`,
-              slug: `${createUserData.firstName.toLowerCase()}-${createUserData.lastName.toLowerCase()}-${Date.now()}`,
+        ...(createUserData.role === UserRole.SELLER ||
+        createUserData.role === UserRole.ADMIN
+          ? {
+              sellerProfile: {
+                create: {
+                  storeName: `${createUserData.firstName} ${createUserData.lastName} Store`,
+                  slug: `${createUserData.firstName.toLowerCase()}-${createUserData.lastName.toLowerCase()}-${Date.now()}`,
+                },
+              },
             }
-          }
-        } : {}),
-        ...(createUserData.role === UserRole.BUYER || createUserData.role === UserRole.ADMIN ? {
-          buyerProfile: {
-            create: {
-              preferences: {}
+          : {}),
+        ...(createUserData.role === UserRole.BUYER ||
+        createUserData.role === UserRole.ADMIN
+          ? {
+              buyerProfile: {
+                create: {
+                  preferences: {},
+                },
+              },
             }
-          }
-        } : {}),
+          : {}),
       },
       include: {
         sellerProfile: true,
         buyerProfile: true,
-      }
+      },
     });
 
     // Eliminar campos sensibles antes de retornar
-    return this.excludeFields(user, ['password', 'emailVerificationToken', 'resetPasswordToken']);
+    return this.excludeFields(user, [
+      'password',
+      'emailVerificationToken',
+      'resetPasswordToken',
+    ]);
   }
 
   async findAll(options: FindAllUsersOptions = {}) {
     const { page = 1, limit = 10, role, isActive } = options;
-    
+
     const where: Prisma.UserWhereInput = {};
     if (role) where.role = role;
     if (isActive !== undefined) where.isActive = isActive;
@@ -93,8 +112,12 @@ export class UsersService {
     ]);
 
     // Eliminar campos sensibles de todos los usuarios
-    const safeUsers = users.map(user => 
-      this.excludeFields(user, ['password', 'emailVerificationToken', 'resetPasswordToken'])
+    const safeUsers = users.map((user) =>
+      this.excludeFields(user, [
+        'password',
+        'emailVerificationToken',
+        'resetPasswordToken',
+      ]),
     );
 
     return {
@@ -122,7 +145,11 @@ export class UsersService {
     }
 
     // Eliminar campos sensibles
-    return this.excludeFields(user, ['password', 'emailVerificationToken', 'resetPasswordToken']);
+    return this.excludeFields(user, [
+      'password',
+      'emailVerificationToken',
+      'resetPasswordToken',
+    ]);
   }
 
   async findById(id: string): Promise<User | null> {
@@ -149,7 +176,7 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateData: any) {
+  async update(id: string, updateData: Prisma.UserUpdateInput) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -168,7 +195,11 @@ export class UsersService {
     });
 
     // Eliminar campos sensibles
-    return this.excludeFields(updatedUser, ['password', 'emailVerificationToken', 'resetPasswordToken']);
+    return this.excludeFields(updatedUser, [
+      'password',
+      'emailVerificationToken',
+      'resetPasswordToken',
+    ]);
   }
 
   async updatePassword(id: string, hashedPassword: string): Promise<void> {
@@ -216,7 +247,11 @@ export class UsersService {
     });
 
     // Eliminar campos sensibles
-    return this.excludeFields(updatedUser, ['password', 'emailVerificationToken', 'resetPasswordToken']);
+    return this.excludeFields(updatedUser, [
+      'password',
+      'emailVerificationToken',
+      'resetPasswordToken',
+    ]);
   }
 
   async remove(id: string): Promise<void> {
@@ -233,48 +268,58 @@ export class UsersService {
     });
   }
 
-async savePasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
-  await this.prisma.user.update({
-    where: { id: userId },
-    data: {
-      resetPasswordToken: token,
-      resetPasswordExpiresAt: expiresAt,
-    },
-  });
-}
+  async savePasswordResetToken(
+    userId: string,
+    token: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        resetPasswordToken: token,
+        resetPasswordExpiresAt: expiresAt,
+      },
+    });
+  }
 
-async findByResetToken(token: string): Promise<User | null> {
-  return this.prisma.user.findUnique({
-    where: { resetPasswordToken: token },
-  });
-}
+  async findByResetToken(token: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { resetPasswordToken: token },
+    });
+  }
 
-async resetUserPassword(userId: string, hashedPassword: string): Promise<void> {
-  await this.prisma.user.update({
-    where: { id: userId },
-    data: {
-      password: hashedPassword,
-      resetPasswordToken: null,
-      resetPasswordExpiresAt: null,
-    },
-  });
-}
-
+  async resetUserPassword(
+    userId: string,
+    hashedPassword: string,
+  ): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpiresAt: null,
+      },
+    });
+  }
 
   async validateUserPassword(email: string, password: string) {
     const user = await this.findByEmailWithPassword(email);
-    
+
     if (!user) {
       return null;
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    
+
     if (!isPasswordValid) {
       return null;
     }
 
     // Retornar usuario sin campos sensibles
-    return this.excludeFields(user, ['password', 'emailVerificationToken', 'resetPasswordToken']);
+    return this.excludeFields(user, [
+      'password',
+      'emailVerificationToken',
+      'resetPasswordToken',
+    ]);
   }
 }

@@ -1,53 +1,53 @@
 // src/modules/reviews/reviews.service.ts
-import { 
-  Injectable, 
-  NotFoundException, 
-  BadRequestException, 
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
   ConflictException,
-  ForbiddenException
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notifications/notifications.service';
-import { 
-  CreateReviewDto, 
-  UpdateReviewDto, 
+import {
+  CreateReviewDto,
+  UpdateReviewDto,
   CreateReviewResponseDto,
   ReviewVoteDto,
   ReportReviewDto,
   FilterReviewDto,
-  ModerateReviewDto
+  ModerateReviewDto,
 } from './dto';
-import { 
-  Prisma, 
-  ReviewStatus, 
-  ReviewHelpfulness
-} from '@prisma/client';
+import { Prisma, ReviewStatus, ReviewHelpfulness } from '@prisma/client';
 
 @Injectable()
 export class ReviewsService {
+  private readonly logger = new Logger(ReviewsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: NotificationService,
   ) {}
 
   // ============================================
   // CREATE REVIEW
   // ============================================
   async createReview(userId: string, createReviewDto: CreateReviewDto) {
-    const { orderId, productId, rating, title, comment, pros, cons, images } = createReviewDto;
+    const { orderId, productId, rating, title, comment, pros, cons, images } =
+      createReviewDto;
 
     // 1. Verificar que la orden existe y pertenece al usuario
     const order = await this.prisma.order.findFirst({
       where: {
         id: orderId,
         buyerId: userId,
-        status: 'COMPLETED'
+        status: 'COMPLETED',
       },
       include: {
         items: {
-          where: { productId }
-        }
-      }
+          where: { productId },
+        },
+      },
     });
 
     if (!order) {
@@ -64,9 +64,9 @@ export class ReviewsService {
         orderId_productId_buyerId: {
           orderId,
           productId,
-          buyerId: userId
-        }
-      }
+          buyerId: userId,
+        },
+      },
     });
 
     if (existingReview) {
@@ -84,12 +84,12 @@ export class ReviewsService {
             lastName: true,
             sellerProfile: {
               select: {
-                storeName: true
-              }
-            }
-          }
-        }
-      }
+                storeName: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!product) {
@@ -107,8 +107,8 @@ export class ReviewsService {
           id: { in: images },
           uploadedById: userId,
           type: 'REVIEW_IMAGE',
-          status: 'ACTIVE'
-        }
+          status: 'ACTIVE',
+        },
       });
 
       if (validImages.length !== images.length) {
@@ -130,21 +130,21 @@ export class ReviewsService {
           comment,
           pros,
           cons,
-          status: 'PENDING_MODERATION'
+          status: 'PENDING_MODERATION',
         },
         include: {
           buyer: {
             select: {
               firstName: true,
-              lastName: true
-            }
+              lastName: true,
+            },
           },
           product: {
             select: {
-              title: true
-            }
-          }
-        }
+              title: true,
+            },
+          },
+        },
       });
 
       // Agregar imágenes si existen
@@ -153,8 +153,8 @@ export class ReviewsService {
           data: images.map((imageId, index) => ({
             reviewId: newReview.id,
             fileId: imageId,
-            order: index
-          }))
+            order: index,
+          })),
         });
       }
 
@@ -173,10 +173,10 @@ export class ReviewsService {
           rating: review.rating,
           comment: review.comment,
           product: { title: product.title },
-          buyer: review.buyer
+          buyer: review.buyer,
         });
       } catch (error) {
-        console.error('Error sending review notification:', error);
+        this.logger.error('Error sending review notification', error.stack);
         // No interrumpir el flujo si falla la notificación
       }
     }
@@ -188,7 +188,7 @@ export class ReviewsService {
     try {
       await this.notificationService.checkReviewMilestones(product.sellerId);
     } catch (error) {
-      console.error('Error checking review milestones:', error);
+      this.logger.error('Error checking review milestones', error.stack);
     }
 
     return this.findOne(review.id);
@@ -198,18 +198,11 @@ export class ReviewsService {
   // FIND REVIEWS
   // ============================================
   async findAll(filters: FilterReviewDto) {
-    const { 
-      productId, 
-      sellerId, 
-      rating, 
-      status, 
-      sortBy, 
-      page, 
-      limit 
-    } = filters;
+    const { productId, sellerId, rating, status, sortBy, page, limit } =
+      filters;
 
     const where: Prisma.ReviewWhereInput = {
-      status: status || 'PUBLISHED'
+      status: status || 'PUBLISHED',
     };
 
     if (productId) where.productId = productId;
@@ -251,28 +244,28 @@ export class ReviewsService {
               avatar: true,
               buyerProfile: {
                 select: {
-                  totalReviews: true
-                }
-              }
-            }
+                  totalReviews: true,
+                },
+              },
+            },
           },
           product: {
             select: {
               title: true,
               slug: true,
-              thumbnailFileIds: true
-            }
+              thumbnailFileIds: true,
+            },
           },
           images: {
             include: {
               file: {
                 select: {
                   url: true,
-                  filename: true
-                }
-              }
+                  filename: true,
+                },
+              },
             },
-            orderBy: { order: 'asc' }
+            orderBy: { order: 'asc' },
           },
           response: {
             include: {
@@ -283,19 +276,19 @@ export class ReviewsService {
                   sellerProfile: {
                     select: {
                       storeName: true,
-                      avatar: true
-                    }
-                  }
-                }
-              }
-            }
-          }
+                      avatar: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         orderBy,
         skip,
-        take: limit
+        take: limit,
       }),
-      this.prisma.review.count({ where })
+      this.prisma.review.count({ where }),
     ]);
 
     return {
@@ -304,8 +297,8 @@ export class ReviewsService {
         currentPage: page,
         totalPages: Math.ceil(totalCount / limit),
         totalItems: totalCount,
-        itemsPerPage: limit
-      }
+        itemsPerPage: limit,
+      },
     };
   }
 
@@ -320,28 +313,28 @@ export class ReviewsService {
             avatar: true,
             buyerProfile: {
               select: {
-                totalReviews: true
-              }
-            }
-          }
+                totalReviews: true,
+              },
+            },
+          },
         },
         product: {
           select: {
             title: true,
             slug: true,
-            thumbnailFileIds: true
-          }
+            thumbnailFileIds: true,
+          },
         },
         images: {
           include: {
             file: {
               select: {
                 url: true,
-                filename: true
-              }
-            }
+                filename: true,
+              },
+            },
           },
-          orderBy: { order: 'asc' }
+          orderBy: { order: 'asc' },
         },
         response: {
           include: {
@@ -352,20 +345,20 @@ export class ReviewsService {
                 sellerProfile: {
                   select: {
                     storeName: true,
-                    avatar: true
-                  }
-                }
-              }
-            }
-          }
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
         },
         votes: {
           select: {
             vote: true,
-            userId: true
-          }
-        }
-      }
+            userId: true,
+          },
+        },
+      },
     });
 
     if (!review) {
@@ -378,24 +371,28 @@ export class ReviewsService {
   // ============================================
   // UPDATE REVIEW
   // ============================================
-  async updateReview(userId: string, reviewId: string, updateDto: UpdateReviewDto) {
+  async updateReview(
+    userId: string,
+    reviewId: string,
+    updateDto: UpdateReviewDto,
+  ) {
     const review = await this.prisma.review.findUnique({
       where: { id: reviewId },
       include: {
         product: {
           select: {
             title: true,
-            sellerId: true
-          }
+            sellerId: true,
+          },
         },
         buyer: {
           select: {
             id: true,
             firstName: true,
-            lastName: true
-          }
-        }
-      }
+            lastName: true,
+          },
+        },
+      },
     });
 
     if (!review) {
@@ -423,15 +420,18 @@ export class ReviewsService {
       where: { id: reviewId },
       data: {
         ...updateData,
-        status: 'PENDING_MODERATION' // Re-moderar después de edición
-      }
+        status: 'PENDING_MODERATION', // Re-moderar después de edición
+      },
     });
 
     // Re-ejecutar auto-moderación
     const moderatedReview = await this.autoModerateReview(reviewId);
 
     // 🆕 NOTIFICACIÓN: Si se volvió a publicar después de edición, notificar al seller
-    if (moderatedReview?.status === 'PUBLISHED' && review.status !== 'PUBLISHED') {
+    if (
+      moderatedReview?.status === 'PUBLISHED' &&
+      review.status !== 'PUBLISHED'
+    ) {
       try {
         await this.notificationService.sendReviewReceivedNotification({
           id: updatedReview.id,
@@ -439,10 +439,13 @@ export class ReviewsService {
           rating: updatedReview.rating,
           comment: updatedReview.comment,
           product: { title: review.product.title },
-          buyer: review.buyer
+          buyer: review.buyer,
         });
       } catch (error) {
-        console.error('Error sending review update notification:', error);
+        this.logger.error(
+          'Error sending review update notification',
+          error.stack,
+        );
       }
     }
 
@@ -455,23 +458,27 @@ export class ReviewsService {
   // ============================================
   // SELLER RESPONSE
   // ============================================
-  async createResponse(sellerId: string, reviewId: string, responseDto: CreateReviewResponseDto) {
+  async createResponse(
+    sellerId: string,
+    reviewId: string,
+    responseDto: CreateReviewResponseDto,
+  ) {
     const review = await this.prisma.review.findUnique({
       where: { id: reviewId },
       include: {
         product: {
           select: {
-            title: true
-          }
+            title: true,
+          },
         },
         buyer: {
           select: {
             id: true,
             firstName: true,
-            lastName: true
-          }
-        }
-      }
+            lastName: true,
+          },
+        },
+      },
     });
 
     if (!review) {
@@ -488,7 +495,7 @@ export class ReviewsService {
 
     // Verificar que no existe respuesta previa
     const existingResponse = await this.prisma.reviewResponse.findUnique({
-      where: { reviewId }
+      where: { reviewId },
     });
 
     if (existingResponse) {
@@ -499,7 +506,7 @@ export class ReviewsService {
       data: {
         reviewId,
         sellerId,
-        comment: responseDto.comment
+        comment: responseDto.comment,
       },
       include: {
         seller: {
@@ -509,12 +516,12 @@ export class ReviewsService {
             sellerProfile: {
               select: {
                 storeName: true,
-                avatar: true
-              }
-            }
-          }
-        }
-      }
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // 🆕 NOTIFICACIÓN: Notificar al comprador que el seller respondió
@@ -525,15 +532,18 @@ export class ReviewsService {
           buyerId: review.buyerId,
           productId: review.productId,
           product: review.product,
-          buyer: review.buyer
+          buyer: review.buyer,
         },
         {
           id: response.id,
-          seller: response.seller
-        }
+          seller: response.seller,
+        },
       );
     } catch (error) {
-      console.error('Error sending review response notification:', error);
+      this.logger.error(
+        'Error sending review response notification',
+        error.stack,
+      );
     }
 
     return response;
@@ -548,15 +558,15 @@ export class ReviewsService {
       include: {
         product: {
           select: {
-            title: true
-          }
+            title: true,
+          },
         },
         buyer: {
           select: {
-            id: true
-          }
-        }
-      }
+            id: true,
+          },
+        },
+      },
     });
 
     if (!review) {
@@ -577,9 +587,9 @@ export class ReviewsService {
       where: {
         reviewId_userId: {
           reviewId,
-          userId
-        }
-      }
+          userId,
+        },
+      },
     });
 
     const isNewHelpfulVote = !existingVote && voteDto.vote === 'HELPFUL';
@@ -590,33 +600,35 @@ export class ReviewsService {
         where: {
           reviewId_userId: {
             reviewId,
-            userId
-          }
+            userId,
+          },
         },
         update: {
-          vote: voteDto.vote
+          vote: voteDto.vote,
         },
         create: {
           reviewId,
           userId,
-          vote: voteDto.vote
-        }
+          vote: voteDto.vote,
+        },
       });
 
       // Recalcular contadores
       const votes = await tx.reviewVote.findMany({
-        where: { reviewId }
+        where: { reviewId },
       });
 
-      const helpfulCount = votes.filter(v => v.vote === 'HELPFUL').length;
-      const notHelpfulCount = votes.filter(v => v.vote === 'NOT_HELPFUL').length;
+      const helpfulCount = votes.filter((v) => v.vote === 'HELPFUL').length;
+      const notHelpfulCount = votes.filter(
+        (v) => v.vote === 'NOT_HELPFUL',
+      ).length;
 
       await tx.review.update({
         where: { id: reviewId },
         data: {
           helpfulCount,
-          notHelpfulCount
-        }
+          notHelpfulCount,
+        },
       });
     });
 
@@ -627,10 +639,13 @@ export class ReviewsService {
           id: reviewId,
           buyerId: review.buyer.id,
           productId: review.productId,
-          product: review.product
+          product: review.product,
         });
       } catch (error) {
-        console.error('Error sending review helpful notification:', error);
+        this.logger.error(
+          'Error sending review helpful notification',
+          error.stack,
+        );
       }
     }
 
@@ -640,7 +655,11 @@ export class ReviewsService {
   // ============================================
   // REPORT REVIEW
   // ============================================
-  async reportReview(userId: string, reviewId: string, reportDto: ReportReviewDto) {
+  async reportReview(
+    userId: string,
+    reviewId: string,
+    reportDto: ReportReviewDto,
+  ) {
     const review = await this.prisma.review.findUnique({
       where: { id: reviewId },
       include: {
@@ -648,15 +667,15 @@ export class ReviewsService {
           select: {
             id: true,
             firstName: true,
-            lastName: true
-          }
+            lastName: true,
+          },
         },
         product: {
           select: {
-            title: true
-          }
-        }
-      }
+            title: true,
+          },
+        },
+      },
     });
 
     if (!review) {
@@ -667,8 +686,8 @@ export class ReviewsService {
     const existingReport = await this.prisma.reviewReport.findFirst({
       where: {
         reviewId,
-        userId
-      }
+        userId,
+      },
     });
 
     if (existingReport) {
@@ -680,19 +699,19 @@ export class ReviewsService {
         reviewId,
         userId,
         reason: reportDto.reason,
-        details: reportDto.details
-      }
+        details: reportDto.details,
+      },
     });
 
     // Si hay muchos reportes, marcar para revisión
     const reportCount = await this.prisma.reviewReport.count({
-      where: { reviewId }
+      where: { reviewId },
     });
 
     if (reportCount >= 3) {
       await this.prisma.review.update({
         where: { id: reviewId },
-        data: { status: 'FLAGGED' }
+        data: { status: 'FLAGGED' },
       });
 
       // 🆕 NOTIFICACIÓN: Review automáticamente flaggeada por reportes múltiples
@@ -705,11 +724,14 @@ export class ReviewsService {
           data: {
             reviewId: review.id,
             productTitle: review.product.title,
-            reason: 'Multiple reports received'
-          }
+            reason: 'Multiple reports received',
+          },
         });
       } catch (error) {
-        console.error('Error sending review flagged notification:', error);
+        this.logger.error(
+          'Error sending review flagged notification',
+          error.stack,
+        );
       }
     }
 
@@ -719,7 +741,11 @@ export class ReviewsService {
   // ============================================
   // MODERATION (ADMIN)
   // ============================================
-  async moderateReview(adminId: string, reviewId: string, moderateDto: ModerateReviewDto) {
+  async moderateReview(
+    adminId: string,
+    reviewId: string,
+    moderateDto: ModerateReviewDto,
+  ) {
     const review = await this.prisma.review.findUnique({
       where: { id: reviewId },
       include: {
@@ -727,16 +753,16 @@ export class ReviewsService {
           select: {
             id: true,
             firstName: true,
-            lastName: true
-          }
+            lastName: true,
+          },
         },
         product: {
           select: {
             title: true,
-            sellerId: true
-          }
-        }
-      }
+            sellerId: true,
+          },
+        },
+      },
     });
 
     if (!review) {
@@ -751,13 +777,16 @@ export class ReviewsService {
         status: moderateDto.status,
         moderatedBy: adminId,
         moderatedAt: new Date(),
-        moderationReason: moderateDto.reason
-      }
+        moderationReason: moderateDto.reason,
+      },
     });
 
     // 🆕 NOTIFICACIONES SEGÚN RESULTADO DE MODERACIÓN
     try {
-      if (moderateDto.status === 'PUBLISHED' && previousStatus !== 'PUBLISHED') {
+      if (
+        moderateDto.status === 'PUBLISHED' &&
+        previousStatus !== 'PUBLISHED'
+      ) {
         // Review aprobada - notificar al seller
         await this.notificationService.sendReviewReceivedNotification({
           id: review.id,
@@ -765,7 +794,7 @@ export class ReviewsService {
           rating: review.rating,
           comment: review.comment,
           product: review.product,
-          buyer: review.buyer
+          buyer: review.buyer,
         });
       } else if (moderateDto.status === 'REMOVED') {
         // Review removida - notificar al comprador
@@ -777,24 +806,26 @@ export class ReviewsService {
           data: {
             reviewId: review.id,
             productTitle: review.product.title,
-            reason: moderateDto.reason || 'Violated community guidelines'
-          }
+            reason: moderateDto.reason || 'Violated community guidelines',
+          },
         });
       }
     } catch (error) {
-      console.error('Error sending moderation notification:', error);
+      this.logger.error('Error sending moderation notification', error.stack);
     }
 
     // Actualizar estadísticas si se aprueba o rechaza
     if (['PUBLISHED', 'REMOVED'].includes(moderateDto.status)) {
       await this.updateProductRating(review.productId);
-      
+
       // Verificar hitos si se aprobó
       if (moderateDto.status === 'PUBLISHED') {
         try {
-          await this.notificationService.checkReviewMilestones(review.product.sellerId);
+          await this.notificationService.checkReviewMilestones(
+            review.product.sellerId,
+          );
         } catch (error) {
-          console.error('Error checking review milestones:', error);
+          this.logger.error('Error checking review milestones', error.stack);
         }
       }
     }
@@ -807,35 +838,39 @@ export class ReviewsService {
   // ============================================
   async getProductStats(productId: string) {
     const rating = await this.prisma.productRating.findUnique({
-      where: { productId }
+      where: { productId },
     });
 
-    return rating || {
-      totalReviews: 0,
-      averageRating: 0,
-      oneStar: 0,
-      twoStar: 0,
-      threeStar: 0,
-      fourStar: 0,
-      fiveStar: 0,
-      recommendationRate: 0
-    };
+    return (
+      rating || {
+        totalReviews: 0,
+        averageRating: 0,
+        oneStar: 0,
+        twoStar: 0,
+        threeStar: 0,
+        fourStar: 0,
+        fiveStar: 0,
+        recommendationRate: 0,
+      }
+    );
   }
 
   async getSellerStats(sellerId: string) {
     const rating = await this.prisma.sellerRating.findUnique({
-      where: { sellerId }
+      where: { sellerId },
     });
 
-    return rating || {
-      totalReviews: 0,
-      averageRating: 0,
-      oneStar: 0,
-      twoStar: 0,
-      threeStar: 0,
-      fourStar: 0,
-      fiveStar: 0
-    };
+    return (
+      rating || {
+        totalReviews: 0,
+        averageRating: 0,
+        oneStar: 0,
+        twoStar: 0,
+        threeStar: 0,
+        fourStar: 0,
+        fiveStar: 0,
+      }
+    );
   }
 
   // ============================================
@@ -847,7 +882,7 @@ export class ReviewsService {
       pendingReviews,
       flaggedReviews,
       reportedReviews,
-      averageRating
+      averageRating,
     ] = await Promise.all([
       this.prisma.review.count(),
       this.prisma.review.count({ where: { status: 'PENDING_MODERATION' } }),
@@ -855,8 +890,8 @@ export class ReviewsService {
       this.prisma.reviewReport.count({ where: { resolved: false } }),
       this.prisma.review.aggregate({
         where: { status: 'PUBLISHED' },
-        _avg: { rating: true }
-      })
+        _avg: { rating: true },
+      }),
     ]);
 
     return {
@@ -864,7 +899,7 @@ export class ReviewsService {
       pendingReviews,
       flaggedReviews,
       reportedReviews,
-      averageRating: Math.round((averageRating._avg.rating || 0) * 100) / 100
+      averageRating: Math.round((averageRating._avg.rating || 0) * 100) / 100,
     };
   }
 
@@ -874,21 +909,21 @@ export class ReviewsService {
     const [reviews, totalCount] = await Promise.all([
       this.prisma.review.findMany({
         where: {
-          status: { in: ['PENDING_MODERATION', 'FLAGGED'] }
+          status: { in: ['PENDING_MODERATION', 'FLAGGED'] },
         },
         include: {
           buyer: {
             select: {
               firstName: true,
               lastName: true,
-              email: true
-            }
+              email: true,
+            },
           },
           product: {
             select: {
               title: true,
-              slug: true
-            }
+              slug: true,
+            },
           },
           reports: {
             where: { resolved: false },
@@ -896,21 +931,21 @@ export class ReviewsService {
               user: {
                 select: {
                   firstName: true,
-                  lastName: true
-                }
-              }
-            }
-          }
+                  lastName: true,
+                },
+              },
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
-        take: limit
+        take: limit,
       }),
       this.prisma.review.count({
         where: {
-          status: { in: ['PENDING_MODERATION', 'FLAGGED'] }
-        }
-      })
+          status: { in: ['PENDING_MODERATION', 'FLAGGED'] },
+        },
+      }),
     ]);
 
     return {
@@ -919,8 +954,8 @@ export class ReviewsService {
         currentPage: page,
         totalPages: Math.ceil(totalCount / limit),
         totalItems: totalCount,
-        itemsPerPage: limit
-      }
+        itemsPerPage: limit,
+      },
     };
   }
 
@@ -930,16 +965,16 @@ export class ReviewsService {
       include: {
         buyer: {
           select: {
-            id: true
-          }
+            id: true,
+          },
         },
         product: {
           select: {
             title: true,
-            sellerId: true
-          }
-        }
-      }
+            sellerId: true,
+          },
+        },
+      },
     });
 
     if (!review) {
@@ -965,11 +1000,14 @@ export class ReviewsService {
         data: {
           reviewId: review.id,
           productTitle: review.product.title,
-          reason: 'Review deleted by administrator'
-        }
+          reason: 'Review deleted by administrator',
+        },
       });
     } catch (error) {
-      console.error('Error sending review deletion notification:', error);
+      this.logger.error(
+        'Error sending review deletion notification',
+        error.stack,
+      );
     }
 
     // Actualizar estadísticas
@@ -983,15 +1021,15 @@ export class ReviewsService {
   // ============================================
   private async autoModerateReview(reviewId: string) {
     const review = await this.prisma.review.findUnique({
-      where: { id: reviewId }
+      where: { id: reviewId },
     });
 
     if (!review) return null;
 
     // Filtros básicos de auto-moderación
     const suspiciousWords = ['spam', 'fake', 'scam'];
-    const hasSpam = suspiciousWords.some(word => 
-      review.comment.toLowerCase().includes(word.toLowerCase())
+    const hasSpam = suspiciousWords.some((word) =>
+      review.comment.toLowerCase().includes(word.toLowerCase()),
     );
 
     let newStatus: ReviewStatus = 'PUBLISHED';
@@ -1002,7 +1040,7 @@ export class ReviewsService {
 
     const updatedReview = await this.prisma.review.update({
       where: { id: reviewId },
-      data: { status: newStatus }
+      data: { status: newStatus },
     });
 
     return updatedReview;
@@ -1012,11 +1050,11 @@ export class ReviewsService {
     const reviews = await this.prisma.review.findMany({
       where: {
         productId,
-        status: 'PUBLISHED'
+        status: 'PUBLISHED',
       },
       select: {
-        rating: true
-      }
+        rating: true,
+      },
     });
 
     if (!reviews.length) {
@@ -1031,7 +1069,7 @@ export class ReviewsService {
           threeStar: 0,
           fourStar: 0,
           fiveStar: 0,
-          recommendationRate: 0
+          recommendationRate: 0,
         },
         create: {
           productId,
@@ -1042,13 +1080,13 @@ export class ReviewsService {
           threeStar: 0,
           fourStar: 0,
           fiveStar: 0,
-          recommendationRate: 0
-        }
+          recommendationRate: 0,
+        },
       });
 
       await this.prisma.product.update({
         where: { id: productId },
-        data: { rating: 0, reviewCount: 0 }
+        data: { rating: 0, reviewCount: 0 },
       });
 
       return;
@@ -1056,17 +1094,19 @@ export class ReviewsService {
 
     // Calcular estadísticas
     const totalReviews = reviews.length;
-    const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
-    
+    const averageRating =
+      reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
+
     const distribution = {
-      oneStar: reviews.filter(r => r.rating === 1).length,
-      twoStar: reviews.filter(r => r.rating === 2).length,
-      threeStar: reviews.filter(r => r.rating === 3).length,
-      fourStar: reviews.filter(r => r.rating === 4).length,
-      fiveStar: reviews.filter(r => r.rating === 5).length,
+      oneStar: reviews.filter((r) => r.rating === 1).length,
+      twoStar: reviews.filter((r) => r.rating === 2).length,
+      threeStar: reviews.filter((r) => r.rating === 3).length,
+      fourStar: reviews.filter((r) => r.rating === 4).length,
+      fiveStar: reviews.filter((r) => r.rating === 5).length,
     };
 
-    const recommendationRate = ((distribution.fourStar + distribution.fiveStar) / totalReviews) * 100;
+    const recommendationRate =
+      ((distribution.fourStar + distribution.fiveStar) / totalReviews) * 100;
 
     // Actualizar ProductRating
     await this.prisma.productRating.upsert({
@@ -1075,15 +1115,15 @@ export class ReviewsService {
         totalReviews,
         averageRating: Math.round(averageRating * 100) / 100,
         ...distribution,
-        recommendationRate: Math.round(recommendationRate * 100) / 100
+        recommendationRate: Math.round(recommendationRate * 100) / 100,
       },
       create: {
         productId,
         totalReviews,
         averageRating: Math.round(averageRating * 100) / 100,
         ...distribution,
-        recommendationRate: Math.round(recommendationRate * 100) / 100
-      }
+        recommendationRate: Math.round(recommendationRate * 100) / 100,
+      },
     });
 
     // Actualizar producto
@@ -1091,8 +1131,8 @@ export class ReviewsService {
       where: { id: productId },
       data: {
         rating: Math.round(averageRating * 100) / 100,
-        reviewCount: totalReviews
-      }
+        reviewCount: totalReviews,
+      },
     });
 
     // Actualizar seller rating
@@ -1102,7 +1142,7 @@ export class ReviewsService {
   private async updateSellerRating(productId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      select: { sellerId: true }
+      select: { sellerId: true },
     });
 
     if (!product) return;
@@ -1110,9 +1150,9 @@ export class ReviewsService {
     const sellerReviews = await this.prisma.review.findMany({
       where: {
         sellerId: product.sellerId,
-        status: 'PUBLISHED'
+        status: 'PUBLISHED',
       },
-      select: { rating: true }
+      select: { rating: true },
     });
 
     if (!sellerReviews.length) {
@@ -1125,7 +1165,7 @@ export class ReviewsService {
           twoStar: 0,
           threeStar: 0,
           fourStar: 0,
-          fiveStar: 0
+          fiveStar: 0,
         },
         create: {
           sellerId: product.sellerId,
@@ -1135,27 +1175,28 @@ export class ReviewsService {
           twoStar: 0,
           threeStar: 0,
           fourStar: 0,
-          fiveStar: 0
-        }
+          fiveStar: 0,
+        },
       });
 
       await this.prisma.sellerProfile.update({
         where: { userId: product.sellerId },
-        data: { rating: 0, totalReviews: 0 }
+        data: { rating: 0, totalReviews: 0 },
       });
 
       return;
     }
 
     const totalReviews = sellerReviews.length;
-    const averageRating = sellerReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
-    
+    const averageRating =
+      sellerReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
+
     const distribution = {
-      oneStar: sellerReviews.filter(r => r.rating === 1).length,
-      twoStar: sellerReviews.filter(r => r.rating === 2).length,
-      threeStar: sellerReviews.filter(r => r.rating === 3).length,
-      fourStar: sellerReviews.filter(r => r.rating === 4).length,
-      fiveStar: sellerReviews.filter(r => r.rating === 5).length,
+      oneStar: sellerReviews.filter((r) => r.rating === 1).length,
+      twoStar: sellerReviews.filter((r) => r.rating === 2).length,
+      threeStar: sellerReviews.filter((r) => r.rating === 3).length,
+      fourStar: sellerReviews.filter((r) => r.rating === 4).length,
+      fiveStar: sellerReviews.filter((r) => r.rating === 5).length,
     };
 
     await this.prisma.sellerRating.upsert({
@@ -1163,22 +1204,22 @@ export class ReviewsService {
       update: {
         totalReviews,
         averageRating: Math.round(averageRating * 100) / 100,
-        ...distribution
+        ...distribution,
       },
       create: {
         sellerId: product.sellerId,
         totalReviews,
         averageRating: Math.round(averageRating * 100) / 100,
-        ...distribution
-      }
+        ...distribution,
+      },
     });
 
     await this.prisma.sellerProfile.update({
       where: { userId: product.sellerId },
       data: {
         rating: Math.round(averageRating * 100) / 100,
-        totalReviews
-      }
+        totalReviews,
+      },
     });
 
     // 🆕 VERIFICAR MEJORA DE RATING DEL SELLER
@@ -1186,11 +1227,11 @@ export class ReviewsService {
       // Obtener rating anterior para comparar
       const previousRating = await this.prisma.sellerProfile.findUnique({
         where: { userId: product.sellerId },
-        select: { rating: true }
+        select: { rating: true },
       });
 
       const newRating = Math.round(averageRating * 100) / 100;
-      
+
       // Si el rating mejoró significativamente (≥ 0.5 estrellas)
       if (previousRating && newRating >= previousRating.rating + 0.5) {
         await this.notificationService.createNotification({
@@ -1202,12 +1243,15 @@ export class ReviewsService {
             previousRating: previousRating.rating,
             newRating,
             totalReviews,
-            improvement: newRating - previousRating.rating
-          }
+            improvement: newRating - previousRating.rating,
+          },
         });
       }
     } catch (error) {
-      console.error('Error sending rating improvement notification:', error);
+      this.logger.error(
+        'Error sending rating improvement notification',
+        error.stack,
+      );
     }
   }
 
@@ -1222,12 +1266,12 @@ export class ReviewsService {
               product: {
                 select: {
                   id: true,
-                  title: true
-                }
-              }
-            }
-          }
-        }
+                  title: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!order) return;
@@ -1242,29 +1286,29 @@ export class ReviewsService {
           where: {
             orderId: order.id,
             productId: item.productId,
-            buyerId: buyerId
-          }
+            buyerId: buyerId,
+          },
         });
 
         if (!existingReview) {
           await this.notificationService.scheduleNotification({
             userId: buyerId,
             type: 'REVIEW_PENDING_REMINDER',
-            title: 'Don\'t forget to review your purchase!',
+            title: "Don't forget to review your purchase!",
             message: `How was your experience with "${item.product.title}"? Your review helps other buyers.`,
             scheduledFor: reminderDate.toISOString(),
             data: {
               orderId: order.id,
               productId: item.productId,
-              productTitle: item.product.title
+              productTitle: item.product.title,
             },
             orderId: order.id,
-            productId: item.productId
+            productId: item.productId,
           });
         }
       }
     } catch (error) {
-      console.error('Error scheduling review reminders:', error);
+      this.logger.error('Error scheduling review reminders', error.stack);
     }
   }
 
@@ -1277,10 +1321,10 @@ export class ReviewsService {
           product: {
             select: {
               title: true,
-              sellerId: true
-            }
-          }
-        }
+              sellerId: true,
+            },
+          },
+        },
       });
 
       if (!productRating) return;
@@ -1289,14 +1333,15 @@ export class ReviewsService {
         { reviews: 10, rating: 4.5 },
         { reviews: 25, rating: 4.0 },
         { reviews: 50, rating: 4.5 },
-        { reviews: 100, rating: 4.0 }
+        { reviews: 100, rating: 4.0 },
       ];
 
       // Verificar si alcanzó un hito
-      const milestone = milestones.find(m => 
-        productRating.totalReviews >= m.reviews && 
-        productRating.averageRating >= m.rating &&
-        productRating.totalReviews < m.reviews + 5 // Ventana de detección
+      const milestone = milestones.find(
+        (m) =>
+          productRating.totalReviews >= m.reviews &&
+          productRating.averageRating >= m.rating &&
+          productRating.totalReviews < m.reviews + 5, // Ventana de detección
       );
 
       if (milestone) {
@@ -1310,12 +1355,12 @@ export class ReviewsService {
             productTitle: productRating.product.title,
             milestone: milestone.reviews,
             averageRating: productRating.averageRating,
-            totalReviews: productRating.totalReviews
-          }
+            totalReviews: productRating.totalReviews,
+          },
         });
       }
     } catch (error) {
-      console.error('Error checking product rating milestone:', error);
+      this.logger.error('Error checking product rating milestone', error.stack);
     }
   }
 }

@@ -8,11 +8,11 @@ import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
-    StripeModule, 
-    OrdersModule, 
+    StripeModule,
+    OrdersModule,
     PrismaModule,
     // NotificationModule,  // ← Comentado temporalmente para evitar dependencias circulares
-    PaymentsModule
+    PaymentsModule,
   ],
   controllers: [WebhookController],
   providers: [StripeWebhookService],

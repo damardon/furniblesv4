@@ -1,61 +1,67 @@
-import { IsString, IsEmail, IsOptional, IsObject, IsNumber } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger'
-import { IsArray, ValidateNested } from 'class-validator'
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsObject,
+  IsNumber,
+} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class FeeBreakdownItemDto {
   @ApiProperty({
     description: 'Tipo de comisión',
     example: 'PLATFORM_FEE',
-    enum: ['PLATFORM_FEE', 'STRIPE_FEE', 'SELLER_AMOUNT', 'TAX']
+    enum: ['PLATFORM_FEE', 'STRIPE_FEE', 'SELLER_AMOUNT', 'TAX'],
   })
   @IsString()
-  type: string
+  type: string;
 
   @ApiProperty({
     description: 'Descripción de la comisión',
-    example: 'Platform commission (10%)'
+    example: 'Platform commission (10%)',
   })
   @IsString()
-  description: string
+  description: string;
 
   @ApiProperty({
     description: 'Monto de la comisión',
-    example: 2.50
+    example: 2.5,
   })
   @IsNumber()
-  amount: number
+  amount: number;
 
   @ApiProperty({
     description: 'Porcentaje aplicado (opcional)',
     example: 10,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber()
-  percentage?: number
+  percentage?: number;
 
   @ApiProperty({
     description: 'ID del vendedor (opcional)',
     example: 'seller_123',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
-  sellerId?: string
+  sellerId?: string;
 }
 
 export class CreateOrderDto {
   @ApiProperty({
     description: 'Email del comprador para envío de archivos',
-    example: 'buyer@example.com'
+    example: 'buyer@example.com',
   })
   @IsEmail()
   buyerEmail: string;
 
   @ApiProperty({
     description: 'Datos de facturación (opcional)',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsObject()
@@ -71,7 +77,7 @@ export class CreateOrderDto {
 
   @ApiProperty({
     description: 'Metadata adicional (opcional)',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsObject()
@@ -80,7 +86,7 @@ export class CreateOrderDto {
   @ApiProperty({
     description: 'Desglose detallado de comisiones y tarifas',
     type: [FeeBreakdownItemDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()

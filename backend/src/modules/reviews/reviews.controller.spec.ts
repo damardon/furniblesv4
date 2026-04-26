@@ -4,7 +4,11 @@ import { ReviewsController } from './reviews.controller';
 import { ReviewsService } from './reviews.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 
 describe('ReviewsController', () => {
@@ -204,7 +208,9 @@ describe('ReviewsController', () => {
 
         const result = await controller.getSellerStats(sellerId);
 
-        expect(mockReviewsService.getSellerStats).toHaveBeenCalledWith(sellerId);
+        expect(mockReviewsService.getSellerStats).toHaveBeenCalledWith(
+          sellerId,
+        );
         expect(result.totalReviews).toBe(25);
         expect(result.averageRating).toBe(4.5);
       });
@@ -493,7 +499,10 @@ describe('ReviewsController', () => {
 
         const result = await controller.getPendingReviews(1, 20);
 
-        expect(mockReviewsService.getPendingReviews).toHaveBeenCalledWith(1, 20);
+        expect(mockReviewsService.getPendingReviews).toHaveBeenCalledWith(
+          1,
+          20,
+        );
         expect(result.reviews).toHaveLength(1);
         expect(result.reviews[0].status).toBe('PENDING_MODERATION');
       });
@@ -612,7 +621,7 @@ describe('ReviewsController', () => {
       // ParseUUIDPipe validation is handled by NestJS framework
       // In real scenarios, this would be handled before reaching the controller
       const invalidId = 'invalid-uuid';
-      
+
       mockReviewsService.findOne.mockRejectedValue(
         new NotFoundException('review.notFound'),
       );

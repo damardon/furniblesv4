@@ -119,7 +119,6 @@ export async function getUserDownloads(filters: DownloadFilters = {}): Promise<D
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [DOWNLOADS-API] Fetching user downloads with filters:', filters)
     
     const queryParams = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
@@ -141,7 +140,6 @@ export async function getUserDownloads(filters: DownloadFilters = {}): Promise<D
     }
 
     const data = await response.json()
-    console.log('✅ [DOWNLOADS-API] Downloads loaded:', data.data?.length || 0)
     
     return data
   } catch (error) {
@@ -158,7 +156,6 @@ export async function getDownloadByToken(token: string): Promise<Download | null
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [DOWNLOADS-API] Fetching download by token:', token)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads/${token}`, {
       headers: {
@@ -176,7 +173,6 @@ export async function getDownloadByToken(token: string): Promise<Download | null
     }
 
     const data = await response.json()
-    console.log('✅ [DOWNLOADS-API] Download data received:', data)
     
     return data
   } catch (error) {
@@ -193,7 +189,6 @@ export async function downloadFile(downloadToken: string): Promise<ApiResponse<{
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [DOWNLOADS-API] Initiating file download:', downloadToken)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads/${downloadToken}/download`, {
       method: 'POST',
@@ -211,7 +206,6 @@ export async function downloadFile(downloadToken: string): Promise<ApiResponse<{
       return { success: false, error: result.message || 'Error downloading file' }
     }
 
-    console.log('✅ [DOWNLOADS-API] Download initiated:', result)
     return { success: true, data: result }
   } catch (error) {
     console.error('❌ [DOWNLOADS-API] Error downloading file:', error)
@@ -227,7 +221,6 @@ export async function getDownloadStats(): Promise<DownloadStats> {
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [DOWNLOADS-API] Fetching download stats')
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads/stats`, {
       headers: {
@@ -242,7 +235,6 @@ export async function getDownloadStats(): Promise<DownloadStats> {
     }
 
     const data = await response.json()
-    console.log('✅ [DOWNLOADS-API] Download stats loaded:', data)
     
     return data
   } catch (error) {
@@ -264,7 +256,6 @@ export async function isDownloadAvailable(downloadToken: string): Promise<{
       return { available: false, reason: 'No autorizado' }
     }
 
-    console.log('🔍 [DOWNLOADS-API] Checking download availability:', downloadToken)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads/${downloadToken}/check`, {
       headers: {
@@ -280,7 +271,6 @@ export async function isDownloadAvailable(downloadToken: string): Promise<{
     }
 
     const data = await response.json()
-    console.log('✅ [DOWNLOADS-API] Download availability checked:', data)
     
     return data
   } catch (error) {
@@ -297,7 +287,6 @@ export async function getDownloadsByOrder(orderNumber: string): Promise<Download
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [DOWNLOADS-API] Fetching downloads for order:', orderNumber)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads/order/${orderNumber}`, {
       headers: {
@@ -312,7 +301,6 @@ export async function getDownloadsByOrder(orderNumber: string): Promise<Download
     }
 
     const data = await response.json()
-    console.log('✅ [DOWNLOADS-API] Order downloads loaded:', data.length || 0)
     
     return data
   } catch (error) {
@@ -329,7 +317,6 @@ export async function regenerateDownloadToken(downloadId: string): Promise<ApiRe
       throw new Error('No autorizado')
     }
 
-    console.log('🔍 [DOWNLOADS-API] Regenerating download token:', downloadId)
     
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/downloads/${downloadId}/regenerate`, {
       method: 'POST',
@@ -347,7 +334,6 @@ export async function regenerateDownloadToken(downloadId: string): Promise<ApiRe
       return { success: false, error: result.message || 'Error regenerating token' }
     }
 
-    console.log('✅ [DOWNLOADS-API] Token regenerated:', result)
     return { success: true, data: result }
   } catch (error) {
     console.error('❌ [DOWNLOADS-API] Error regenerating token:', error)

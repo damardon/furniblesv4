@@ -190,7 +190,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
         const animeModule = await import('animejs/lib/anime.es.js')
         setAnime(animeModule.default)
         setIsLoaded(true)
-        console.log('🎬 Anime.js cargado exitosamente')
       } catch (error) {
         console.error('❌ Error cargando anime.js:', error)
       }
@@ -217,7 +216,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
         ...config,
         begin: (anim: any) => {
           if (config.begin) config.begin(anim)
-          console.log(`🎬 Iniciando animación: ${animationId}`)
         },
         complete: (anim: any) => {
           if (config.complete) config.complete()
@@ -225,7 +223,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
           if (activeAnimations.size === 0) {
             setIsAnimating(false)
           }
-          console.log(`✅ Animación completada: ${animationId}`)
         },
         update: (anim: any) => {
           if (config.update) config.update(anim)
@@ -251,7 +248,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
       animation.pause()
       animation.seek(0)
       activeAnimations.delete(id)
-      console.log(`⏹️ Animación detenida: ${id}`)
     }
   }, [activeAnimations])
 
@@ -260,7 +256,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
     activeAnimations.forEach((animation, id) => {
       animation.pause()
       animation.seek(0)
-      console.log(`⏹️ Animación detenida: ${id}`)
     })
     activeAnimations.clear()
     setIsAnimating(false)
@@ -271,7 +266,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
     const animation = activeAnimations.get(id)
     if (animation) {
       animation.pause()
-      console.log(`⏸️ Animación pausada: ${id}`)
     }
   }, [activeAnimations])
 
@@ -280,7 +274,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
     const animation = activeAnimations.get(id)
     if (animation) {
       animation.play()
-      console.log(`▶️ Animación reproducida: ${id}`)
     }
   }, [activeAnimations])
 
@@ -289,7 +282,6 @@ export function AnimeProvider({ children }: AnimeProviderProps) {
     const animation = activeAnimations.get(id)
     if (animation) {
       animation.restart()
-      console.log(`🔄 Animación reiniciada: ${id}`)
     }
   }, [activeAnimations])
 

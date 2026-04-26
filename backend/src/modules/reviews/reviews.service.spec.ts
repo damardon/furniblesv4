@@ -48,6 +48,7 @@ describe('ReviewsService', () => {
     reviewVote: {
       upsert: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       deleteMany: jest.fn(),
     },
     reviewReport: {
@@ -153,16 +154,16 @@ describe('ReviewsService', () => {
           firstName: 'Test',
           lastName: 'Buyer',
           avatar: null,
-          buyerProfile: { totalReviews: 1 }
+          buyerProfile: { totalReviews: 1 },
         },
         product: {
           title: 'Mesa de Comedor',
           slug: 'mesa-comedor-premium',
-          thumbnailFileIds: []
+          thumbnailFileIds: [],
         },
         images: [],
         response: null,
-        votes: []
+        votes: [],
       } as any);
 
       // Setup mocks for createReview flow
@@ -208,6 +209,19 @@ describe('ReviewsService', () => {
           cons: createReviewDto.cons,
           status: 'PENDING_MODERATION',
         },
+        include: {
+          buyer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          product: {
+            select: {
+              title: true,
+            },
+          },
+        },
       });
 
       // Verify findOne was called
@@ -225,8 +239,18 @@ describe('ReviewsService', () => {
       };
 
       const mockValidImages = [
-        { id: 'image-1', uploadedById: userId, type: 'REVIEW_IMAGE', status: 'ACTIVE' },
-        { id: 'image-2', uploadedById: userId, type: 'REVIEW_IMAGE', status: 'ACTIVE' },
+        {
+          id: 'image-1',
+          uploadedById: userId,
+          type: 'REVIEW_IMAGE',
+          status: 'ACTIVE',
+        },
+        {
+          id: 'image-2',
+          uploadedById: userId,
+          type: 'REVIEW_IMAGE',
+          status: 'ACTIVE',
+        },
       ];
 
       // Spy en findOne
@@ -237,25 +261,25 @@ describe('ReviewsService', () => {
           firstName: 'Test',
           lastName: 'Buyer',
           avatar: null,
-          buyerProfile: { totalReviews: 1 }
+          buyerProfile: { totalReviews: 1 },
         },
         product: {
           title: 'Mesa de Comedor',
           slug: 'mesa-comedor-premium',
-          thumbnailFileIds: []
+          thumbnailFileIds: [],
         },
         images: [
           {
             file: { url: '/uploads/image-1.jpg', filename: 'image-1.jpg' },
-            order: 0
+            order: 0,
           },
           {
             file: { url: '/uploads/image-2.jpg', filename: 'image-2.jpg' },
-            order: 1
-          }
+            order: 1,
+          },
         ],
         response: null,
-        votes: []
+        votes: [],
       } as any);
 
       // Setup mocks
@@ -442,7 +466,11 @@ describe('ReviewsService', () => {
     });
 
     it('should successfully create seller response', async () => {
-      const result = await service.createResponse(sellerId, reviewId, responseDto);
+      const result = await service.createResponse(
+        sellerId,
+        reviewId,
+        responseDto,
+      );
 
       expect(result.comment).toBe(responseDto.comment);
       expect(result.seller.firstName).toBe('Test');
@@ -546,7 +574,9 @@ describe('ReviewsService', () => {
       ];
 
       mockPrisma.review.findMany.mockResolvedValue(mockReviews);
-      mockPrisma.product.findUnique.mockResolvedValue({ sellerId: 'seller-123' });
+      mockPrisma.product.findUnique.mockResolvedValue({
+        sellerId: 'seller-123',
+      });
       mockPrisma.productRating.upsert.mockResolvedValue({});
       mockPrisma.product.update.mockResolvedValue({});
       mockPrisma.sellerRating.upsert.mockResolvedValue({});

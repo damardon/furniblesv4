@@ -164,8 +164,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logout successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@CurrentUser('id') userId: string, @Request() req) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  return this.authService.logout(token, userId); // ← Debe pasar 2 parámetros
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    return this.authService.logout(token, userId); // ← Debe pasar 2 parámetros
   }
 
   @Public()

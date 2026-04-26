@@ -104,7 +104,6 @@ export class APIClient {
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        console.log(`🔍 [API] ${fetchOptions.method || 'GET'} ${url} (attempt ${attempt + 1}/${retries + 1})`)
 
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -117,7 +116,6 @@ export class APIClient {
 
         clearTimeout(timeoutId)
 
-        console.log(`📡 [API] Response: ${response.status} ${response.statusText}`)
 
         // Si la response no es ok, intentar leer el error
         if (!response.ok) {
@@ -137,7 +135,6 @@ export class APIClient {
 
         // Intentar parsear la respuesta
         const data = await response.json()
-        console.log(`✅ [API] Success:`, data)
         
         return data
       } catch (error) {
@@ -220,7 +217,6 @@ export class APIClient {
       }
     }
 
-    console.log(`🔍 [API] UPLOAD ${url}`)
 
     try {
       const response = await fetch(url, {
@@ -233,7 +229,6 @@ export class APIClient {
         body: formData,
       })
 
-      console.log(`📡 [API] Upload Response: ${response.status} ${response.statusText}`)
 
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`
@@ -251,7 +246,6 @@ export class APIClient {
       }
 
       const data = await response.json()
-      console.log(`✅ [API] Upload Success:`, data)
       
       return data
     } catch (error) {

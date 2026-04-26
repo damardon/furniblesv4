@@ -158,7 +158,7 @@ export function OrderCard({ order }: OrderCardProps) {
           <CreditCardIcon className="w-4 h-4 text-gray-600" />
           <span className="font-bold text-black">
             {t('product_count', { 
-              count: order.items?.length,
+              count: order.items?.length ?? 0,
               text: order.items?.length === 1 ? t('product_singular') : t('product_plural')
             })}
           </span>

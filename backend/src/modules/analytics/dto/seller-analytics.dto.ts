@@ -11,7 +11,7 @@ export enum DashboardMetric {
   PRODUCTS = 'products',
   REVIEWS = 'reviews',
   CUSTOMERS = 'customers',
-  CONVERSION = 'conversion'
+  CONVERSION = 'conversion',
 }
 
 export enum SortBy {
@@ -20,18 +20,18 @@ export enum SortBy {
   RATING = 'rating',
   REVIEWS = 'reviews',
   CREATED_AT = 'createdAt',
-  UPDATED_AT = 'updatedAt'
+  UPDATED_AT = 'updatedAt',
 }
 
 export enum SortOrder {
   ASC = 'asc',
-  DESC = 'desc'
+  DESC = 'desc',
 }
 
 export class GetSellerDashboardDto extends SellerAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include comparison with previous period',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -40,7 +40,7 @@ export class GetSellerDashboardDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include recent activity data',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -51,7 +51,7 @@ export class GetSellerDashboardDto extends SellerAnalyticsFiltersDto {
 export class GetSellerRevenueDto extends SellerAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include breakdown by product',
-    default: false
+    default: false,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -60,7 +60,7 @@ export class GetSellerRevenueDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include platform fees breakdown',
-    default: false
+    default: false,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -72,16 +72,19 @@ export class GetSellerProductsDto extends SellerAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Sort products by',
     enum: SortBy,
-    default: SortBy.REVENUE
+    default: SortBy.REVENUE,
   })
   @IsOptional()
-  @IsEnum(SortBy, { message: 'sortBy must be one of: revenue, orders, rating, reviews, createdAt, updatedAt' })
+  @IsEnum(SortBy, {
+    message:
+      'sortBy must be one of: revenue, orders, rating, reviews, createdAt, updatedAt',
+  })
   sortBy?: SortBy = SortBy.REVENUE;
 
   @ApiPropertyOptional({
     description: 'Sort order',
     enum: SortOrder,
-    default: SortOrder.DESC
+    default: SortOrder.DESC,
   })
   @IsOptional()
   @IsEnum(SortOrder, { message: 'sortOrder must be either asc or desc' })
@@ -89,7 +92,7 @@ export class GetSellerProductsDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include detailed metrics for each product',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -100,7 +103,7 @@ export class GetSellerProductsDto extends SellerAnalyticsFiltersDto {
 export class GetSellerReviewsDto extends SellerAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include review distribution by rating',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -109,7 +112,7 @@ export class GetSellerReviewsDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include recent reviews',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -118,7 +121,7 @@ export class GetSellerReviewsDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include response rate metrics',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -129,7 +132,7 @@ export class GetSellerReviewsDto extends SellerAnalyticsFiltersDto {
 export class GetSellerCustomersDto extends SellerAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include repeat customer analysis',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -138,7 +141,7 @@ export class GetSellerCustomersDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include customer lifetime value',
-    default: false
+    default: false,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -149,7 +152,7 @@ export class GetSellerCustomersDto extends SellerAnalyticsFiltersDto {
 export class GetSellerNotificationsDto extends SellerAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include engagement metrics',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -158,7 +161,7 @@ export class GetSellerNotificationsDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include breakdown by notification type',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -169,7 +172,7 @@ export class GetSellerNotificationsDto extends SellerAnalyticsFiltersDto {
 export class GetSellerConversionDto extends SellerAnalyticsFiltersDto {
   @ApiPropertyOptional({
     description: 'Include funnel analysis',
-    default: true
+    default: true,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -178,7 +181,7 @@ export class GetSellerConversionDto extends SellerAnalyticsFiltersDto {
 
   @ApiPropertyOptional({
     description: 'Include conversion by traffic source',
-    default: false
+    default: false,
   })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)

@@ -12,12 +12,6 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'probable-barnacle-65pw9jg5qwxc5w6-3002.app.github.dev',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'furnibles-backend.up.railway.app',
         port: '',
         pathname: '/**',
@@ -50,18 +44,6 @@ const nextConfig = {
   
   // ✅ MODIFICADO: Webpack config compatible con export
   webpack: (config, { dev, isServer }) => {
-    // Configuración para Codespaces (solo en desarrollo)
-    if (dev && !isServer && process.env.CODESPACE_NAME) {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-      };
-      
-      config.infrastructureLogging = {
-        level: 'error',
-      };
-    }
-    
     // ✅ NUEVO: Fallbacks para export estático
     if (!isServer) {
       config.resolve.fallback = {
@@ -72,19 +54,12 @@ const nextConfig = {
         crypto: false,
       };
     }
-    
+
     return config;
   },
-  
-  // ✅ MODIFICADO: Solo para desarrollo en Codespaces
-  ...(process.env.CODESPACE_NAME && process.env.NODE_ENV === 'development' && {
-    onDemandEntries: {
-      maxInactiveAge: 25 * 1000,
-      pagesBufferLength: 2,
-    },
-  }),
 
   env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   },

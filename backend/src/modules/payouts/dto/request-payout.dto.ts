@@ -1,11 +1,20 @@
 // src/modules/payouts/dto/request-payout.dto.ts - FINAL
-import { IsNumber, IsString, IsOptional, IsIn, Min, Max, IsBoolean } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsOptional,
+  IsIn,
+  Min,
+  Max,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RequestPayoutDto {
   @ApiPropertyOptional({
-    description: 'Amount to payout (if not specified, will payout all available balance)',
-    example: 100.50,
+    description:
+      'Amount to payout (if not specified, will payout all available balance)',
+    example: 100.5,
     minimum: 1,
     maximum: 100000,
   })

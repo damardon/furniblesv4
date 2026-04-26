@@ -1,5 +1,6 @@
 // src/modules/checkout/checkout.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CartService } from '../cart/cart.service';
 import { OrdersService } from '../orders/orders.service';
@@ -8,88 +9,102 @@ import { CheckoutDto, CheckoutResponseDto } from './dto/checkout.dto';
 
 @Injectable()
 export class CheckoutService {
+  private readonly logger = new Logger(CheckoutService.name);
+
   constructor(
     private prisma: PrismaService,
     private cartService: CartService,
     private ordersService: OrdersService,
     private stripeService: StripeService,
+    private configService: ConfigService,
   ) {}
 
   async createCheckoutSession(
-  userId: string, 
-  dto: CheckoutDto
-): Promise<CheckoutResponseDto> {
-  // Obtener carrito del usuario
-  const cart = await this.cartService.getCart(userId);
+    userId: string,
+    dto: CheckoutDto,
+  ): Promise<CheckoutResponseDto> {
+    // Obtener carrito del usuario
+    const cart = await this.cartService.getCart(userId);
 
-  if (cart.items.length === 0) {
-    throw new BadRequestException('El carrito está vacío');
-  }
-
-  // Filtrar productos específicos si se especificaron
-  let itemsToCheckout = cart.items;
-  if (dto.productIds && dto.productIds.length > 0) {
-    itemsToCheckout = cart.items.filter(item => 
-      dto.productIds.includes(item.productId)
-    );
-
-    if (itemsToCheckout.length === 0) {
-      throw new BadRequestException('No se encontraron productos válidos para checkout');
+    if (cart.items.length === 0) {
+      throw new BadRequestException('El carrito está vacío');
     }
-  }
 
-  // Recalcular totales solo para los productos seleccionados
-  const subtotal = itemsToCheckout.reduce((sum, item) => sum + item.currentPrice, 0);
-  const platformFee = subtotal * cart.summary.platformFeeRate;
-  const totalAmount = subtotal + platformFee;
+    // Filtrar productos específicos si se especificaron
+    let itemsToCheckout = cart.items;
+    if (dto.productIds && dto.productIds.length > 0) {
+      itemsToCheckout = cart.items.filter((item) =>
+        dto.productIds.includes(item.productId),
+      );
 
-  // Crear orden
-  const orderDto = await this.ordersService.createOrder(userId, {
-    buyerEmail: dto.buyerEmail,
-    billingData: dto.billingData
-  });
-
-  // Crear sesión de Stripe
-  const stripeSession = await this.stripeService.createCheckoutSession({
-    orderId: orderDto.id,
-    orderNumber: orderDto.orderNumber,
-    amount: totalAmount,
-    currency: 'usd',
-    customerEmail: dto.buyerEmail,
-    successUrl: dto.successUrl || `${process.env.FRONTEND_URL}/orders/${orderDto.id}/success`,
-    cancelUrl: dto.cancelUrl || `${process.env.FRONTEND_URL}/cart`,
-    metadata: {
-      orderId: orderDto.id,
-      userId,
-      itemCount: itemsToCheckout.length.toString()
-    }
-  });
-
-  // ✅ Actualización simple SIN spread de metadata
-  await this.prisma.order.update({
-    where: { id: orderDto.id },
-    data: {
-      paymentIntentId: stripeSession.payment_intent as string,
-      metadata: {
-        stripeSessionId: stripeSession.id,
-        checkoutCreatedAt: new Date().toISOString()
+      if (itemsToCheckout.length === 0) {
+        throw new BadRequestException(
+          'No se encontraron productos válidos para checkout',
+        );
       }
     }
-  });
 
-  // Calcular expiración (24 horas desde ahora)
-  const expiresAt = new Date();
-  expiresAt.setHours(expiresAt.getHours() + 24);
+    // Recalcular totales solo para los productos seleccionados
+    const subtotal = itemsToCheckout.reduce(
+      (sum, item) => sum + item.currentPrice,
+      0,
+    );
+    const platformFee = subtotal * cart.summary.platformFeeRate;
+    const totalAmount = subtotal + platformFee;
 
-  return {
-    orderId: orderDto.id,
-    orderNumber: orderDto.orderNumber,
-    checkoutUrl: stripeSession.url,
-    paymentIntentId: stripeSession.payment_intent as string,
-    totalAmount: totalAmount,
-    expiresAt
-  };
-}
+    // Crear orden
+    const orderDto = await this.ordersService.createOrder(userId, {
+      buyerEmail: dto.buyerEmail,
+      billingData: dto.billingData,
+    });
+
+    const frontendUrl = this.configService.get(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
+
+    // Crear sesión de Stripe
+    const stripeSession = await this.stripeService.createCheckoutSession({
+      orderId: orderDto.id,
+      orderNumber: orderDto.orderNumber,
+      amount: totalAmount,
+      currency: 'usd',
+      customerEmail: dto.buyerEmail,
+      successUrl:
+        dto.successUrl || `${frontendUrl}/orders/${orderDto.id}/success`,
+      cancelUrl: dto.cancelUrl || `${frontendUrl}/cart`,
+      metadata: {
+        orderId: orderDto.id,
+        userId,
+        itemCount: itemsToCheckout.length.toString(),
+      },
+    });
+
+    // ✅ Actualización simple SIN spread de metadata
+    await this.prisma.order.update({
+      where: { id: orderDto.id },
+      data: {
+        paymentIntentId: stripeSession.payment_intent as string,
+        metadata: {
+          stripeSessionId: stripeSession.id,
+          checkoutCreatedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    // Calcular expiración (24 horas desde ahora)
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    return {
+      orderId: orderDto.id,
+      orderNumber: orderDto.orderNumber,
+      checkoutUrl: stripeSession.url,
+      paymentIntentId: stripeSession.payment_intent as string,
+      totalAmount: totalAmount,
+      expiresAt,
+    };
+  }
 
   /**
    * Validar sesión de checkout existente - CORREGIDO
@@ -100,13 +115,13 @@ export class CheckoutService {
       const orders = await this.prisma.order.findMany({
         where: {
           metadata: {
-            not: null
-          }
-        }
+            not: null,
+          },
+        },
       });
 
       // Filtrar manualmente en el código ya que SQLite no soporta JSON path queries complejas
-      const order = orders.find(order => {
+      const order = orders.find((order) => {
         if (order.metadata && typeof order.metadata === 'object') {
           const metadata = order.metadata as Record<string, any>;
           return metadata.stripeSessionId === sessionId;
@@ -124,7 +139,7 @@ export class CheckoutService {
 
       return new Date() < expirationTime && order.status === 'PENDING';
     } catch (error) {
-      console.error('Error validating checkout session:', error);
+      this.logger.error('Error validating checkout session', error.stack);
       return false;
     }
   }
@@ -137,12 +152,14 @@ export class CheckoutService {
       where: {
         id: orderId,
         buyerId: userId,
-        status: 'PENDING'
-      }
+        status: 'PENDING',
+      },
     });
 
     if (!order) {
-      throw new BadRequestException('Orden no encontrada o no se puede cancelar');
+      throw new BadRequestException(
+        'Orden no encontrada o no se puede cancelar',
+      );
     }
 
     // Actualizar orden como cancelada
@@ -152,11 +169,11 @@ export class CheckoutService {
         status: 'CANCELLED',
         cancelledAt: new Date(),
         metadata: {
-          ...(order.metadata as Record<string, any> || {}),
+          ...((order.metadata as Record<string, any>) || {}),
           cancellationReason: 'Cancelled by user during checkout',
-          cancelledAt: new Date().toISOString()
-        }
-      }
+          cancelledAt: new Date().toISOString(),
+        },
+      },
     });
   }
 
@@ -167,7 +184,7 @@ export class CheckoutService {
     const order = await this.prisma.order.findFirst({
       where: {
         id: orderId,
-        buyerId: userId
+        buyerId: userId,
       },
       include: {
         items: {
@@ -178,12 +195,12 @@ export class CheckoutService {
                 title: true,
                 slug: true,
                 category: true,
-                imageFileIds: true // Obtener los IDs de imágenes desde JSON
-              }
-            }
-          }
-        }
-      }
+                imageFileIds: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -192,23 +209,17 @@ export class CheckoutService {
 
     // Helper function para obtener imagen del producto
     const getProductImageUrl = async (product: any): Promise<string | null> => {
-      try {
-        if (product.imageFileIds) {
-          const imageIds = JSON.parse(product.imageFileIds);
-          if (Array.isArray(imageIds) && imageIds.length > 0) {
-            const imageFile = await this.prisma.file.findFirst({
-              where: { 
-                id: { in: imageIds },
-                type: 'IMAGE',
-                status: 'ACTIVE'
-              },
-              select: { url: true }
-            });
-            return imageFile?.url || null;
-          }
-        }
-      } catch (error) {
-        console.warn('Error parsing imageFileIds:', error);
+      const imageIds = product.imageFileIds || [];
+      if (Array.isArray(imageIds) && imageIds.length > 0) {
+        const imageFile = await this.prisma.file.findFirst({
+          where: {
+            id: { in: imageIds },
+            type: 'IMAGE',
+            status: 'ACTIVE',
+          },
+          select: { url: true },
+        });
+        return imageFile?.url || null;
       }
       return null;
     };
@@ -217,7 +228,7 @@ export class CheckoutService {
     const itemsWithImages = await Promise.all(
       order.items.map(async (item) => {
         const imageUrl = await getProductImageUrl(item.product);
-        
+
         return {
           id: item.id,
           productId: item.productId,
@@ -229,10 +240,10 @@ export class CheckoutService {
             title: item.product.title,
             slug: item.product.slug,
             category: item.product.category,
-            imageUrl
-          }
+            imageUrl,
+          },
         };
-      })
+      }),
     );
 
     return {
@@ -245,24 +256,29 @@ export class CheckoutService {
       buyerEmail: order.buyerEmail,
       items: itemsWithImages,
       createdAt: order.createdAt,
-      paymentIntentId: order.paymentIntentId
+      paymentIntentId: order.paymentIntentId,
     };
   }
 
   /**
    * Reactivar checkout para orden pendiente
    */
-  async reactivateCheckout(orderId: string, userId: string): Promise<CheckoutResponseDto> {
+  async reactivateCheckout(
+    orderId: string,
+    userId: string,
+  ): Promise<CheckoutResponseDto> {
     const order = await this.prisma.order.findFirst({
       where: {
         id: orderId,
         buyerId: userId,
-        status: 'PENDING'
-      }
+        status: 'PENDING',
+      },
     });
 
     if (!order) {
-      throw new BadRequestException('Orden no encontrada o no se puede reactivar');
+      throw new BadRequestException(
+        'Orden no encontrada o no se puede reactivar',
+      );
     }
 
     // Verificar que no haya expirado (24 horas)
@@ -275,6 +291,11 @@ export class CheckoutService {
       throw new BadRequestException('La sesión de checkout ha expirado');
     }
 
+    const frontendUrl = this.configService.get(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
+
     // Crear nueva sesión de Stripe
     const stripeSession = await this.stripeService.createCheckoutSession({
       orderId: order.id,
@@ -282,13 +303,13 @@ export class CheckoutService {
       amount: order.totalAmount,
       currency: 'usd',
       customerEmail: order.buyerEmail,
-      successUrl: `${process.env.FRONTEND_URL}/orders/${order.id}/success`,
-      cancelUrl: `${process.env.FRONTEND_URL}/cart`,
+      successUrl: `${frontendUrl}/orders/${order.id}/success`,
+      cancelUrl: `${frontendUrl}/cart`,
       metadata: {
         orderId: order.id,
         userId,
-        reactivated: 'true'
-      }
+        reactivated: 'true',
+      },
     });
 
     // Actualizar metadata con nueva sesión
@@ -297,11 +318,11 @@ export class CheckoutService {
       data: {
         paymentIntentId: stripeSession.payment_intent as string,
         metadata: {
-          ...(order.metadata as Record<string, any> || {}),
+          ...((order.metadata as Record<string, any>) || {}),
           stripeSessionId: stripeSession.id,
-          reactivatedAt: new Date().toISOString()
-        }
-      }
+          reactivatedAt: new Date().toISOString(),
+        },
+      },
     });
 
     return {
@@ -310,7 +331,7 @@ export class CheckoutService {
       checkoutUrl: stripeSession.url,
       paymentIntentId: stripeSession.payment_intent as string,
       totalAmount: order.totalAmount,
-      expiresAt: expirationTime
+      expiresAt: expirationTime,
     };
   }
 
@@ -330,28 +351,28 @@ export class CheckoutService {
       totalCheckouts,
       completedCheckouts,
       cancelledCheckouts,
-      avgCheckoutValue
+      avgCheckoutValue,
     ] = await Promise.all([
       this.prisma.order.count({ where }),
       this.prisma.order.count({ where: { ...where, status: 'COMPLETED' } }),
       this.prisma.order.count({ where: { ...where, status: 'CANCELLED' } }),
       this.prisma.order.aggregate({
         where: { ...where, status: 'COMPLETED' },
-        _avg: { totalAmount: true }
-      })
+        _avg: { totalAmount: true },
+      }),
     ]);
 
-    const conversionRate = totalCheckouts > 0 
-      ? (completedCheckouts / totalCheckouts) * 100 
-      : 0;
+    const conversionRate =
+      totalCheckouts > 0 ? (completedCheckouts / totalCheckouts) * 100 : 0;
 
     return {
       totalCheckouts,
       completedCheckouts,
       cancelledCheckouts,
-      pendingCheckouts: totalCheckouts - completedCheckouts - cancelledCheckouts,
+      pendingCheckouts:
+        totalCheckouts - completedCheckouts - cancelledCheckouts,
       conversionRate: Math.round(conversionRate * 100) / 100,
-      avgCheckoutValue: avgCheckoutValue._avg.totalAmount || 0
+      avgCheckoutValue: avgCheckoutValue._avg.totalAmount || 0,
     };
   }
 }

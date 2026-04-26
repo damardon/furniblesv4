@@ -133,7 +133,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_ERROR', payload: null })
 
     try {
-      console.log('🔐 [AUTH] Attempting login...')
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: 'POST',
@@ -162,7 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
 
-      console.log('✅ [AUTH] Login successful')
       
     } catch (error: any) {
       console.error('❌ [AUTH] Login error:', error)
@@ -176,7 +174,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_ERROR', payload: null })
 
     try {
-      console.log('🔐 [AUTH] Attempting registration...')
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: 'POST',
@@ -205,7 +202,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
 
-      console.log('✅ [AUTH] Registration successful')
       
     } catch (error: any) {
       console.error('❌ [AUTH] Registration error:', error)
@@ -216,7 +212,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ✅ Función de logout
   const logout = async () => {
     try {
-      console.log('🔐 [AUTH] Logging out...')
       
       const token = getTokenFromStorage()
       if (token) {
@@ -234,7 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removeTokenFromStorage()
       dispatch({ type: 'LOGOUT' })
       
-      console.log('✅ [AUTH] Logout successful')
       router.push('/')
       
     } catch (error) {
@@ -255,7 +249,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      console.log('🔐 [AUTH] Checking authentication...')
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`, {
         headers: getAuthHeaders(token)
@@ -270,12 +263,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             token
           }
         })
-        console.log('✅ [AUTH] Authentication verified')
       } else {
         // Token inválido o expirado
         removeTokenFromStorage()
         dispatch({ type: 'LOGOUT' })
-        console.log('❌ [AUTH] Invalid token, logged out')
       }
     } catch (error) {
       console.error('❌ [AUTH] Auth check error:', error)

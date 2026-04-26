@@ -1,10 +1,17 @@
-import { IsEmail, IsOptional, IsObject, IsArray, IsString, IsUrl } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsObject,
+  IsArray,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CheckoutDto {
   @ApiProperty({
     description: 'Email del comprador para recibir los archivos',
-    example: 'buyer@example.com'
+    example: 'buyer@example.com',
   })
   @IsEmail()
   buyerEmail: string;
@@ -12,7 +19,7 @@ export class CheckoutDto {
   @ApiProperty({
     description: 'URL de éxito después del pago',
     required: false,
-    default: 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev/orders/success'
+    default: 'http://localhost:3000/orders/success',
   })
   @IsOptional()
   @IsUrl()
@@ -21,7 +28,7 @@ export class CheckoutDto {
   @ApiProperty({
     description: 'URL de cancelación',
     required: false,
-    default: 'https://probable-barnacle-65wp9jg5qwxc5w6-3000.app.github.dev/cart'
+    default: 'http://localhost:3000/cart',
   })
   @IsOptional()
   @IsUrl()
@@ -29,7 +36,7 @@ export class CheckoutDto {
 
   @ApiProperty({
     description: 'Datos de facturación',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsObject()
@@ -45,9 +52,10 @@ export class CheckoutDto {
   };
 
   @ApiProperty({
-    description: 'IDs específicos de productos del carrito a comprar (opcional)',
+    description:
+      'IDs específicos de productos del carrito a comprar (opcional)',
     required: false,
-    type: [String]
+    type: [String],
   })
   @IsOptional()
   @IsArray()
@@ -57,32 +65,32 @@ export class CheckoutDto {
 
 export class CheckoutResponseDto {
   @ApiProperty({
-    description: 'ID de la orden creada'
+    description: 'ID de la orden creada',
   })
   orderId: string;
 
   @ApiProperty({
-    description: 'Número único de la orden'
+    description: 'Número único de la orden',
   })
   orderNumber: string;
 
   @ApiProperty({
-    description: 'URL de Stripe Checkout para proceder al pago'
+    description: 'URL de Stripe Checkout para proceder al pago',
   })
   checkoutUrl: string;
 
   @ApiProperty({
-    description: 'ID del Payment Intent de Stripe'
+    description: 'ID del Payment Intent de Stripe',
   })
   paymentIntentId: string;
 
   @ApiProperty({
-    description: 'Monto total a pagar'
+    description: 'Monto total a pagar',
   })
   totalAmount: number;
 
   @ApiProperty({
-    description: 'Fecha y hora de expiración del checkout'
+    description: 'Fecha y hora de expiración del checkout',
   })
   expiresAt: Date;
 }

@@ -31,6 +31,21 @@ interface FeaturedProduct {
   }
 }
 
+interface SellerApiResponse {
+  id: string
+  firstName: string
+  lastName: string
+  avatar?: string
+  productCount?: number
+  sellerProfile?: {
+    storeName?: string
+    slug?: string
+    description?: string
+    avatar?: string
+    isVerified?: boolean
+  }
+}
+
 interface TopSeller {
   id: string
   storeName: string
@@ -55,7 +70,6 @@ interface ProductCategory {
 // ✅ Obtener productos destacados desde el endpoint real
 export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
   try {
-    console.log('🔍 [HOMEPAGE] Fetching featured products...')
     
     // ✅ USAR endpoint /products/featured que creamos
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/featured`, {
@@ -74,7 +88,6 @@ export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
     const result = await response.json()
     
     if (result.success && result.data) {
-      console.log('✅ [HOMEPAGE] Featured products loaded:', result.data.length)
       return result.data || []
     }
     
@@ -90,7 +103,6 @@ export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
 // ✅ Obtener productos más recientes
 export async function getLatestProducts(): Promise<FeaturedProduct[]> {
   try {
-    console.log('🔍 [HOMEPAGE] Fetching latest products...')
     
     // ✅ USAR endpoint /products/latest que creamos
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/latest`, {
@@ -109,7 +121,6 @@ export async function getLatestProducts(): Promise<FeaturedProduct[]> {
     const result = await response.json()
     
     if (result.success && result.data) {
-      console.log('✅ [HOMEPAGE] Latest products loaded:', result.data.length)
       return result.data || []
     }
     
@@ -125,7 +136,6 @@ export async function getLatestProducts(): Promise<FeaturedProduct[]> {
 // ✅ Obtener estadísticas del marketplace desde el endpoint real
 export async function getMarketplaceStats(): Promise<HomepageStats> {
   try {
-    console.log('🔍 [HOMEPAGE] Fetching marketplace stats...')
     
     // ✅ USAR endpoint /analytics/stats que creamos
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/stats`, {
@@ -149,7 +159,6 @@ export async function getMarketplaceStats(): Promise<HomepageStats> {
           satisfactionRate: 98 // Valor calculado del marketplace
         }
         
-        console.log('✅ [HOMEPAGE] Marketplace stats loaded from API:', stats)
         return stats
       }
     }
@@ -166,7 +175,6 @@ export async function getMarketplaceStats(): Promise<HomepageStats> {
       satisfactionRate: 98
     }
     
-    console.log('⚠️ [HOMEPAGE] Using fallback stats:', fallbackStats)
     return fallbackStats
     
   } catch (error) {
@@ -187,7 +195,6 @@ export async function getMarketplaceStats(): Promise<HomepageStats> {
 // ✅ Obtener vendedores destacados desde el endpoint real
 export async function getTopSellers(): Promise<TopSeller[]> {
   try {
-    console.log('🔍 [HOMEPAGE] Fetching top sellers...')
     
     // ✅ USAR endpoint /users/sellers/featured que creamos
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/sellers/featured`, {
@@ -206,7 +213,7 @@ export async function getTopSellers(): Promise<TopSeller[]> {
     const result = await response.json()
     
     if (result.success && result.data) {
-      const sellers = result.data.map((seller: any) => ({
+      const sellers = result.data.map((seller: SellerApiResponse) => ({
         id: seller.id,
         storeName: seller.sellerProfile?.storeName || `${seller.firstName} Store`,
         slug: seller.sellerProfile?.slug || `seller-${seller.id}`,
@@ -221,7 +228,6 @@ export async function getTopSellers(): Promise<TopSeller[]> {
         }
       }))
       
-      console.log('✅ [HOMEPAGE] Top sellers loaded from API:', sellers.length)
       return sellers.slice(0, 4) // Top 4 sellers para homepage
     }
 
@@ -237,7 +243,6 @@ export async function getTopSellers(): Promise<TopSeller[]> {
 // ✅ Obtener categorías de productos
 export async function getProductCategories(): Promise<ProductCategory[]> {
   try {
-    console.log('🔍 [HOMEPAGE] Fetching product categories...')
     
     // ✅ USAR endpoint /products/categories que creamos
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/categories`, {
@@ -256,7 +261,6 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
     const result = await response.json()
     
     if (result.success && result.data) {
-      console.log('✅ [HOMEPAGE] Categories loaded from API:', result.data.length)
       return result.data
     }
 
@@ -283,7 +287,6 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
 // ✅ Obtener todos los datos de homepage en una sola función
 export async function getHomepageData() {
   try {
-    console.log('🔍 [HOMEPAGE] Fetching all homepage data...')
     
     const [featuredProducts, latestProducts, stats, topSellers, categories] = await Promise.allSettled([
       getFeaturedProducts(),
@@ -308,14 +311,6 @@ export async function getHomepageData() {
       categories: categories.status === 'fulfilled' ? categories.value : []
     }
 
-    console.log('✅ [HOMEPAGE] All homepage data loaded successfully')
-    console.log('📊 [HOMEPAGE] Data summary:', {
-      featuredProducts: result.featuredProducts.length,
-      latestProducts: result.latestProducts.length,
-      topSellers: result.topSellers.length,
-      categories: result.categories.length,
-      stats: result.stats
-    })
 
     return result
     

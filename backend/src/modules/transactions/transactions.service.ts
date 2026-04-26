@@ -1,5 +1,11 @@
 // src/modules/transactions/transactions.service.ts
-import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StripeService } from '../stripe/stripe.service';
 import { TransactionFilterDto } from './dto/transaction-filter.dto';
@@ -19,7 +25,13 @@ export class TransactionsService {
    * 🆕 Crear registro de transacción
    */
   async createTransaction(data: {
-    type: 'SALE' | 'PLATFORM_FEE' | 'STRIPE_FEE' | 'PAYOUT' | 'REFUND' | 'CHARGEBACK';
+    type:
+      | 'SALE'
+      | 'PLATFORM_FEE'
+      | 'STRIPE_FEE'
+      | 'PAYOUT'
+      | 'REFUND'
+      | 'CHARGEBACK';
     status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
     amount: number;
     currency: string;
@@ -33,7 +45,9 @@ export class TransactionsService {
     metadata?: any;
   }) {
     try {
-      this.logger.log(`Creating transaction: ${data.type} for ${data.amount} ${data.currency}`);
+      this.logger.log(
+        `Creating transaction: ${data.type} for ${data.amount} ${data.currency}`,
+      );
 
       const transaction = await this.prisma.transaction.create({
         data: {
@@ -333,9 +347,15 @@ export class TransactionsService {
   /**
    * 🆕 Obtener detalles de transacción específica
    */
-  async getTransactionById(transactionId: string, userId: string, userRole: string) {
+  async getTransactionById(
+    transactionId: string,
+    userId: string,
+    userRole: string,
+  ) {
     try {
-      this.logger.log(`Getting transaction ${transactionId} for user ${userId}`);
+      this.logger.log(
+        `Getting transaction ${transactionId} for user ${userId}`,
+      );
 
       const where: Prisma.TransactionWhereUniqueInput = { id: transactionId };
 
@@ -400,7 +420,11 @@ export class TransactionsService {
   /**
    * 🆕 Obtener estadísticas de transacciones
    */
-  async getTransactionStatistics(filters?: { startDate?: string; endDate?: string; sellerId?: string }) {
+  async getTransactionStatistics(filters?: {
+    startDate?: string;
+    endDate?: string;
+    sellerId?: string;
+  }) {
     try {
       this.logger.log('Getting transaction statistics');
 
@@ -469,26 +493,31 @@ export class TransactionsService {
         summary: {
           totalTransactions,
           totalAmount: Number(totalAmount._sum.amount || 0),
-          averageAmount: totalTransactions > 0 ? Number(totalAmount._sum.amount || 0) / totalTransactions : 0,
+          averageAmount:
+            totalTransactions > 0
+              ? Number(totalAmount._sum.amount || 0) / totalTransactions
+              : 0,
         },
-        byType: typeStats.map(stat => ({
+        byType: typeStats.map((stat) => ({
           type: stat.type,
           count: stat._count.id,
           totalAmount: Number(stat._sum.amount || 0),
         })),
-        byStatus: statusStats.map(stat => ({
+        byStatus: statusStats.map((stat) => ({
           status: stat.status,
           count: stat._count.id,
           totalAmount: Number(stat._sum.amount || 0),
         })),
-        byCurrency: currencyStats.map(stat => ({
+        byCurrency: currencyStats.map((stat) => ({
           currency: stat.currency,
           count: stat._count.id,
           totalAmount: Number(stat._sum.amount || 0),
         })),
       };
     } catch (error) {
-      this.logger.error(`Failed to get transaction statistics: ${error.message}`);
+      this.logger.error(
+        `Failed to get transaction statistics: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -497,12 +526,14 @@ export class TransactionsService {
    * 🆕 Actualizar estado de transacción
    */
   async updateTransactionStatus(
-    transactionId: string, 
+    transactionId: string,
     status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED',
-    metadata?: any
+    metadata?: any,
   ) {
     try {
-      this.logger.log(`Updating transaction ${transactionId} status to ${status}`);
+      this.logger.log(
+        `Updating transaction ${transactionId} status to ${status}`,
+      );
 
       const updateData: Prisma.TransactionUpdateInput = {
         status,
@@ -518,10 +549,14 @@ export class TransactionsService {
         data: updateData,
       });
 
-      this.logger.log(`Transaction ${transactionId} status updated to ${status}`);
+      this.logger.log(
+        `Transaction ${transactionId} status updated to ${status}`,
+      );
       return updatedTransaction;
     } catch (error) {
-      this.logger.error(`Failed to update transaction status: ${error.message}`);
+      this.logger.error(
+        `Failed to update transaction status: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -529,17 +564,20 @@ export class TransactionsService {
   /**
    * 🆕 Registrar transacciones desde órdenes (helper)
    */
-  async recordOrderTransactions(orderId: string, orderData: {
-    buyerId: string;
-    sellerId: string;
-    totalAmount: number;
-    platformFeeAmount: number;
-    sellerAmount: number;
-    stripeFeeAmount?: number;
-    currency: string;
-    stripePaymentIntentId?: string;
-    stripeChargeId?: string;
-  }) {
+  async recordOrderTransactions(
+    orderId: string,
+    orderData: {
+      buyerId: string;
+      sellerId: string;
+      totalAmount: number;
+      platformFeeAmount: number;
+      sellerAmount: number;
+      stripeFeeAmount?: number;
+      currency: string;
+      stripePaymentIntentId?: string;
+      stripeChargeId?: string;
+    },
+  ) {
     try {
       this.logger.log(`Recording transactions for order ${orderId}`);
 
@@ -593,10 +631,14 @@ export class TransactionsService {
         transactions.push(stripeFeeTransaction);
       }
 
-      this.logger.log(`Recorded ${transactions.length} transactions for order ${orderId}`);
+      this.logger.log(
+        `Recorded ${transactions.length} transactions for order ${orderId}`,
+      );
       return transactions;
     } catch (error) {
-      this.logger.error(`Failed to record order transactions: ${error.message}`);
+      this.logger.error(
+        `Failed to record order transactions: ${error.message}`,
+      );
       throw error;
     }
   }

@@ -39,14 +39,14 @@ export class CreateProductDto {
 
   @ApiProperty({
     description: 'Precio del producto en USD',
-    example: 5.00,
+    example: 5.0,
     minimum: 1,
     maximum: 100,
   })
   @IsNumber({}, { message: 'auth.validation.price_number' })
   @Min(1, { message: 'auth.validation.price_min' })
   @Max(100, { message: 'auth.validation.price_max' })
-  price: number = 5.00;
+  price: number = 5.0;
 
   @ApiProperty({
     description: 'Categoría del producto',
@@ -73,7 +73,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10, { message: 'auth.validation.tags_max_size' })
-  @Transform(({ value }) => value?.map((tag: string) => tag.toLowerCase().trim()))
+  @Transform(({ value }) =>
+    value?.map((tag: string) => tag.toLowerCase().trim()),
+  )
   tags?: string[];
 
   @ApiProperty({
