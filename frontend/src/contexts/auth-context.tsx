@@ -79,6 +79,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 interface AuthContextType {
   state: AuthState
   login: (email: string, password: string) => Promise<void>
+  loginWithToken: (data: { token: string; refreshToken: string; user: User }) => void
   register: (data: RegisterData) => Promise<void>
   logout: () => Promise<void>
   checkAuth: () => Promise<void>
@@ -280,6 +281,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_USER', payload: user })
   }
 
+  const loginWithToken = ({ token, refreshToken: _rt, user }: { token: string; refreshToken: string; user: User }) => {
+    setTokenInStorage(token)
+    dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } })
+  }
+
   // ✅ Verificar auth al montar
   useEffect(() => {
     checkAuth()
@@ -288,6 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
     state,
     login,
+    loginWithToken,
     register,
     logout,
     checkAuth,

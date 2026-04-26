@@ -244,4 +244,27 @@ export class AuthService {
   async isTokenBlacklisted(token: string): Promise<boolean> {
     return this.tokenBlacklistService.isTokenBlacklisted(token);
   }
+
+  async loginWithGoogle(googleUser: {
+    googleId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatar?: string;
+  }) {
+    const user = await this.usersService.findOrCreateGoogleUser(googleUser);
+
+    const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const token = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+    });
+
+    return { token, refreshToken, user };
+  }
 }

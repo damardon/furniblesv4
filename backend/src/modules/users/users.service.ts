@@ -322,4 +322,59 @@ export class UsersService {
       'resetPasswordToken',
     ]);
   }
+
+  async findOrCreateGoogleUser(googleProfile: {
+    googleId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatar?: string;
+  }): Promise<User> {
+    // 1. Ya existe con ese googleId
+    const byGoogleId = await this.prisma.user.findUnique({
+      where: { googleId: googleProfile.googleId },
+    });
+    if (byGoogleId) {
+      await this.prisma.user.update({
+        where: { id: byGoogleId.id },
+        data: { lastLoginAt: new Date() },
+      });
+      return byGoogleId;
+    }
+
+    // 2. Email ya registrado (vincular cuenta)
+    const byEmail = await this.prisma.user.findUnique({
+      where: { email: googleProfile.email },
+    });
+    if (byEmail) {
+      return this.prisma.user.update({
+        where: { id: byEmail.id },
+        data: {
+          googleId: googleProfile.googleId,
+          authProvider: 'google',
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          avatar: byEmail.avatar ?? googleProfile.avatar,
+          lastLoginAt: new Date(),
+        },
+      });
+    }
+
+    // 3. Usuario nuevo
+    return this.prisma.user.create({
+      data: {
+        email: googleProfile.email,
+        firstName: googleProfile.firstName,
+        lastName: googleProfile.lastName,
+        googleId: googleProfile.googleId,
+        authProvider: 'google',
+        avatar: googleProfile.avatar,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        isActive: true,
+        role: UserRole.BUYER,
+        buyerProfile: { create: {} },
+      },
+    });
+  }
 }

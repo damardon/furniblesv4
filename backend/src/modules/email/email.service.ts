@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import * as sgMail from '@sendgrid/mail';
 
 interface EmailData {
   to: string | string[];
@@ -13,49 +13,38 @@ interface EmailData {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
+  private readonly fromAddress: string;
+  private readonly enabled: boolean;
 
   constructor(private configService: ConfigService) {
-    this.createTransporter();
-  }
+    const apiKey = configService.get<string>('SENDGRID_API_KEY', '');
+    this.fromAddress = configService.get('EMAIL_FROM', 'noreply@furnibles.com');
+    this.enabled = apiKey.startsWith('SG.');
 
-  private createTransporter() {
-    const emailConfig = {
-      host: this.configService.get('SMTP_HOST', 'smtp.gmail.com'),
-      port: this.configService.get('SMTP_PORT', 587),
-      secure: false, // true para 465, false para otros puertos
-      auth: {
-        user: this.configService.get('SMTP_USER'),
-        pass: this.configService.get('SMTP_PASS'),
-      },
-    };
-
-    this.transporter = nodemailer.createTransport(emailConfig);
+    if (this.enabled) {
+      sgMail.setApiKey(apiKey);
+      this.logger.log('SendGrid email service initialized');
+    } else {
+      this.logger.warn('SENDGRID_API_KEY not set — emails will be logged only');
+    }
   }
 
   async sendEmail(emailData: EmailData): Promise<boolean> {
+    const htmlContent = this.generateEmailHTML(emailData.template, emailData.data);
+    const from = emailData.from || this.fromAddress;
+    const to = Array.isArray(emailData.to) ? emailData.to : [emailData.to];
+
+    if (!this.enabled) {
+      this.logger.log(`[EMAIL MOCK] To: ${to.join(', ')} | Subject: ${emailData.subject}`);
+      return true;
+    }
+
     try {
-      const htmlContent = this.generateEmailHTML(
-        emailData.template,
-        emailData.data,
-      );
-
-      const mailOptions = {
-        from:
-          emailData.from ||
-          this.configService.get('SMTP_FROM', 'noreply@furnibles.com'),
-        to: emailData.to,
-        subject: emailData.subject,
-        html: htmlContent,
-      };
-
-      const result = await this.transporter.sendMail(mailOptions);
-      this.logger.log(
-        `Email sent successfully to ${emailData.to}: ${result.messageId}`,
-      );
+      await sgMail.send({ from, to, subject: emailData.subject, html: htmlContent });
+      this.logger.log(`Email sent to ${to.join(', ')}: ${emailData.subject}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${emailData.to}:`, error);
+      this.logger.error(`Failed to send email to ${to.join(', ')}:`, error?.message);
       return false;
     }
   }

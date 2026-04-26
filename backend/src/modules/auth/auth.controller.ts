@@ -7,7 +7,11 @@ import {
   HttpCode,
   HttpStatus,
   Get,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import {
   ApiTags,
   ApiOperation,
@@ -29,7 +33,10 @@ import { UnauthorizedException, ConflictException } from '@nestjs/common';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Public()
   @Post('login')
@@ -223,5 +230,39 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async verifyEmail(@Body('token') token: string) {
     return this.authService.verifyEmail(token);
+  }
+
+  // ── Google OAuth ──────────────────────────────────────────────────────────
+
+  @Public()
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  async googleAuth() {
+    // Passport redirects to Google automatically
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleCallback(@Request() req: any, @Res() res: Response) {
+    const { token, refreshToken, user } = await this.authService.loginWithGoogle(req.user);
+
+    const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+
+    // Encode auth data as query params for the frontend to pick up
+    const params = new URLSearchParams({
+      token,
+      refreshToken,
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      avatar: user.avatar ?? '',
+    });
+
+    res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
   }
 }
