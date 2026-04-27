@@ -40,7 +40,7 @@ export default function LoginPage() {
 
           {/* Google SSO — único método */}
           <a
-            href={`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`}
+            href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google`}
             className="w-full flex items-center justify-center gap-3 bg-white border-4 border-black px-6 py-4 font-black uppercase text-sm hover:bg-yellow-400 transition-all duration-200"
             style={{ boxShadow: '6px 6px 0 #000000' }}
           >
