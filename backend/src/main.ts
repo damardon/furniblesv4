@@ -29,15 +29,20 @@ async function bootstrap() {
   );
   const corsOrigin = configService.get('CORS_ORIGIN');
 
-  // CORS configuration with environment-based origins
+  // CORS configuration — accept localhost, any *.vercel.app deployment, and the configured production domain
   const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
-
-  if (corsOrigin) {
-    allowedOrigins.push(corsOrigin);
-  }
+  if (corsOrigin) allowedOrigins.push(corsOrigin);
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl)
+      if (!origin) return callback(null, true);
+      // Allow any Vercel preview/production URL during MVP phase
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+      // Allow configured origins (production domain + localhost)
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
