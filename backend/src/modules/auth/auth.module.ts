@@ -10,10 +10,12 @@ import { TokenBlacklistInterceptor } from './interceptors/token-blacklist.interc
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
     PassportModule,
+    ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -32,6 +34,7 @@ import { LocalStrategy } from './strategies/local.strategy';
     TokenBlacklistService,
     JwtStrategy,
     LocalStrategy,
+    GoogleStrategy,
     {
       provide: APP_INTERCEPTOR,
       useClass: TokenBlacklistInterceptor,

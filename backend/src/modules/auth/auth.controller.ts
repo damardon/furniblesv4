@@ -1,112 +1,45 @@
 import {
   Controller,
   Post,
-  Body,
   UseGuards,
   Request,
   HttpCode,
   HttpStatus,
   Get,
+  Res,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiBody,
-} from '@nestjs/swagger';
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/auth.dto';
-import { RegisterDto } from './dto/auth.dto';
-import { ChangePasswordDto } from './dto/auth.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { I18n, I18nContext } from 'nestjs-i18n';
-import { UnauthorizedException, ConflictException } from '@nestjs/common';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
+  // Password-based login/register disabled — Google OAuth only
   @Public()
   @Post('login')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'User login' })
-  @ApiBody({ type: LoginDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Login successful',
-    schema: {
-      type: 'object',
-      properties: {
-        token: { type: 'string' },
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            email: { type: 'string' },
-            firstName: { type: 'string' },
-            lastName: { type: 'string' },
-            role: { type: 'string' },
-            status: { type: 'string' },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  @HttpCode(HttpStatus.GONE)
+  @ApiOperation({ summary: 'Disabled — use GET /auth/google' })
+  async login() {
+    return { message: 'Password login disabled. Use Google OAuth: GET /api/auth/google' };
   }
 
   @Public()
   @Post('register')
-  @ApiOperation({ summary: 'User registration' })
-  @ApiBody({ type: RegisterDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Registration successful',
-    schema: {
-      type: 'object',
-      properties: {
-        access_token: { type: 'string' },
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'number' },
-            email: { type: 'string' },
-            firstName: { type: 'string' },
-            lastName: { type: 'string' },
-            role: { type: 'string' },
-            status: { type: 'string' },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('change-password')
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Change user password' })
-  @ApiBody({ type: ChangePasswordDto })
-  @ApiResponse({ status: 200, description: 'Password changed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid current password' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async changePassword(
-    @CurrentUser('id') userId: string, // Cambié number por string para Prisma
-    @Body() changePasswordDto: ChangePasswordDto,
-  ) {
-    await this.authService.changePassword(userId, changePasswordDto);
-    return { message: 'Contraseña cambiada exitosamente' };
+  @HttpCode(HttpStatus.GONE)
+  @ApiOperation({ summary: 'Disabled — use GET /auth/google' })
+  async register() {
+    return { message: 'Registration disabled. Use Google OAuth: GET /api/auth/google' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -170,58 +103,59 @@ export class AuthController {
 
   @Public()
   @Post('forgot-password')
-  @ApiOperation({ summary: 'Request password reset' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', format: 'email' },
-      },
-      required: ['email'],
-    },
-  })
-  @ApiResponse({ status: 200, description: 'Password reset email sent' })
-  async forgotPassword(@Body('email') email: string) {
-    return this.authService.forgotPassword(email);
+  @HttpCode(HttpStatus.GONE)
+  @ApiOperation({ summary: 'Disabled — use GET /auth/google' })
+  async forgotPassword() {
+    return { message: 'Password auth disabled. Use Google OAuth: GET /api/auth/google' };
   }
 
   @Public()
   @Post('reset-password')
-  @ApiOperation({ summary: 'Reset password with token' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        token: { type: 'string' },
-        newPassword: { type: 'string', minLength: 8 },
-      },
-      required: ['token', 'newPassword'],
-    },
-  })
-  @ApiResponse({ status: 200, description: 'Password reset successful' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
-  async resetPassword(
-    @Body('token') token: string,
-    @Body('newPassword') newPassword: string,
-  ) {
-    return this.authService.resetPassword(token, newPassword);
+  @HttpCode(HttpStatus.GONE)
+  @ApiOperation({ summary: 'Disabled — use GET /auth/google' })
+  async resetPassword() {
+    return { message: 'Password auth disabled. Use Google OAuth: GET /api/auth/google' };
   }
 
   @Public()
   @Post('verify-email')
-  @ApiOperation({ summary: 'Verify email with token' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        token: { type: 'string' },
-      },
-      required: ['token'],
-    },
-  })
-  @ApiResponse({ status: 200, description: 'Email verified successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
-  async verifyEmail(@Body('token') token: string) {
-    return this.authService.verifyEmail(token);
+  @HttpCode(HttpStatus.GONE)
+  @ApiOperation({ summary: 'Disabled — use GET /auth/google' })
+  async verifyEmail() {
+    return { message: 'Password auth disabled. Use Google OAuth: GET /api/auth/google' };
+  }
+
+  // ── Google OAuth ──────────────────────────────────────────────────────────
+
+  @Public()
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  async googleAuth() {
+    // Passport redirects to Google automatically
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleCallback(@Request() req: any, @Res() res: Response) {
+    const { token, refreshToken, user } = await this.authService.loginWithGoogle(req.user);
+
+    const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+
+    // Encode auth data as query params for the frontend to pick up
+    const params = new URLSearchParams({
+      token,
+      refreshToken,
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      avatar: user.avatar ?? '',
+    });
+
+    res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
   }
 }

@@ -1,12 +1,11 @@
-// prisma/schema.prisma - Schema Corregido para SQLite
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // Enums
@@ -192,7 +191,7 @@ enum NotificationChannel {
 model User {
   id                     String     @id @default(cuid())
   email                  String     @unique
-  password               String
+  password               String?
   role                   UserRole   @default(BUYER)
   isBoth                 Boolean    @default(false)
   firstName              String
@@ -206,6 +205,10 @@ model User {
   isActive               Boolean    @default(true)
   status                 UserStatus @default(ACTIVE)
   avatar                 String?
+
+  // OAuth
+  googleId    String? @unique
+  authProvider String  @default("local")
 
   // Stripe Connect Integration
   stripeConnectId    String? @unique

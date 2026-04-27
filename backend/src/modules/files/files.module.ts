@@ -4,6 +4,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { FilesService } from './files.service';
 import { FilesController } from './files.controller';
 import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseStorageService } from './supabase-storage.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { PrismaService } from '../prisma/prisma.service';
     }),
   ],
   controllers: [FilesController],
-  providers: [FilesService, PrismaService],
+  providers: [FilesService, PrismaService, SupabaseStorageService],
   exports: [FilesService], // Exportar para uso en otros módulos
 })
 export class FilesModule {}

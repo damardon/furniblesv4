@@ -1,4 +1,3 @@
-// src/modules/files/files.service.ts
 import {
   Injectable,
   BadRequestException,
@@ -8,11 +7,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { SupabaseStorageService } from './supabase-storage.service';
 import sharp from 'sharp';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 import { FileType, FileStatus } from '@prisma/client';
 import {
   FileResponseDto,
@@ -42,24 +39,18 @@ export interface ProcessedFile {
 @Injectable()
 export class FilesService {
   private readonly logger = new Logger(FilesService.name);
-  private readonly uploadPath: string;
   private readonly maxFileSize: number;
   private readonly allowedMimeTypes: string[];
-  private readonly baseUrl: string;
 
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private storage: SupabaseStorageService,
   ) {
-    this.uploadPath = this.config.get('UPLOAD_PATH', './uploads');
-    this.maxFileSize = parseInt(this.config.get('MAX_FILE_SIZE', '10485760')); // 10MB
+    this.maxFileSize = parseInt(this.config.get('MAX_FILE_SIZE', '10485760'));
     this.allowedMimeTypes = this.config
       .get('ALLOWED_FILE_TYPES', 'pdf,jpg,jpeg,png,webp')
       .split(',');
-    this.baseUrl = this.config.get('BASE_URL', 'http://localhost:3001');
-
-    // Crear directorio de uploads si no existe
-    this.ensureUploadDirectory();
   }
 
   // Validar archivo antes del upload
@@ -149,7 +140,7 @@ export class FilesService {
         maxFileSize: this.maxFileSize,
         maxFileSizeFormatted: this.formatFileSize(this.maxFileSize),
         allowedTypes: this.allowedMimeTypes,
-        uploadPath: this.uploadPath,
+        provider: 'supabase',
       },
     };
   }
@@ -159,26 +150,17 @@ export class FilesService {
     this.validateFile(file, FileType.PDF);
 
     const fileKey = this.generateFileKey(file.originalname, 'pdf');
-    const filePath = path.join(this.uploadPath, 'pdfs', fileKey);
+    const storagePath = `pdfs/${fileKey}`;
 
-    // Crear directorio si no existe
-    await this.ensureDirectoryExists(path.dirname(filePath));
-
-    // Guardar archivo
-    await fs.writeFile(filePath, file.buffer);
-
-    // Calcular checksum
+    const url = await this.storage.upload(storagePath, file.buffer, file.mimetype);
     const checksum = this.calculateChecksum(file.buffer);
-
-    // Extraer metadata del PDF (opcional)
     const metadata = await this.extractPdfMetadata(file.buffer);
 
-    // Crear registro en BD
     const fileRecord = await this.prisma.file.create({
       data: {
         filename: file.originalname,
         key: fileKey,
-        url: `${this.baseUrl}/api/files/pdf/${fileKey}`,
+        url,
         mimeType: file.mimetype,
         size: file.size,
         type: FileType.PDF,
@@ -228,80 +210,63 @@ export class FilesService {
     userId: string,
   ): Promise<ProcessedFile> {
     const fileKey = this.generateFileKey(file.originalname, 'image');
-    const filePath = path.join(this.uploadPath, 'images', fileKey);
     const thumbnailKey = `thumb_${fileKey}`;
-    const thumbnailPath = path.join(
-      this.uploadPath,
-      'thumbnails',
-      thumbnailKey,
-    );
-
-    // Crear directorios
-    await this.ensureDirectoryExists(path.dirname(filePath));
-    await this.ensureDirectoryExists(path.dirname(thumbnailPath));
 
     // Procesar imagen original
     const processedImage = await sharp(file.buffer)
-      .resize(1200, 1200, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toBuffer();
 
     // Crear thumbnail
     const thumbnail = await sharp(file.buffer)
-      .resize(300, 300, {
-        fit: 'cover',
-        position: 'center',
-      })
+      .resize(300, 300, { fit: 'cover', position: 'center' })
       .jpeg({ quality: 80 })
       .toBuffer();
 
-    // Guardar archivos
-    await fs.writeFile(filePath, processedImage);
-    await fs.writeFile(thumbnailPath, thumbnail);
+    // Subir ambos a Supabase Storage en paralelo
+    const [imageUrl, thumbnailUrl] = await Promise.all([
+      this.storage.upload(`images/${fileKey}`, processedImage, 'image/jpeg'),
+      this.storage.upload(`thumbnails/${thumbnailKey}`, thumbnail, 'image/jpeg'),
+    ]);
 
-    // Obtener dimensiones
     const { width, height } = await sharp(processedImage).metadata();
-
-    // Calcular checksums
     const checksum = this.calculateChecksum(processedImage);
     const thumbnailChecksum = this.calculateChecksum(thumbnail);
 
-    // Crear registro de imagen principal
-    const imageRecord = await this.prisma.file.create({
-      data: {
-        filename: file.originalname,
-        key: fileKey,
-        url: `${this.baseUrl}/api/files/image/${fileKey}`,
-        mimeType: 'image/jpeg',
-        size: processedImage.length,
-        type: FileType.IMAGE,
-        status: FileStatus.ACTIVE,
-        width,
-        height,
-        checksum,
-        uploadedById: userId,
-      },
-    });
-
-    // Crear registro de thumbnail
-    await this.prisma.file.create({
-      data: {
-        filename: `thumb_${file.originalname}`,
-        key: thumbnailKey,
-        url: `${this.baseUrl}/api/files/thumbnail/${thumbnailKey}`,
-        mimeType: 'image/jpeg',
-        size: thumbnail.length,
-        type: FileType.THUMBNAIL,
-        status: FileStatus.ACTIVE,
-        width: 300,
-        height: 300,
-        checksum: thumbnailChecksum,
-        uploadedById: userId,
-      },
-    });
+    // Crear ambos registros en BD en paralelo
+    const [imageRecord] = await Promise.all([
+      this.prisma.file.create({
+        data: {
+          filename: file.originalname,
+          key: fileKey,
+          url: imageUrl,
+          mimeType: 'image/jpeg',
+          size: processedImage.length,
+          type: FileType.IMAGE,
+          status: FileStatus.ACTIVE,
+          width,
+          height,
+          checksum,
+          uploadedById: userId,
+        },
+      }),
+      this.prisma.file.create({
+        data: {
+          filename: `thumb_${file.originalname}`,
+          key: thumbnailKey,
+          url: thumbnailUrl,
+          mimeType: 'image/jpeg',
+          size: thumbnail.length,
+          type: FileType.THUMBNAIL,
+          status: FileStatus.ACTIVE,
+          width: 300,
+          height: 300,
+          checksum: thumbnailChecksum,
+          uploadedById: userId,
+        },
+      }),
+    ]);
 
     return {
       id: imageRecord.id,
@@ -315,39 +280,15 @@ export class FilesService {
     };
   }
 
-  // Obtener archivo por clave
-  async getFileByKey(key: string): Promise<{ file: any; filePath: string }> {
-    const file = await this.prisma.file.findUnique({
-      where: { key },
-    });
+  // Obtener archivo por clave — devuelve la URL pública de Supabase
+  async getFileByKey(key: string): Promise<{ file: any; url: string }> {
+    const file = await this.prisma.file.findUnique({ where: { key } });
 
     if (!file || file.status !== FileStatus.ACTIVE) {
       throw new NotFoundException('File not found');
     }
 
-    let filePath: string;
-    switch (file.type) {
-      case FileType.PDF:
-        filePath = path.join(this.uploadPath, 'pdfs', key);
-        break;
-      case FileType.IMAGE:
-        filePath = path.join(this.uploadPath, 'images', key);
-        break;
-      case FileType.THUMBNAIL:
-        filePath = path.join(this.uploadPath, 'thumbnails', key);
-        break;
-      default:
-        throw new NotFoundException('Invalid file type');
-    }
-
-    // Verificar que el archivo existe físicamente
-    try {
-      await fs.access(filePath);
-    } catch {
-      throw new NotFoundException('File not found');
-    }
-
-    return { file, filePath };
+    return { file, url: file.url };
   }
 
   // Eliminar archivo
@@ -369,32 +310,16 @@ export class FilesService {
       throw new ForbiddenException('You are not the owner of this file');
     }
 
-    // Marcar como eliminado en BD
     await this.prisma.file.update({
       where: { id: fileId },
       data: { status: FileStatus.DELETED },
     });
 
-    // Eliminar archivo físico (opcional, se puede hacer en background)
-    try {
-      let filePath: string;
-      switch (file.type) {
-        case FileType.PDF:
-          filePath = path.join(this.uploadPath, 'pdfs', file.key);
-          break;
-        case FileType.IMAGE:
-          filePath = path.join(this.uploadPath, 'images', file.key);
-          break;
-        case FileType.THUMBNAIL:
-          filePath = path.join(this.uploadPath, 'thumbnails', file.key);
-          break;
-      }
-
-      await fs.unlink(filePath);
-    } catch (error) {
-      // Log error but don't fail the operation
-      this.logger.error('Error deleting physical file', error.stack);
-    }
+    // Borrar de Supabase Storage en background (no falla la operación si falla el storage)
+    const folder = file.type === FileType.PDF ? 'pdfs' : file.type === FileType.IMAGE ? 'images' : 'thumbnails';
+    this.storage.delete(`${folder}/${file.key}`).catch((err) =>
+      this.logger.error('Error deleting from storage', err?.message),
+    );
   }
 
   // Obtener archivos del usuario
@@ -533,21 +458,15 @@ export class FilesService {
     let deletedCount = 0;
     const failedIds: string[] = [];
 
-    // Only loop for filesystem operations (cannot be batched)
+    // Delete from Supabase Storage
     for (const file of eligibleFiles) {
-      const typeDir =
-        file.type === FileType.PDF
-          ? 'pdfs'
-          : file.type === FileType.IMAGE
-            ? 'images'
-            : 'thumbnails';
-      const filePath = path.join(this.uploadPath, typeDir, file.key);
+      const folder = file.type === FileType.PDF ? 'pdfs' : file.type === FileType.IMAGE ? 'images' : 'thumbnails';
       try {
-        await fs.unlink(filePath);
+        await this.storage.delete(`${folder}/${file.key}`);
         totalSize += file.size;
         deletedCount++;
       } catch (error) {
-        this.logger.error(`Error deleting file ${filePath}`, error.stack);
+        this.logger.error(`Error deleting file ${file.key} from storage`, error?.message);
         failedIds.push(file.id);
       }
     }
@@ -651,31 +570,10 @@ export class FilesService {
 
   // HELPER METHODS (implementaciones faltantes)
 
-  private async ensureUploadDirectory(): Promise<void> {
-    try {
-      await fs.mkdir(this.uploadPath, { recursive: true });
-      await fs.mkdir(path.join(this.uploadPath, 'pdfs'), { recursive: true });
-      await fs.mkdir(path.join(this.uploadPath, 'images'), { recursive: true });
-      await fs.mkdir(path.join(this.uploadPath, 'thumbnails'), {
-        recursive: true,
-      });
-    } catch (error) {
-      this.logger.error('Error creating upload directories', error.stack);
-    }
-  }
-
-  private async ensureDirectoryExists(dirPath: string): Promise<void> {
-    try {
-      await fs.mkdir(dirPath, { recursive: true });
-    } catch (error) {
-      this.logger.error('Error creating directory', error.stack);
-    }
-  }
-
   private generateFileKey(originalname: string, prefix: string): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2);
-    const extension = path.extname(originalname);
+    const extension = originalname.includes('.') ? '.' + originalname.split('.').pop() : '';
     return `${prefix}_${timestamp}_${random}${extension}`;
   }
 
@@ -684,7 +582,7 @@ export class FilesService {
   }
 
   private getFileExtension(filename: string): string {
-    return path.extname(filename).toLowerCase().substring(1);
+    return filename.includes('.') ? filename.split('.').pop()!.toLowerCase() : '';
   }
 
   private formatFileSize(bytes: number): string {

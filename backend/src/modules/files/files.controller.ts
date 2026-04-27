@@ -26,7 +26,6 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import * as fs from 'fs/promises';
 import { FilesService } from './files.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -213,62 +212,28 @@ export class FilesController {
   @ApiResponse({ status: 200, description: 'Archivo PDF' })
   @ApiResponse({ status: 404, description: 'Archivo no encontrado' })
   async downloadPdf(@Param('key') key: string, @Res() res: Response) {
-    const { file, filePath } = await this.filesService.getFileByKey(key);
-
-    const fileBuffer = await fs.readFile(filePath);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${file.filename}"`,
-      'Content-Length': file.size,
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      Pragma: 'no-cache',
-      Expires: '0',
-    });
-
-    res.send(fileBuffer);
+    const { url } = await this.filesService.getFileByKey(key);
+    res.redirect(url);
   }
 
   @Get('image/:key')
   @Public()
   @ApiOperation({ summary: 'Ver imagen' })
   @ApiParam({ name: 'key', description: 'Clave única de la imagen' })
-  @ApiResponse({ status: 200, description: 'Imagen' })
-  @ApiResponse({ status: 404, description: 'Imagen no encontrada' })
+  @ApiResponse({ status: 302, description: 'Redirect to Supabase Storage' })
   async getImage(@Param('key') key: string, @Res() res: Response) {
-    const { file, filePath } = await this.filesService.getFileByKey(key);
-
-    const fileBuffer = await fs.readFile(filePath);
-
-    res.set({
-      'Content-Type': file.mimeType,
-      'Content-Length': file.size,
-      'Cache-Control': 'public, max-age=86400', // Cache por 1 día
-      ETag: file.checksum,
-    });
-
-    res.send(fileBuffer);
+    const { url } = await this.filesService.getFileByKey(key);
+    res.redirect(url);
   }
 
   @Get('thumbnail/:key')
   @Public()
   @ApiOperation({ summary: 'Ver thumbnail' })
   @ApiParam({ name: 'key', description: 'Clave única del thumbnail' })
-  @ApiResponse({ status: 200, description: 'Thumbnail' })
-  @ApiResponse({ status: 404, description: 'Thumbnail no encontrado' })
+  @ApiResponse({ status: 302, description: 'Redirect to Supabase Storage' })
   async getThumbnail(@Param('key') key: string, @Res() res: Response) {
-    const { file, filePath } = await this.filesService.getFileByKey(key);
-
-    const fileBuffer = await fs.readFile(filePath);
-
-    res.set({
-      'Content-Type': 'image/jpeg',
-      'Content-Length': file.size,
-      'Cache-Control': 'public, max-age=86400', // Cache por 1 día
-      ETag: file.checksum,
-    });
-
-    res.send(fileBuffer);
+    const { url } = await this.filesService.getFileByKey(key);
+    res.redirect(url);
   }
 
   @Get(':id/metadata')
