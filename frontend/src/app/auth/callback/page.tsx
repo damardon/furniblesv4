@@ -27,7 +27,7 @@ export default function AuthCallbackPage() {
     loginWithToken({
       token,
       refreshToken: refreshToken ?? token,
-      user: { id: userId, email, firstName: firstName ?? '', lastName: lastName ?? '', role: role as any, avatar: avatar || undefined },
+      user: { id: userId, email, firstName: firstName ?? '', lastName: lastName ?? '', role: role as any, avatar: avatar || undefined, isVerified: true, createdAt: new Date().toISOString() },
     })
 
     const dest = role === 'ADMIN' ? '/admin/dashboard' : role === 'SELLER' ? '/vendedor-dashboard' : '/'

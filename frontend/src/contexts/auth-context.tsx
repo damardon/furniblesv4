@@ -12,6 +12,7 @@ interface User {
   lastName: string
   role: 'BUYER' | 'SELLER' | 'ADMIN'
   isVerified: boolean
+  avatar?: string
   sellerProfile?: {
     id: string
     storeName: string
