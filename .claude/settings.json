@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import sys; d=eval\\(sys.stdin.read\\(\\)\\); [print\\(k, '->', v.get\\('types','?'\\) if isinstance\\(v,dict\\) else v\\) for k,v in d.items\\(\\)]\")"
+    ]
+  }
+}
