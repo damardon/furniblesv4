@@ -12,7 +12,13 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'furnibles-backend.up.railway.app',
+        hostname: 'furniblesv4-production.up.railway.app',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vboxikfmpdiverafslkd.supabase.co',
         port: '',
         pathname: '/**',
       },
